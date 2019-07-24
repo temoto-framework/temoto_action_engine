@@ -27,8 +27,8 @@ generate_messages(
 
 catkin_package(
   INCLUDE_DIRS include
-#  LIBRARIES temoto_action_engine
-  CATKIN_DEPENDS roscpp std_msgs
+  LIBRARIES temoto_ae_components temoto_ae_umrf_json
+  CATKIN_DEPENDS roscpp std_msgs class_loader
 #  DEPENDS system_lib
 ) 
 
