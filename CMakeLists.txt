@@ -38,6 +38,7 @@ include_directories(
   "${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include"
 )
 
+# Library that combines core components of the action engine
 add_library(temoto_ae_components 
   src/action_handle.cpp
   src/umrf_graph_helper.cpp
@@ -47,6 +48,15 @@ add_library(temoto_ae_components
 )
 add_dependencies(temoto_ae_components ${catkin_EXPORTED_TARGETS} ${${PROJECT_NAME}_EXPORTED_TARGETS})
 target_link_libraries(temoto_ae_components 
+  ${catkin_LIBRARIES}
+)
+
+# Library that combines UMRF json converter components
+add_library(temoto_ae_umrf_json
+  src/umrf_json_converter.cpp
+)
+add_dependencies(temoto_ae_umrf_json ${catkin_EXPORTED_TARGETS} ${${PROJECT_NAME}_EXPORTED_TARGETS})
+target_link_libraries(temoto_ae_umrf_json 
   ${catkin_LIBRARIES}
 )
 
