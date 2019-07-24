@@ -1,6 +1,0 @@
-devel_space: /home/robert/catkin_ws_2/src/temoto_action_engine/devel
-install: false
-install_space: /home/robert/catkin_ws_2/src/temoto_action_engine/install
-profile: default
-source_space: /home/robert/catkin_ws_2/src/temoto_action_engine/src
-workspace: /home/robert/catkin_ws_2/src/temoto_action_engine
