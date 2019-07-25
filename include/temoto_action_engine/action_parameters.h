@@ -72,6 +72,13 @@ public:
     }
   }
 
+  bool setParameter(const std::string& param_name, const std::string& param_type, const Payload& pl)
+  {
+    ParameterContainer pc(param_name, param_type);
+    pc.setData(pl);
+    setParameter(pc);
+  }
+
   bool copyParameters(const ActionParameters& params_in)
   {
     try
@@ -107,14 +114,11 @@ public:
     }
   }
 
-  const ParameterContainer& getParameter(const std::string& name)
+  const ParameterContainer& getParameter(const std::string& name) const
   {
     if (!hasParameter(name))
     {
-      //std::cout << "Could not find parameter '" << name << "'\n";
-      /*
-       * TODO: Do something if the requested parameter doesn't exist 
-       */ 
+      throw CREATE_TEMOTO_ERROR("Could not find parameter '" + name + "'.");
     }
     return *parameters_.find(name);
   }

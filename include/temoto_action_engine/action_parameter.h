@@ -21,11 +21,20 @@
 
 #include <vector>
 #include <string>
+#include <map>
 #include "temoto_action_engine/temoto_error.h"
 
 /*
  * Action Parameter
- */ 
+ */
+namespace action_parameter
+{
+  const std::map<std::string, std::string> PARAMETER_MAP {
+    {"number", "double"},
+    {"string", "std::string"}
+  };
+}
+
 template <class T>
 class ActionParameter
 {
