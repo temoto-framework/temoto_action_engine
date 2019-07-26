@@ -26,7 +26,7 @@ generate_messages(
 )
 
 catkin_package(
-  INCLUDE_DIRS include
+  INCLUDE_DIRS include "${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include"
   LIBRARIES temoto_ae_components temoto_ae_umrf_json
   CATKIN_DEPENDS roscpp std_msgs class_loader
 #  DEPENDS system_lib
