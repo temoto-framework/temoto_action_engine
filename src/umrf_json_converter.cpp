@@ -19,6 +19,8 @@
 #include "temoto_action_engine/umrf_json_converter.h"
 #include "temoto_action_engine/temoto_error.h"
 #include <iostream>
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
 
 namespace umrf_json_converter
 {
@@ -146,7 +148,67 @@ Umrf fromUmrfJsonStr(const std::string& umrf_json_str, bool as_descriptor)
 
 std::string toUmrfJsonStr(const Umrf& umrf)
 {
-  return "";
+  /*
+   * Create UMRF JSON string from scratch.
+   * reference: http://www.thomaswhitton.com/blog/2013/06/28/json-c-plus-plus-examples/
+   */ 
+  rapidjson::Document fromScratch; // document is the root of a json message
+  fromScratch.SetObject(); // define the document as an object rather than an array
+
+  // must pass an allocator when the object may need to allocate memory
+  rapidjson::Document::AllocatorType& allocator = fromScratch.GetAllocator();
+
+  /*
+   * Fill the JSON datastructure according to UMRF format
+   */ 
+
+  // Set the name of the UMRF frame
+  rapidjson::Value name_value(rapidjson::kStringType);
+  name_value.SetString(umrf.getName().c_str(), umrf.getName().size());
+  fromScratch.AddMember("name", name_value, allocator);
+
+  // Set the suffix
+  fromScratch.AddMember("suffix", "0", allocator);
+
+  // Set the notation
+  fromScratch.AddMember("notation", "", allocator);
+
+  // Set the effect
+  fromScratch.AddMember("effect", "umrf.getEffect().c_str()", allocator);
+
+  // Set the parameters via a rapidjson object type
+  rapidjson::Value object(rapidjson::kObjectType);
+  for (const auto& parameter : umrf.getInputParameters())
+  {
+    rapidjson::Value parameter_name(rapidjson::kStringType);
+    parameter_name.SetString(parameter.getName().c_str(), parameter.getName().size());
+
+    rapidjson::Value parameter_value(rapidjson::kObjectType);
+    if (parameter.getType() == "string")
+    {
+      rapidjson::Value pvf_value(rapidjson::kStringType);
+      //pvf_value.SetString(parameter.second.value_string.c_str(), parameter.second.value_string.size());
+      parameter_value.AddMember("pvf_type", "string", allocator);
+      parameter_value.AddMember("pvf_value", "pvf_value", allocator);
+    }
+    else if (parameter.getType() == "number")
+    {
+      rapidjson::Value pvf_value(rapidjson::kNumberType);
+      //pvf_value.SetDouble(parameter.second.value_number);
+      parameter_value.AddMember("pvf_type", "number", allocator);
+      parameter_value.AddMember("pvf_value", "pvf_value", allocator);
+    }
+    object.AddMember(parameter_name, parameter_value, allocator); 
+  }
+  fromScratch.AddMember("input_parameters", object, allocator);
+
+  /*
+   * Convert the JSON datastructure to a JSON string
+   */
+  rapidjson::StringBuffer strbuf;
+  rapidjson::Writer<rapidjson::StringBuffer> writer(strbuf);
+  fromScratch.Accept(writer);
+  return strbuf.GetString();
 }
 
 const rapidjson::Value& getRootJsonElement(const char* element_name, const rapidjson::Document& json_doc)

@@ -23,6 +23,7 @@
 #include <string>
 #include <map>
 #include "temoto_action_engine/temoto_error.h"
+#include <boost/algorithm/string.hpp>
 
 /*
  * Action Parameter
@@ -105,9 +106,81 @@ public:
     return name_;
   }
 
+  std::string getNameNoNamespace() const
+  {
+    std::vector<std::string> name_comp_vec;
+    boost::split(name_comp_vec, name_, boost::is_any_of("::"));
+    return name_comp_vec.back();
+  }
+
+   std::string getNamespace() const
+  {
+    std::vector<std::string> name_comp_vec;
+    boost::split(name_comp_vec, name_, boost::is_any_of("::"));
+    return name_comp_vec.back();
+  }
+
+  void setName(const std::string& name)
+  {
+    name_ = name;
+  }
+
+  void setNameKeepNamespace(const std::string& name)
+  {
+    std::vector<std::string> name_comp_vec;
+    boost::split(name_comp_vec, name_, boost::is_any_of("::"));
+    
+    std::string final_name;
+    name_comp_vec.pop_back(); // Remove the name
+
+    for (const auto& name_comp : name_comp_vec)
+    {
+      if (name_comp.empty())
+      {
+        continue;
+      }
+      final_name += name_comp + "::";
+    }
+    final_name += name;
+    name_ = final_name;
+  }
+
+  void removeNamespaceLevel()
+  {
+    std::vector<std::string> name_comp_vec;
+    boost::split(name_comp_vec, name_, boost::is_any_of("::"));
+    
+    if (name_comp_vec.size() == 1)
+    {
+      return;
+    }
+
+    std::string name_no_ns = name_comp_vec.back();
+    std::string final_name;
+    name_comp_vec.pop_back(); // Remove the name
+    name_comp_vec.pop_back(); // Remove the empty char
+    name_comp_vec.pop_back(); // Remove the namespace
+
+    for (const auto& name_comp : name_comp_vec)
+    {
+      if (name_comp.empty())
+      {
+        continue;
+      }
+      final_name += name_comp + "::";
+    }
+    final_name += name_no_ns;
+    name_ = final_name;
+  }
+
   const std::string& getType() const
   {
     return type_;
+  }
+
+  void setType(const std::string& type)
+  {
+    type_ = type;
   }
 
   bool operator<(const ActionParameter<T>& rhs) const

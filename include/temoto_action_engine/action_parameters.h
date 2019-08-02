@@ -128,6 +128,16 @@ public:
     return parameters_;
   }
 
+  bool removeParameter(const std::string& name)
+  {
+    if (!hasParameter(name))
+    {
+      return false;
+    }
+    parameters_.erase(parameters_.find(name));
+    return true;
+  }
+
   std::set<ParameterContainer> getParameterGroup(const std::set<std::string>& param_names) const
   {
     std::set<ParameterContainer> parameters_out;
@@ -189,7 +199,6 @@ public:
     parameters_.clear();
   }
 
-private:
   std::set<std::string> getParamNames() const
   {
     std::set<std::string> keys;
@@ -199,7 +208,8 @@ private:
     }
     return keys;
   }
-
+  
+private:
   bool containsAll(const std::set<std::string>& param_names) const
   {
     bool contains_all = true;

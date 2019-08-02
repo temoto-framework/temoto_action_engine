@@ -33,6 +33,7 @@ public:
   Umrf(const Umrf& uj);
 
   const std::string& getName() const;
+  std::string& getNameNc();
   bool setName(const std::string& name);
 
   const std::string& getPackageName() const;

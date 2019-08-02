@@ -43,6 +43,11 @@ const std::string& Umrf::getName() const
   return name_;
 }
 
+std::string& Umrf::getNameNc()
+{
+  return name_;
+}
+
 bool Umrf::setName(const std::string& name)
 {
   if (!name.empty())
