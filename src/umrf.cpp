@@ -175,6 +175,24 @@ bool Umrf::setSuffix(const std::string& suffix)
   }
 }
 
+const std::string& Umrf::getNotation() const
+{
+  return notation_;
+}
+
+bool Umrf::setNotation(const std::string& notation)
+{
+  if (!notation.empty())
+  {
+    notation_ = notation;
+    return true;  
+  }
+  else
+  {
+    return false;
+  }
+}
+
 const unsigned int& Umrf::getId() const
 {
   return id_;

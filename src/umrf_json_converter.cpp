@@ -167,40 +167,93 @@ std::string toUmrfJsonStr(const Umrf& umrf)
   name_value.SetString(umrf.getName().c_str(), umrf.getName().size());
   fromScratch.AddMember("name", name_value, allocator);
 
+  // Set the package name
+  if (!umrf.getPackageName().empty())
+  {
+    rapidjson::Value package_name_value(rapidjson::kStringType);
+    package_name_value.SetString(umrf.getPackageName().c_str(), umrf.getPackageName().size());
+    fromScratch.AddMember("package_name", package_name_value, allocator);
+  }
+
   // Set the suffix
-  fromScratch.AddMember("suffix", "0", allocator);
+  if (!umrf.getSuffix().empty())
+  {
+    rapidjson::Value suffix_value(rapidjson::kStringType);
+    suffix_value.SetString(umrf.getSuffix().c_str(), umrf.getSuffix().size());
+    fromScratch.AddMember("suffix", suffix_value, allocator);
+  }
 
   // Set the notation
-  fromScratch.AddMember("notation", "", allocator);
+  if (!umrf.getSuffix().empty())
+  {
+    rapidjson::Value notation_value(rapidjson::kStringType);
+    notation_value.SetString(umrf.getNotation().c_str(), umrf.getNotation().size());
+    fromScratch.AddMember("notation", notation_value, allocator);
+  }
 
   // Set the effect
-  fromScratch.AddMember("effect", "umrf.getEffect().c_str()", allocator);
-
-  // Set the parameters via a rapidjson object type
-  rapidjson::Value object(rapidjson::kObjectType);
-  for (const auto& parameter : umrf.getInputParameters())
+  if (!umrf.getSuffix().empty())
   {
-    rapidjson::Value parameter_name(rapidjson::kStringType);
-    parameter_name.SetString(parameter.getName().c_str(), parameter.getName().size());
-
-    rapidjson::Value parameter_value(rapidjson::kObjectType);
-    if (parameter.getType() == "string")
-    {
-      rapidjson::Value pvf_value(rapidjson::kStringType);
-      //pvf_value.SetString(parameter.second.value_string.c_str(), parameter.second.value_string.size());
-      parameter_value.AddMember("pvf_type", "string", allocator);
-      parameter_value.AddMember("pvf_value", "pvf_value", allocator);
-    }
-    else if (parameter.getType() == "number")
-    {
-      rapidjson::Value pvf_value(rapidjson::kNumberType);
-      //pvf_value.SetDouble(parameter.second.value_number);
-      parameter_value.AddMember("pvf_type", "number", allocator);
-      parameter_value.AddMember("pvf_value", "pvf_value", allocator);
-    }
-    object.AddMember(parameter_name, parameter_value, allocator); 
+    rapidjson::Value effect_value(rapidjson::kStringType);
+    effect_value.SetString(umrf.getEffect().c_str(), umrf.getEffect().size());
+    fromScratch.AddMember("effect", effect_value, allocator);
   }
-  fromScratch.AddMember("input_parameters", object, allocator);
+
+  // Set the input parameters via a rapidjson object type
+  if (!umrf.getOutputParameters().empty())
+  {
+    rapidjson::Value input_object(rapidjson::kObjectType);
+    for (const auto& parameter : umrf.getInputParameters())
+    {
+      rapidjson::Value parameter_name(rapidjson::kStringType);
+      parameter_name.SetString(parameter.getName().c_str(), parameter.getName().size());
+
+      rapidjson::Value parameter_value(rapidjson::kObjectType);
+      if (parameter.getType() == "string")
+      {
+        rapidjson::Value pvf_value(rapidjson::kStringType);
+        parameter_value.AddMember("pvf_type", "string", allocator);
+        //parameter_value.AddMember("pvf_value", "pvf_value", allocator);
+      }
+      else if (parameter.getType() == "number")
+      {
+        rapidjson::Value pvf_value(rapidjson::kNumberType);
+        //pvf_value.SetDouble(parameter.second.value_number);
+        parameter_value.AddMember("pvf_type", "number", allocator);
+        //parameter_value.AddMember("pvf_value", "pvf_value", allocator);
+      }
+      input_object.AddMember(parameter_name, parameter_value, allocator); 
+    }
+    fromScratch.AddMember("input_parameters", input_object, allocator);
+  }
+
+  // Set the output parameters via a rapidjson object type
+  if (!umrf.getInputParameters().empty())
+  {
+    rapidjson::Value output_object(rapidjson::kObjectType);
+    for (const auto& parameter : umrf.getInputParameters())
+    {
+      rapidjson::Value parameter_name(rapidjson::kStringType);
+      parameter_name.SetString(parameter.getName().c_str(), parameter.getName().size());
+
+      rapidjson::Value parameter_value(rapidjson::kObjectType);
+      if (parameter.getType() == "string")
+      {
+        rapidjson::Value pvf_value(rapidjson::kStringType);
+        parameter_value.AddMember("pvf_type", "string", allocator);
+        //parameter_value.AddMember("pvf_value", "pvf_value", allocator);
+      }
+      else if (parameter.getType() == "number")
+      {
+        rapidjson::Value pvf_value(rapidjson::kNumberType);
+        //pvf_value.SetDouble(parameter.second.value_number);
+        parameter_value.AddMember("pvf_type", "number", allocator);
+        //parameter_value.AddMember("pvf_value", "pvf_value", allocator);
+      }
+      output_object.AddMember(parameter_name, parameter_value, allocator); 
+    }
+    fromScratch.AddMember("output_parameters", output_object, allocator);
+  }
 
   /*
    * Convert the JSON datastructure to a JSON string

@@ -42,6 +42,9 @@ public:
   const std::string& getSuffix() const;
   bool setSuffix(const std::string& suffix);
 
+  const std::string& getNotation() const;
+  bool setNotation(const std::string& notation);
+
   const std::string& getFullName() const;
 
   const std::string& getLibraryPath() const;
