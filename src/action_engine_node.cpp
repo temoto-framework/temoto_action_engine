@@ -18,12 +18,6 @@ public:
     TEMOTO_PRINT("Action Engine is good to go");
   }
 
-  // TemotoActionEngineNode(const TemotoActionEngineNode& aen)
-  // : ae_(aen.ae_)
-  // , nh_(aen.nh_)
-  // , umrf_graph_sub_(aen.umrf_graph_sub_)
-  // {}
-
   ~TemotoActionEngineNode()
   {
     ae_.stopAndCleanUp();

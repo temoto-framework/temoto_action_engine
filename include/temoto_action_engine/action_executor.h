@@ -30,9 +30,6 @@
 #include "temoto_action_engine/threadsafe_print.h"
 #include "temoto_action_engine/action_handle.h"
 
-// // Forward declare ActionHandle
-// class ActionHandle;
-
 /**
  * @brief Handles loading and execution of TeMoto Actions
  * 
@@ -43,25 +40,27 @@ public:
   ActionExecutor();
   
   /**
-   * @brief Executes all children actions of the specified parent
+   * @brief Invoked after an action returns from the executeAction() method, notifying the ActionExecutor that this
+   * particular action has finished execution. ActionExecutor then checks if the particular action is part of an UMRF
+   * graph and executes children actions of according graphs.
    * 
-   * @tparam T Payload type of the parameters
-   * @param parent_action_name Requested
-   * @param parent_action_parameters Requested
+   * @param int 
+   * @param parent_action_parameters 
    */
   void notifyFinished(const unsigned int& parent_action_id, const ActionParameters& parent_action_parameters);
 
+  /**
+   * @brief Executes actions in a graph specified its' unique ID.
+   * 
+   * @param ids Identifiers of the actions to be executed
+   * @param ugh Graph where the actions are part of
+   * @param initialized_requrired If true then non of the actions are executed if some action is still in
+   * uninitialized state (required input parameters not received)
+   */
   void executeById(const std::vector<unsigned int> ids, UmrfGraphHelper& ugh, bool initialized_requrired = false);
 
   /**
-   * @brief Returns the number of actions which are running in their own thread
-   * 
-   * @return unsigned int 
-   */
-  unsigned int getFutureCount() const;
-
-  /**
-   * @brief Returns the number of actions that are in the ActionExecutor
+   * @brief Returns the number of actions that are active in the ActionExecutor
    * 
    * @return unsigned int 
    */
@@ -72,17 +71,34 @@ public:
    */
   bool isActive() const;
 
-  // /**
-  //  * @brief Stops all actions and removes the action threads. It's a blocking call which waits
-  //  * for all actions to finish.
-  //  * TODO: Make the function non-blocking by adding a timeout functionality.
-  //  */
+  /**
+   * @brief Stops all actively running actions and the synchronous action cleanup loop
+   * 
+   * @return true 
+   * @return false 
+   */
   bool stopAndCleanUp();
 
+  /**
+   * @brief Creates and stores a UMRF graph object
+   * 
+   * @param graph_name 
+   * @param umrf_jsons_vec Umrf vector based on which the graph will be built
+   */
   void addUmrfGraph(const std::string& graph_name, std::vector<Umrf> umrf_jsons_vec);
 
+  /**
+   * @brief Executes UMRF graph based on graph name
+   * 
+   * @param graph_name 
+   */
   void executeUmrfGraph(const std::string& graph_name);
 
+  /**
+   * @brief Stops all actions associated with this graph
+   * 
+   * @param graph_name 
+   */
   void stopUmrfGraph(const std::string& graph_name);
 
 private:
@@ -90,7 +106,7 @@ private:
   bool futureIsReady(const std::future<T>& t);
 
   /**
-   * @brief Executes the cleanup loop which will remove all actions that have
+   * @brief Executes the cleanup loop which will remove all synchronous actions that have
    * finished executing.
    * 
    */

@@ -26,12 +26,16 @@
 #include "temoto_action_engine/messaging.h"
 
 /**
- * @brief This is the base action that every action has to inherit and implement
+ * @brief This is the abstract base action that every action has to inherit and implement
  * 
  */
 class ActionBase
 {
 public:
+  /**
+   * @brief Wraps the virtual executeAction() method with common catch blocks and checks if the invoked action is initialized.
+   * 
+   */
   void executeActionWrapped()
   {
     if (!isInitialized())
@@ -57,12 +61,19 @@ public:
     }
   }
 
+  /**
+   * @brief Sets the STOP_REQUESTED_ member variable to "true" which is used by actionOk()
+   * 
+   */
   bool stopAction()
   {
     STOP_REQUESTED_ = true;
     return true;
   }
 
+  /**
+   * @brief Set the Umrf object
+   */
   void setUmrf(const std::shared_ptr<Umrf>& umrf)
   {
     umrf_ = umrf;
@@ -71,19 +82,37 @@ public:
   virtual ~ActionBase(){};
 
 protected:
+  /**
+   * @brief Method that is invoked when action is executed. Has to be implemented by an action that
+   * inherits this class.
+   * 
+   */
   virtual void executeAction() = 0;
 
+  /**
+   * @brief A method that inheriting actions must use to determine if the action is required to stop or not.
+   * Typical use case would be evaluation of a loop condition.
+   * 
+   * @return true if the action is not required to stop
+   * @return false if the action is required to stop
+   */
   bool actionOk()
   {
     return !STOP_REQUESTED_;
   }
 
+  /**
+   * @brief Get the Umrf Ptr object
+   * 
+   * @return std::shared_ptr<Umrf> 
+   */
   std::shared_ptr<Umrf> getUmrfPtr()
   {
     return umrf_;
   }
 
 private:
+  /// Checks if the pointer to a UMRF has been set or not
   bool isInitialized()
   {
     if(umrf_)

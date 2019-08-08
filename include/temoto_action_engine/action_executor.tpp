@@ -85,13 +85,6 @@ bool ActionExecutor::isActive() const
   return false;
 }
 
-unsigned int ActionExecutor::getFutureCount() const
-{
-  // LOCK_GUARD_TYPE_R guard_futures(named_action_futures_rw_mutex_);
-  // return named_action_futures_.size();
-  return 0;
-}
-
 unsigned int ActionExecutor::getActionCount() const
 {
   LOCK_GUARD_TYPE_R guard_handles(named_action_handles_rw_mutex_);

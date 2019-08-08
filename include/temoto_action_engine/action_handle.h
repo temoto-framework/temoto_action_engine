@@ -31,16 +31,22 @@
 #include "temoto_action_engine/action_base.h"
 #include "temoto_action_engine/temoto_error.h"
 
+// Forward declare the action executor object
 class ActionExecutor;
 
+/**
+ * @brief 
+ * 
+ */
 class ActionHandle
 {
 public:
 
+  /// Defines all possible states for the action handle
   enum class State
   {
-    UNINITIALIZED,      // Action library is not loaded
-    INITIALIZED,        // Action library is loaded
+    UNINITIALIZED,      // Action library is not loaded or input parameters not received
+    INITIALIZED,        // Action library is loaded and input parameters received
     READY,              // Action instance is loaded
     RUNNING,            // Action instance is running
     STOP_REQUESTED,     // A request to stop has been registered
@@ -48,6 +54,7 @@ public:
     ERROR,              // Problems with any critical component of the action
   };
 
+  /// A convenience datastructure which helps to convert state names to std::string
   std::map<State, std::string> state_to_str_map_ = 
   {
     {State::UNINITIALIZED, "UNINITIALIZED"},
@@ -59,8 +66,15 @@ public:
     {State::ERROR, "ERROR"},
   };
 
+  /**
+   * @brief Construct a new Action Handle object
+   * 
+   * @param umrf Basis for the action handle
+   * @param action_executor_ptr Used for notifying the action executor
+   */
   ActionHandle(Umrf umrf, ActionExecutor* action_executor_ptr);
 
+  /// Copy constructor
   ActionHandle(const ActionHandle& action_handle);
 
   ~ActionHandle();
