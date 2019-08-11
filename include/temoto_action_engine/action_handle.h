@@ -79,6 +79,32 @@ public:
 
   ~ActionHandle();
 
+  /**
+   * @brief Non-blocking call for executing the action in its own thread
+   * 
+   */
+  void executeActionThread();
+
+  /**
+   * @brief Creates an instance of the user defined action object. Does not execute the action.
+   * 
+   */
+  void instantiateAction();
+
+  /**
+   * @brief Sets the stop request flag via BaseAction::stopRequested and waits for the specified timeout period for
+   * the action to finish. If timeout is reached, then the action is set to ERROR state.
+   * 
+   * @param timeout period in seconds.
+   */
+  void stopAction(double timeout);
+
+  /**
+   * @brief Stops the action (ActionHandle::stopAction) and destroys the action instance object.
+   * 
+   */
+  void clearAction();
+
   const std::string& getActionName() const;
 
   const std::string& getEffect() const;
@@ -86,14 +112,6 @@ public:
   const unsigned int& getHandleId() const;
 
   bool addInputParameters(ActionParameters action_parameters);
-
-  void instantiateAction();
-
-  void executeActionThread();
-
-  void stopAction(double timeout);
-
-  void clearAction();
 
   const State& getState() const;
 
@@ -106,6 +124,11 @@ public:
   bool clearFuture();
 
 private:
+  /**
+   * @brief Blocking call. Invokes the ActionBase::executeAction method.
+   * 
+   * @return TemotoErrorStack 
+   */
   TemotoErrorStack executeAction();
 
   bool future_retreived_;
@@ -125,6 +148,7 @@ private:
   mutable MUTEX_TYPE_R umrf_rw_mutex_;
   GUARDED_VARIABLE(std::shared_ptr<Umrf> umrf_, umrf_rw_mutex_);
 
+  /// Used for notifying the ActionExecutor when the action has finished execution.
   ActionExecutor* action_executor_ptr_;
 };
 #endif

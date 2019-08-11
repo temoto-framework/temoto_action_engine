@@ -21,6 +21,10 @@
 
 #include "temoto_action_engine/umrf.h"
 
+/**
+ * @brief A helper class that tries to find a suitable action from a list of known actions based on given UMRF.
+ * 
+ */
 class ActionMatchFinder
 {
 public:

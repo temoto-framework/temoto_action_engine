@@ -32,6 +32,8 @@ bool ActionMatchFinder::findMatchingAction(Umrf& umrf_in, const std::vector<Umrf
 
     /*
      * Compare input parameters
+     * TODO: Add other PVF field comparisons: 
+     * https://temoto-telerobotics.github.io/temoto-telerobotics.github.io/site/concepts/actions#parameter-value-format
      */
     bool input_params_match = true;
     for (const auto& umrf_in_input_param : umrf_in.getInputParameters())
@@ -49,6 +51,8 @@ bool ActionMatchFinder::findMatchingAction(Umrf& umrf_in, const std::vector<Umrf
 
     /*
      * Compare output parameters
+     * TODO: Add other PVF field comparisons: 
+     * https://temoto-telerobotics.github.io/temoto-telerobotics.github.io/site/concepts/actions#parameter-value-format
      */
     bool output_params_match = true;
     for (const auto& umrf_in_output_param : umrf_in.getOutputParameters())

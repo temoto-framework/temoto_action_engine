@@ -175,7 +175,7 @@ TemotoErrorStack ActionHandle::executeAction()
     setState(ActionHandle::State::FINISHED);
 
     // Since this method is meant to be executed asynchonously, then any potential errors are passed
-    // via an ErrorStack. But if there are no errors, then return an empty error stack.
+    // via an ErrorStack as a future value. But if there are no errors, then return an empty error stack.
     return TemotoErrorStack();
   }
   catch(TemotoErrorStack e)
@@ -227,6 +227,7 @@ void ActionHandle::stopAction(double timeout)
     {
       if (timeout_timer.elapsed() >= timeout)
       {
+        setState(ActionHandle::State::ERROR);
         throw CREATE_TEMOTO_ERROR_STACK("Reached the timeout of " + std::to_string(timeout) + " seconds.");
       }
       std::this_thread::sleep_for(std::chrono::milliseconds(100));

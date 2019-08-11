@@ -40,7 +40,7 @@ public:
   ActionExecutor();
   
   /**
-   * @brief Invoked after an action returns from the executeAction() method, notifying the ActionExecutor that this
+   * @brief Invoked after an action returns from the ActionHandle::executeAction method, notifying the ActionExecutor that this
    * particular action has finished execution. ActionExecutor then checks if the particular action is part of an UMRF
    * graph and executes children actions of according graphs.
    * 

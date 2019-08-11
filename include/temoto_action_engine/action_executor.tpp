@@ -142,6 +142,9 @@ void ActionExecutor::cleanupLoop()
             ; nah_it!=named_action_handles_.end()
             ; /* empty */)
         {
+          /*
+           * TODO: Handle actions that have reached to error state
+           */
           if (/*(nah_it->second.getState() == ActionHandle::State::FINISHED) &&*/
               nah_it->second.futureIsReady() &&
               nah_it->second.getEffect() == "synchronous")

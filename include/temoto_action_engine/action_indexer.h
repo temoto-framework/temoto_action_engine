@@ -25,16 +25,51 @@
 #include "boost/filesystem.hpp"
 #include "temoto_action_engine/umrf.h"
 
+/**
+ * @brief Responsible for finding action packages from the filesystem.
+ * 
+ */
 class ActionIndexer
 {
 public:
   ActionIndexer();
+  /**
+   * @brief Adds a base path where the ActionIndexer should look for action packages.
+   * 
+   * @param path 
+   */
   void addActionPath(const std::string& path);
+
+  /**
+   * @brief Adds a base path where the ActionIndexer should look for action packages.
+   * 
+   * @param path 
+   */
   void addActionPath(const std::vector<std::string>& paths);
+
+  /**
+   * @brief Goes through all ActionIndexer::action_paths_ and looks for actions recursively (see ActionIndexer::indexActions).
+   * Clears all previously found actions before indexing.
+   * 
+   */
   void indexActions();
+
+  /**
+   * @brief Returns all UMRFs that were found during last indexing
+   * 
+   * @return const std::vector<Umrf>& 
+   */
   const std::vector<Umrf>& getUmrfs() const;
 
 private:
+
+  /**
+   * @brief Finds actions on local filesystem.
+   * 
+   * @param action_to_find If not specified then all actions are indexed.
+   * @param base_path Base path where the search is started.
+   * @param search_depth Specifies the folder level depth for the search.
+   */
   void findActionFilesys( std::string action_to_find
                         , boost::filesystem::directory_entry base_path
                         , int search_depth);
