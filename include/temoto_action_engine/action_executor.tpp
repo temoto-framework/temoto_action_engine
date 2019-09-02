@@ -227,7 +227,6 @@ void ActionExecutor::executeUmrfGraph(const std::string& graph_name)
 
     UmrfGraphHelper& ugh = named_umrf_graphs_.at(graph_name);
     std::vector<unsigned int> action_ids = ugh.getRootNodes();
-
     executeById(action_ids, ugh, true);
   }
   catch(TemotoErrorStack e)

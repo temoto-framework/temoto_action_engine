@@ -228,10 +228,10 @@ std::string toUmrfJsonStr(const Umrf& umrf)
   }
 
   // Set the output parameters via a rapidjson object type
-  if (!umrf.getInputParameters().empty())
+  if (!umrf.getOutputParameters().empty())
   {
     rapidjson::Value output_object(rapidjson::kObjectType);
-    for (const auto& parameter : umrf.getInputParameters())
+    for (const auto& parameter : umrf.getOutputParameters())
     {
       rapidjson::Value parameter_name(rapidjson::kStringType);
       parameter_name.SetString(parameter.getName().c_str(), parameter.getName().size());
@@ -371,7 +371,7 @@ ActionParameters::Parameters parseParameters(const rapidjson::Value& value_in, s
       }
       else if (type == "number")
       {
-        float value = getNumberFromValue(getJsonElement(PVF_FIELDS.value, value_in));
+        double value = getNumberFromValue(getJsonElement(PVF_FIELDS.value, value_in));
         pc.setData(boost::any(value));
       }
     }

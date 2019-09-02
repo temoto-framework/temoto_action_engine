@@ -1,0 +1,16 @@
+{
+  "name": "TaWrapperTest",
+  "suffix": "1",
+  "effect": "asynchronous",
+  "input_parameters": {
+    "a_number": {
+      "pvf_type": "number",
+      "pvf_value": 3.33
+    }
+  },
+  "output_parameters": {
+    "a_string": {
+      "pvf_type": "string"
+    }
+  }
+}

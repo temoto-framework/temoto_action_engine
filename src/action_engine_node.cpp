@@ -11,19 +11,38 @@ class TemotoActionEngineNode
 {
 public:
   TemotoActionEngineNode()
-  {
-    umrf_graph_sub_ = nh_.subscribe("umrf_graph_topic", 1, &TemotoActionEngineNode::umrfGraphCallback, this);
-    ai_.addActionPath("/home/robert/catkin_ws_2/src/robert_v_sandbox/test_actions/");
-    ai_.indexActions();
-    TEMOTO_PRINT("Action Engine is good to go");
-  }
+  {}
 
   ~TemotoActionEngineNode()
   {
     ae_.stopAndCleanUp();
   }
   
+  /**
+   * @brief Reads in the commandline arguments for action base path and initiates the subscriber
+   * 
+   * @param argc 
+   * @param argv 
+   */
+  bool initializeActionEngine(int argc, char** argv)
+  {
+    // Extract the arguments
+    if (!(argc == 2 || argc == 4))
+    {
+      std::cout << "Missing argument for action base path\n";
+      return false;
+    }
+
+    std::string base_path(argv[1]);
+
+    umrf_graph_sub_ = nh_.subscribe("umrf_graph_topic", 1, &TemotoActionEngineNode::umrfGraphCallback, this);
+    ai_.addActionPath(base_path);
+    ai_.indexActions();
+    TEMOTO_PRINT("Action Engine is good to go");
+    return true;
+  }
 private:
+
   /**
    * @brief Callback for executing UMRF graphs
    * 
@@ -77,6 +96,10 @@ int main(int argc, char** argv)
 {
   ros::init(argc, argv, "temoto_action_engine_node");
   TemotoActionEngineNode action_engine_node;
+  if (!action_engine_node.initializeActionEngine(argc, argv))
+  {
+    return 1;
+  }
 
   ros::AsyncSpinner spinner(0);
   spinner.start();

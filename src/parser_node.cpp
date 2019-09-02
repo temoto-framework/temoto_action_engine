@@ -11,7 +11,7 @@ const std::string app_name = "AE_test";
 
 int main(int argc, char** argv)
 {
-  if (!(argc == 2 || argc == 4))
+  if (!(argc == 3 || argc == 5))
   {
     std::cout << "Missing argument for json base path\n";
     return 1;
@@ -21,9 +21,24 @@ int main(int argc, char** argv)
   ros::NodeHandle nh;
   ros::Publisher umrf_graph_pub = nh.advertise<temoto_action_engine::UmrfJsonGraph>("umrf_graph_topic", 1);
 
+  // Get the commandline arguments
   std::string base_path(argv[1]);
-  //std::vector<std::string> umrf_names = {"umrf_0.json", "umrf_1.json", "umrf_2.json", "umrf_3.json"};
-  std::vector<std::string> umrf_names = {"umrf_google_parser.json"};
+  std::string umrf_list_name(argv[2]);
+
+  std::ifstream umrf_list_fs(base_path + "/" + umrf_list_name);
+  std::vector<std::string> umrf_names;
+
+  // Extract the umrf names
+  if (umrf_list_fs.is_open())
+  {
+    std::string umrf_name;
+    while (getline(umrf_list_fs, umrf_name))
+    {
+      std::cout << "umrf name: " << umrf_name << std::endl;
+      umrf_names.push_back(umrf_name);
+    }
+    umrf_list_fs.close();
+  }
 
   /*
    * Read the UMRF jsons
@@ -32,7 +47,7 @@ int main(int argc, char** argv)
   ujg_msg.graph_name = "graph test 101";
   for (const auto& json_name : umrf_names)
   {
-    std::string umrf_full_path = base_path + json_name;
+    std::string umrf_full_path = base_path + "/" + json_name;
     std::ifstream ifs(umrf_full_path);
     std::string umrf_json_str;
     umrf_json_str.assign(std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>());
