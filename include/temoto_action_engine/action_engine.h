@@ -16,27 +16,33 @@
 
 /* Author: Robert Valner */
 
-#ifndef TEMOTO_ACTION_ENGINE__MESSAGING_H
-#define TEMOTO_ACTION_ENGINE__MESSAGING_H
+#ifndef TEMOTO_ACTION_ENGINE__ACTION_ENGINE_H
+#define TEMOTO_ACTION_ENGINE__ACTION_ENGINE_H
 
-#include <string>
-#include <iostream>
-#include "temoto_action_engine/threadsafe_print.h"
+#include "temoto_action_engine/action_executor.h"
+#include "temoto_action_engine/action_indexer.h"
+#include "temoto_action_engine/action_match_finder.h"
+#include "temoto_action_engine/temoto_error.h"
 
-#define TEMOTO_PRINT(message) temoto_messaging::print(message, __func__)
-#define TEMOTO_PRINT_OF(message, of) temoto_messaging::printOf(message, __func__, of)
-
-namespace temoto_messaging
+/**
+ * @brief Handles loading and execution of TeMoto Actions
+ * 
+ */
+class ActionEngine
 {
-  inline void print(const std::string& message, const std::string& prefix)
-  {
-    PrintThread{} << "[" << prefix << "] " << message << std::endl;
-  }
+public:
+  ActionEngine();
 
-  inline void printOf(const std::string& message, const std::string& prefix, const std::string& of)
-  {
-    PrintThread{} << "[" << prefix << " of " << of << "] " << message << std::endl;
-  }
-}
+  void start();
 
+  void executeUmrfGraph(const std::string& umrf_graph_name, const std::vector<Umrf>& umrf_vec);
+
+  void addActionsPath(const std::string& action_packages_path);
+
+  ~ActionEngine();
+private:
+  ActionExecutor ae_;
+  ActionIndexer ai_;
+  ActionMatchFinder amf_;
+};
 #endif

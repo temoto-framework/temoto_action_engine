@@ -26,13 +26,12 @@
 #include <class_loader/class_loader.hpp>
 #include <boost/shared_ptr.hpp>
 #include "temoto_action_engine/compiler_macros.h"
-#include "temoto_action_engine/messaging.h"
 #include "temoto_action_engine/umrf.h"
-#include "temoto_action_engine/action_base.h"
 #include "temoto_action_engine/temoto_error.h"
 
 // Forward declare the action executor object
 class ActionExecutor;
+class ActionBase;
 
 /**
  * @brief 

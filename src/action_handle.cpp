@@ -19,6 +19,7 @@
 #include "temoto_action_engine/action_handle.h"
 #include "temoto_action_engine/action_executor.h"
 #include "temoto_action_engine/basic_timer.h"
+#include "temoto_action_engine/action_base.h"
 #include "temoto_action_engine/messaging.h"
 
 ActionHandle::ActionHandle(Umrf umrf, ActionExecutor* action_executor_ptr)

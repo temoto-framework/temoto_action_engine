@@ -27,7 +27,6 @@
 #include "temoto_action_engine/compiler_macros.h"
 #include "temoto_action_engine/umrf.h"
 #include "temoto_action_engine/umrf_graph_helper.h"
-#include "temoto_action_engine/threadsafe_print.h"
 #include "temoto_action_engine/action_handle.h"
 
 /**
@@ -38,6 +37,12 @@ class ActionExecutor
 {
 public:
   ActionExecutor();
+
+  /**
+   * @brief Starts the action executor
+   * 
+   */
+  void start();
   
   /**
    * @brief Invoked after an action returns from the ActionHandle::executeAction method, notifying the ActionExecutor that this
@@ -102,9 +107,6 @@ public:
   void stopUmrfGraph(const std::string& graph_name);
 
 private:
-  template<typename T>
-  bool futureIsReady(const std::future<T>& t);
-
   /**
    * @brief Executes the cleanup loop which will remove all synchronous actions that have
    * finished executing.
@@ -142,8 +144,4 @@ private:
   GUARDED_VARIABLE(UmrfGraphMap named_umrf_graphs_, named_umrf_graphs_rw_mutex_);
 };
 
-/*
- * Include the template implementation file
- */ 
-#include "temoto_action_engine/action_executor.tpp"
 #endif

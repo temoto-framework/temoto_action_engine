@@ -16,14 +16,15 @@
 
 /* Author: Robert Valner */
 
-#ifndef TEMOTO_ACTION_ENGINE__ACTION_EXECUTOR_TPP
-#define TEMOTO_ACTION_ENGINE__ACTION_EXECUTOR_TPP
-
 #include "temoto_action_engine/action_executor.h"
 #include "temoto_action_engine/temoto_error.h"
+#include "temoto_action_engine/messaging.h"
 #include <set>
  
 ActionExecutor::ActionExecutor()
+{}
+
+void ActionExecutor::start()
 {
   startCleanupLoopThread();
 }
@@ -64,12 +65,6 @@ void ActionExecutor::notifyFinished(const unsigned int& parent_action_id, const 
   {
     throw CREATE_TEMOTO_ERROR_STACK(std::string(e.what()));
   }
-}
-
-template<typename T>
-bool ActionExecutor::futureIsReady(const std::future<T>& t)
-{
-  return t.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
 }
 
 bool ActionExecutor::isActive() const
@@ -371,5 +366,3 @@ unsigned int ActionExecutor::createId()
 {
   return action_handle_id_count_++;
 }
-
-#endif

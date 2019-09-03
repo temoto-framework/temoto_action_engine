@@ -12,14 +12,14 @@ public:
 
   ~PrintThread()
   {
-    std::lock_guard<std::mutex> guard(_mutexPrint);
+    //std::lock_guard<std::mutex> guard(_mutexPrint);
     std::cout << this->str();
   }
 
 private:
-  static std::mutex _mutexPrint;
+  //static std::mutex _mutexPrint;
 };
 
-std::mutex PrintThread::_mutexPrint{};
+//std::mutex PrintThread::_mutexPrint{};
 
 #endif

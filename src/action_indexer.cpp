@@ -17,7 +17,7 @@
 /* Author: Robert Valner */
 
 #include "temoto_action_engine/action_indexer.h"
-// #include "temoto_action_engine/messaging.h"
+#include "temoto_action_engine/messaging.h"
 #include "temoto_action_engine/temoto_error.h"
 #include "temoto_action_engine/umrf_json_converter.h"
 #include <algorithm>
@@ -61,12 +61,12 @@ void ActionIndexer::indexActions()
     for (const std::string action_path : action_paths_)
     {
       boost::filesystem::directory_entry full_path_b = boost::filesystem::directory_entry(action_path);
-      //TEMOTO_PRINT("Indexing actions at " + full_path_b.path().string());
-      std::cout << "Indexing actions at "<< full_path_b.path().string() << std::endl;
+      TEMOTO_PRINT("Indexing actions at " + full_path_b.path().string());
+      // std::cout << "Indexing actions at "<< full_path_b.path().string() << std::endl;
 
       findActionFilesys("", full_path_b, 2);
     }
-    std::cout << "Found " << std::to_string(indexed_umrfs_.size()) << " actions" << std::endl;
+    TEMOTO_PRINT("Found " + std::to_string(indexed_umrfs_.size()) + " actions");
   }
   catch(TemotoErrorStack e)
   {
@@ -98,7 +98,7 @@ void ActionIndexer::findActionFilesys( std::string action_to_find
         try
         {
           std::string umrf_full_path = itr->path().string();
-          std::cout << "Potential umrf at: " << umrf_full_path << std::endl;
+          //std::cout << "Potential umrf at: " << umrf_full_path << std::endl;
           //TEMOTO_PRINT("Potential umrf at: " + umrf_full_path);
           std::ifstream ifs(umrf_full_path);
           std::string umrf_json_str;
@@ -111,13 +111,13 @@ void ActionIndexer::findActionFilesys( std::string action_to_find
           // TODO: check if the library actually exists
           std::string action_lib_path = hackdir.parent_path().string() + "/lib/lib" + umrf.getPackageName() + ".so";
           umrf.setLibraryPath(action_lib_path);
-          std::cout << umrf << std::endl;
+          //std::cout << umrf << std::endl;
           indexed_umrfs_.push_back(umrf);
         }
 
         catch(TemotoErrorStack e)
         {
-          std::cout << e.what() << std::endl;
+          TEMOTO_PRINT(e.what());
           //throw FORWARD_TEMOTO_ERROR_STACK(e);
         }
       }

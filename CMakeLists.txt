@@ -11,6 +11,7 @@ endif()
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  roslib
   std_msgs
   class_loader
   message_generation
@@ -45,6 +46,8 @@ add_library(temoto_ae_components
   src/umrf.cpp
   src/action_indexer.cpp
   src/action_match_finder.cpp
+  src/action_executor.cpp
+  src/action_engine.cpp
 )
 add_dependencies(temoto_ae_components ${catkin_EXPORTED_TARGETS} ${${PROJECT_NAME}_EXPORTED_TARGETS})
 target_link_libraries(temoto_ae_components 
@@ -87,7 +90,7 @@ add_dependencies(action_engine_node
 )
 target_link_libraries(action_engine_node
   ${catkin_LIBRARIES}
-  temoto_ae_components 
+  temoto_ae_components yaml-cpp
 ) 
 
 # Parser node
@@ -103,4 +106,4 @@ add_dependencies(parser_node
 target_link_libraries(parser_node
   ${catkin_LIBRARIES}
   temoto_ae_components 
-) 
+)  

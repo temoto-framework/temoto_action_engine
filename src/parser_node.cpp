@@ -11,7 +11,7 @@ const std::string app_name = "AE_test";
 
 int main(int argc, char** argv)
 {
-  if (!(argc == 3 || argc == 5))
+  if (!(argc == 4 || argc == 6))
   {
     std::cout << "Missing argument for json base path\n";
     return 1;
@@ -24,6 +24,9 @@ int main(int argc, char** argv)
   // Get the commandline arguments
   std::string base_path(argv[1]);
   std::string umrf_list_name(argv[2]);
+  std::string target(argv[3]);
+
+  std::cout << "Targeting the message to '" << target << "'" << std::endl;
 
   std::ifstream umrf_list_fs(base_path + "/" + umrf_list_name);
   std::vector<std::string> umrf_names;
@@ -45,6 +48,7 @@ int main(int argc, char** argv)
    */ 
   temoto_action_engine::UmrfJsonGraph ujg_msg;
   ujg_msg.graph_name = "graph test 101";
+  ujg_msg.targets.push_back(target);
   for (const auto& json_name : umrf_names)
   {
     std::string umrf_full_path = base_path + "/" + json_name;

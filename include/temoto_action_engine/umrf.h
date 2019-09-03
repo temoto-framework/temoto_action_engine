@@ -32,6 +32,22 @@ public:
 
   Umrf(const Umrf& uj);
 
+  void operator=(const Umrf& umrf)
+  {
+    name_ = umrf.name_;
+    package_name_ = umrf.package_name_;
+    suffix_ = umrf.suffix_;
+    notation_ = umrf.notation_;
+    effect_ = umrf.effect_;
+    library_path_ = umrf.library_path_;
+    parents_ = umrf.parents_;
+    children_ = umrf.children_;
+    id_ = umrf.id_;
+    full_name_ = umrf.full_name_;
+    input_parameters_ = umrf.input_parameters_;
+    output_parameters_ = umrf.output_parameters_;
+  }
+
   const std::string& getName() const;
   std::string& getNameNc();
   bool setName(const std::string& name);
