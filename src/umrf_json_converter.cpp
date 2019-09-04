@@ -200,7 +200,7 @@ std::string toUmrfJsonStr(const Umrf& umrf)
   }
 
   // Set the input parameters via a rapidjson object type
-  if (!umrf.getOutputParameters().empty())
+  if (!umrf.getInputParameters().empty())
   {
     rapidjson::Value input_object(rapidjson::kObjectType);
     for (const auto& parameter : umrf.getInputParameters())
