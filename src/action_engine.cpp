@@ -51,8 +51,15 @@ void ActionEngine::executeUmrfGraph(const std::string& umrf_graph_name, const st
 
 void ActionEngine::addActionsPath(const std::string& action_packages_path)
 {
-  ai_.addActionPath(action_packages_path);
-  ai_.indexActions();
+  try
+  {
+    ai_.addActionPath(action_packages_path);
+    ai_.indexActions();
+  }
+  catch(TemotoErrorStack e)
+  {
+    throw FORWARD_TEMOTO_ERROR_STACK(e);
+  }
 }
 
 ActionEngine::~ActionEngine()

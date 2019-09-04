@@ -28,7 +28,7 @@
 class ActionMatchFinder
 {
 public:
-  bool findMatchingAction(Umrf& umrf_in, const std::vector<Umrf>& known_umrfs) const;
+  bool findMatchingAction(Umrf& umrf_in, const std::vector<Umrf>& known_umrfs, bool name_match = false) const;
 };
 
 #endif

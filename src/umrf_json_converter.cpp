@@ -192,7 +192,7 @@ std::string toUmrfJsonStr(const Umrf& umrf)
   }
 
   // Set the effect
-  if (!umrf.getSuffix().empty())
+  if (!umrf.getEffect().empty())
   {
     rapidjson::Value effect_value(rapidjson::kStringType);
     effect_value.SetString(umrf.getEffect().c_str(), umrf.getEffect().size());

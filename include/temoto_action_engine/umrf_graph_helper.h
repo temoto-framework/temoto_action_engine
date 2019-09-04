@@ -81,6 +81,8 @@ public:
 
   const std::vector<Umrf>& getUmrfs() const;
 
+  bool partOfGraph(const unsigned int& node_id) const;
+
   State checkState();
 
 private:
@@ -89,8 +91,6 @@ private:
   bool findRootNodes();
 
   bool createMaps();
-
-  bool partOfGraph(const unsigned int& node_id) const;
 
   typedef std::map<unsigned int, GraphNode> GraphNodeMap;
   mutable MUTEX_TYPE_R graph_nodes_map_rw_mutex_;

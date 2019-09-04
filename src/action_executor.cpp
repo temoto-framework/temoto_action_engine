@@ -151,6 +151,31 @@ void ActionExecutor::cleanupLoop()
               {
                 std::cout << error_message << std::endl;
               }
+              
+              // Notify the graph that the node has finished
+              {
+                LOCK_GUARD_TYPE_R guard_graphs(named_umrf_graphs_rw_mutex_);
+                for ( auto nug_it=named_umrf_graphs_.begin()
+                    ; nug_it!=named_umrf_graphs_.end()
+                    ; /* empty */)
+                {
+                  if (!nug_it->second.partOfGraph(nah_it->first))
+                  {
+                    ++nug_it;
+                    continue;
+                  }
+                  nug_it->second.setNodeFinished(nah_it->first);
+                  if (nug_it->second.checkState() == UmrfGraphHelper::State::FINISHED)
+                  {
+                    TEMOTO_PRINT(nug_it->first + " is finished");
+                    named_umrf_graphs_.erase(nug_it++);
+                  }
+                  else
+                  {
+                    ++nug_it;
+                  }
+                }
+              }
               nah_it->second.clearAction();
               named_action_handles_.erase(nah_it++);
             }

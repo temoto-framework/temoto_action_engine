@@ -125,7 +125,8 @@ void ActionIndexer::findActionFilesys( std::string action_to_find
   }
   catch (std::exception& e)
   {
-    throw CREATE_TEMOTO_ERROR_STACK(e.what());
+    // throw CREATE_TEMOTO_ERROR_STACK(e.what());
+    TEMOTO_PRINT(e.what());
   }
 
   catch(...)

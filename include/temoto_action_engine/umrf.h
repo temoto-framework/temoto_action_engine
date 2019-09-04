@@ -25,6 +25,14 @@
 #include "temoto_action_engine/compiler_macros.h"
 #include "temoto_action_engine/action_parameters.h"
 
+namespace action_effect
+{
+  const std::vector<std::string> EFFECT_LIST {
+    "synchronous",
+    "asynchronous"
+  };
+}
+
 class Umrf
 {
 public:
@@ -73,6 +81,7 @@ public:
   bool setChildren(const std::vector<std::string>& children);
 
   const std::string& getEffect() const;
+  std::string& getEffectNc();
   bool setEffect(const std::string& effect);
 
   const unsigned int& getId() const;

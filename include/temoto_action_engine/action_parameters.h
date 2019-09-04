@@ -159,7 +159,7 @@ public:
     return (parameters_.find(parameter_name) != parameters_.end());
   }
 
-  unsigned int getParameterCount()
+  unsigned int getParameterCount() const
   {
     return parameters_.size();
   }

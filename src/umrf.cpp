@@ -144,6 +144,11 @@ const std::string& Umrf::getEffect() const
   return effect_;
 }
 
+std::string& Umrf::getEffectNc()
+{
+  return effect_;
+}
+
 bool Umrf::setEffect(const std::string& effect)
 {
   if (!effect.empty())

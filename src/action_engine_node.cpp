@@ -28,17 +28,24 @@ public:
     umrf_graph_sub_ = nh_.subscribe("/umrf_graph_topic", 1, &TemotoActionEngineNode::umrfGraphCallback, this);
 
     // Set the default action paths
+    int successful_paths = 0;
     for (const auto& ap : action_paths_)
     {
       try
       {
         ae_.addActionsPath(ap);
+        successful_paths++;
       }
       catch(const std::exception& e)
       {
-        std::cerr << e.what() << '\n';
-        return false;
+        TEMOTO_PRINT(e.what());
       }
+    }
+
+    if (successful_paths == 0)
+    {
+      TEMOTO_PRINT("None of the indicated directories contained TeMoto actions, exiting.");
+      return false;
     }
 
     // Start the action engine
@@ -118,17 +125,20 @@ public:
          * TODO: check for typos and other existance problems
          */
         YAML::Node config = YAML::LoadFile(action_uri_file_path);
+        TEMOTO_PRINT("Indexing TeMoto actions from:");
         for (YAML::const_iterator it = config.begin(); it != config.end(); ++it)
         {
           std::string package_name = (*it)["package_name"].as<std::string>();
           std::string relative_path = (*it)["relative_path"].as<std::string>();
           std::string full_path = ros::package::getPath(package_name) + "/" + relative_path;
           action_paths_.push_back(full_path);
+          std::cout << " * " << full_path << std::endl;
         }
+        std::cout << std::endl;
       }
       else
       {
-        std::cout << "Missing action packages path file" << std::endl;
+        TEMOTO_PRINT("Missing action packages path file");
         std::cout << desc << std::endl;
         return 1;
       }
@@ -141,11 +151,12 @@ public:
         std::string main_wake_word = vm["mw"].as<std::string>();
         wake_words_.push_back(main_wake_word);
 
-        TEMOTO_PRINT("Wake words that this Action Engine Node responds to");
+        TEMOTO_PRINT("Wake words that this Action Engine Node responds to:");
         for (const auto& ww : wake_words_)
         {
           std::cout << " * " << ww << std::endl;
         }
+        std::cout << std::endl;
       }
       else
       {
@@ -257,7 +268,11 @@ int main(int argc, char** argv)
   /*
    * Initialize ROS
    */
-  std::cout << "\n*\n*         - ACTION ENGINE NODE - \n*" << std::endl;
+  std::cout << std::endl;
+  std::cout << "* * * * * * * * * * * * * * * * * * * * " << std::endl;
+  std::cout << "*        - ACTION ENGINE NODE -         " << std::endl;
+  std::cout << "* * * * * * * * * * * * * * * * * * * * " << std::endl;
+
   ros::init(argc, argv, "temoto_action_engine_node");
 
   // Instantiate the Action Engine node object

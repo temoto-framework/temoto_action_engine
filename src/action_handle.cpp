@@ -106,8 +106,8 @@ bool ActionHandle::setState(ActionHandle::State state_to_set)
   }
   else
   {
-    TEMOTO_PRINT_OF("Changing state from " + state_to_str_map_[state_] + " to " + state_to_str_map_[state_to_set]
-                   , umrf_->getFullName());
+    // TEMOTO_PRINT_OF("Changing state from " + state_to_str_map_[state_] + " to " + state_to_str_map_[state_to_set]
+    //                , umrf_->getFullName());
     state_ = state_to_set;
     return true; 
   }
