@@ -27,7 +27,7 @@ void ActionEngine::start()
   ae_.start();
 }
 
-void ActionEngine::executeUmrfGraph(const std::string& umrf_graph_name, const std::vector<Umrf>& umrf_vec)
+void ActionEngine::executeUmrfGraph(const std::string& umrf_graph_name, const std::vector<Umrf>& umrf_vec, bool name_match_required)
 {
   std::vector<Umrf> umrf_vec_local = umrf_vec;
 
@@ -35,7 +35,7 @@ void ActionEngine::executeUmrfGraph(const std::string& umrf_graph_name, const st
   for (auto& umrf : umrf_vec_local)
   {
     // Find a matching action for this UMRF
-    if (!amf_.findMatchingAction(umrf, ai_.getUmrfs()))
+    if (!amf_.findMatchingAction(umrf, ai_.getUmrfs(), name_match_required))
     {
       throw CREATE_TEMOTO_ERROR_STACK("Could not find a matching action for UMRF named " + umrf.getName());
     }
@@ -64,5 +64,12 @@ void ActionEngine::addActionsPath(const std::string& action_packages_path)
 
 ActionEngine::~ActionEngine()
 {
-  ae_.stopAndCleanUp();
+  try
+  {
+    ae_.stopAndCleanUp();
+  }
+  catch(const std::exception& e)
+  {
+    std::cerr << e.what() << '\n';
+  }
 }
