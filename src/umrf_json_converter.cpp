@@ -164,14 +164,14 @@ std::string toUmrfJsonStr(const Umrf& umrf)
 
   // Set the name of the UMRF frame
   rapidjson::Value name_value(rapidjson::kStringType);
-  name_value.SetString(umrf.getName().c_str(), umrf.getName().size());
+  name_value.SetString(umrf.getName().c_str(), umrf.getName().size(), allocator);
   fromScratch.AddMember("name", name_value, allocator);
 
   // Set the package name
   if (!umrf.getPackageName().empty())
   {
     rapidjson::Value package_name_value(rapidjson::kStringType);
-    package_name_value.SetString(umrf.getPackageName().c_str(), umrf.getPackageName().size());
+    package_name_value.SetString(umrf.getPackageName().c_str(), umrf.getPackageName().size(), allocator);
     fromScratch.AddMember("package_name", package_name_value, allocator);
   }
 
@@ -179,7 +179,7 @@ std::string toUmrfJsonStr(const Umrf& umrf)
   if (!umrf.getSuffix().empty())
   {
     rapidjson::Value suffix_value(rapidjson::kStringType);
-    suffix_value.SetString(umrf.getSuffix().c_str(), umrf.getSuffix().size());
+    suffix_value.SetString(umrf.getSuffix().c_str(), umrf.getSuffix().size(), allocator);
     fromScratch.AddMember("suffix", suffix_value, allocator);
   }
 
@@ -187,7 +187,7 @@ std::string toUmrfJsonStr(const Umrf& umrf)
   if (!umrf.getSuffix().empty())
   {
     rapidjson::Value notation_value(rapidjson::kStringType);
-    notation_value.SetString(umrf.getNotation().c_str(), umrf.getNotation().size());
+    notation_value.SetString(umrf.getNotation().c_str(), umrf.getNotation().size(), allocator);
     fromScratch.AddMember("notation", notation_value, allocator);
   }
 
@@ -195,7 +195,7 @@ std::string toUmrfJsonStr(const Umrf& umrf)
   if (!umrf.getEffect().empty())
   {
     rapidjson::Value effect_value(rapidjson::kStringType);
-    effect_value.SetString(umrf.getEffect().c_str(), umrf.getEffect().size());
+    effect_value.SetString(umrf.getEffect().c_str(), umrf.getEffect().size(), allocator);
     fromScratch.AddMember("effect", effect_value, allocator);
   }
 
@@ -206,14 +206,20 @@ std::string toUmrfJsonStr(const Umrf& umrf)
     for (const auto& parameter : umrf.getInputParameters())
     {
       rapidjson::Value parameter_name(rapidjson::kStringType);
-      parameter_name.SetString(parameter.getName().c_str(), parameter.getName().size());
+      parameter_name.SetString(parameter.getName().c_str(), parameter.getName().size(), allocator);
 
       rapidjson::Value parameter_value(rapidjson::kObjectType);
       if (parameter.getType() == "string")
       {
-        rapidjson::Value pvf_value(rapidjson::kStringType);
         parameter_value.AddMember("pvf_type", "string", allocator);
-        //parameter_value.AddMember("pvf_value", "pvf_value", allocator);
+
+        if (!parameter.getData().empty())
+        {
+          std::string pvf_value_str = boost::any_cast<std::string>(parameter.getData());
+          rapidjson::Value pvf_value(rapidjson::kStringType);
+          pvf_value.SetString(pvf_value_str.c_str(), pvf_value_str.size(), allocator);
+          parameter_value.AddMember("pvf_value", pvf_value, allocator);
+        }
       }
       else if (parameter.getType() == "number")
       {
@@ -234,14 +240,19 @@ std::string toUmrfJsonStr(const Umrf& umrf)
     for (const auto& parameter : umrf.getOutputParameters())
     {
       rapidjson::Value parameter_name(rapidjson::kStringType);
-      parameter_name.SetString(parameter.getName().c_str(), parameter.getName().size());
+      parameter_name.SetString(parameter.getName().c_str(), parameter.getName().size()), allocator;
 
       rapidjson::Value parameter_value(rapidjson::kObjectType);
       if (parameter.getType() == "string")
       {
-        rapidjson::Value pvf_value(rapidjson::kStringType);
         parameter_value.AddMember("pvf_type", "string", allocator);
-        //parameter_value.AddMember("pvf_value", "pvf_value", allocator);
+        if (!parameter.getData().empty())
+        {
+          std::string pvf_value_str = boost::any_cast<std::string>(parameter.getData());
+          rapidjson::Value pvf_value(rapidjson::kStringType);
+          pvf_value.SetString(pvf_value_str.c_str(), pvf_value_str.size(), allocator);
+          parameter_value.AddMember("pvf_value", pvf_value, allocator);
+        }
       }
       else if (parameter.getType() == "number")
       {
