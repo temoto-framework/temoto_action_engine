@@ -82,6 +82,7 @@ bool ActionMatchFinder::findMatchingAction(Umrf& umrf_in, const std::vector<Umrf
      * Get the library path of the matching action
      */
     umrf_in.setLibraryPath(known_umrf.getLibraryPath());
+    umrf_in.setName(known_umrf.getName());
     return true;
 
     /*
