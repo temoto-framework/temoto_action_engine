@@ -213,7 +213,7 @@ std::string toUmrfJsonStr(const Umrf& umrf)
       {
         parameter_value.AddMember("pvf_type", "string", allocator);
 
-        if (!parameter.getData().empty())
+        if (parameter.getDataSize() != 0)
         {
           std::string pvf_value_str = boost::any_cast<std::string>(parameter.getData());
           rapidjson::Value pvf_value(rapidjson::kStringType);
@@ -246,7 +246,7 @@ std::string toUmrfJsonStr(const Umrf& umrf)
       if (parameter.getType() == "string")
       {
         parameter_value.AddMember("pvf_type", "string", allocator);
-        if (!parameter.getData().empty())
+        if (parameter.getDataSize() != 0)
         {
           std::string pvf_value_str = boost::any_cast<std::string>(parameter.getData());
           rapidjson::Value pvf_value(rapidjson::kStringType);
