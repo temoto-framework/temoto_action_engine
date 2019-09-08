@@ -47,7 +47,7 @@ int main(int argc, char** argv)
    * Read the UMRF jsons
    */ 
   temoto_action_engine::UmrfJsonGraph ujg_msg;
-  ujg_msg.graph_name = "graph test 101";
+  ujg_msg.graph_name = "graph_test_" + umrf_list_name;
   ujg_msg.targets.push_back(target);
   for (const auto& json_name : umrf_names)
   {
