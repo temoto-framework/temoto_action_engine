@@ -62,6 +62,15 @@ public:
   }
 
   /**
+   * @brief Custom parameter notification routine;
+   * 
+   */
+  virtual void onParameterUpdate()
+  {
+    TEMOTO_PRINT("parameter update");
+  }
+
+  /**
    * @brief Sets the STOP_REQUESTED_ member variable to "true" which is used by actionOk()
    * 
    */

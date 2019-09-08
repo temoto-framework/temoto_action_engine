@@ -234,6 +234,12 @@ bool Umrf::setInputParameters(const ActionParameters& params)
   }
 }
 
+bool Umrf::setInputParameter(const ActionParameters::ParameterContainer& param_in)
+{
+  LOCK_GUARD_TYPE_R guard_input_params(input_params_rw_mutex_);
+  return input_parameters_.setParameter(param_in);
+}
+
 const ActionParameters& Umrf::getOutputParameters() const
 {
   LOCK_GUARD_TYPE_R guard_output_params(output_params_rw_mutex_);
@@ -339,3 +345,44 @@ std::ostream& operator<<( std::ostream& stream, const Umrf& umrf)
   return stream;
 }
 
+bool Umrf::updateInputParams(const Umrf& umrf_in)
+{
+  LOCK_GUARD_TYPE_R guard_input_params(input_params_rw_mutex_);
+  try
+  {
+    bool parameters_updated = false;
+    for (const auto& input_param_in : umrf_in.getInputParameters())
+    {
+      // Get the parameter
+      if (input_parameters_.getParameters().find(input_param_in) == input_parameters_.end())
+      {
+        for (const auto& p : input_parameters_.getParameters())
+        {
+          std::cout << p.getName() << " ";
+        }
+        std::cout << std::endl;
+        continue;
+      }
+
+      const ActionParameters::ParameterContainer& input_param_loc = *input_parameters_.getParameters().find(input_param_in);
+
+      // Skip that parameter if it's not updatable
+      if (!input_param_loc.isUpdatable())
+      {
+        continue;
+      }
+
+      // Update the parameter
+      if (!setInputParameter(input_param_in))
+      {
+        continue;
+      }
+      parameters_updated = true;
+    }
+    return parameters_updated;
+  }
+  catch(TemotoErrorStack e)
+  {
+    throw FORWARD_TEMOTO_ERROR_STACK(e);
+  }
+}

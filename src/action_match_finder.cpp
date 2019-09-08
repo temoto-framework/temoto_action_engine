@@ -32,7 +32,7 @@ bool ActionMatchFinder::findMatchingAction(Umrf& umrf_in, const std::vector<Umrf
 
     /*
      * Compare input parameters
-     * TODO: Add other PVF field comparisons: 
+     *    TODO: Add other PVF field comparisons: 
      * https://temoto-telerobotics.github.io/temoto-telerobotics.github.io/site/concepts/actions#parameter-value-format
      */
     if (umrf_in.getInputParameters().getParameterCount() != known_umrf.getInputParameters().getParameterCount())
@@ -48,6 +48,9 @@ bool ActionMatchFinder::findMatchingAction(Umrf& umrf_in, const std::vector<Umrf
         input_params_match = false;
         break;
       }
+      /*
+       * TODO: Check for other PVF values
+       */
     }
     if (!input_params_match)
     {
@@ -56,7 +59,7 @@ bool ActionMatchFinder::findMatchingAction(Umrf& umrf_in, const std::vector<Umrf
 
     /*
      * Compare output parameters
-     * TODO: Add other PVF field comparisons: 
+     *    TODO: Add other PVF field comparisons: 
      * https://temoto-telerobotics.github.io/temoto-telerobotics.github.io/site/concepts/actions#parameter-value-format
      */
     if (umrf_in.getOutputParameters().getParameterCount() != known_umrf.getOutputParameters().getParameterCount())
@@ -83,6 +86,17 @@ bool ActionMatchFinder::findMatchingAction(Umrf& umrf_in, const std::vector<Umrf
      */
     umrf_in.setLibraryPath(known_umrf.getLibraryPath());
     umrf_in.setName(known_umrf.getName());
+
+    /*
+     * Update parameter PVF fields
+     */
+    for (const auto& known_umrf_param : known_umrf.getInputParameters())
+    {
+      ActionParameters::ParameterContainer new_param = known_umrf_param;
+      new_param.setData(umrf_in.getInputParameters().getParameter(known_umrf_param.getName()).getData());
+      umrf_in.getInputParametersNc().setParameter(new_param, true);
+    }
+
     return true;
 
     /*

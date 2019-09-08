@@ -122,6 +122,8 @@ public:
 
   bool clearFuture();
 
+  void updateUmrf(const Umrf& umrf_in);
+
 private:
   /**
    * @brief Blocking call. Invokes the ActionBase::executeAction method.

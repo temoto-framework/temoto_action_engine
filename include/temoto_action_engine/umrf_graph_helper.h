@@ -83,6 +83,8 @@ public:
 
   bool partOfGraph(const unsigned int& node_id) const;
 
+  const unsigned int& getNodeId(const std::string& node_name) const;
+
   State checkState();
 
 private:
@@ -90,12 +92,20 @@ private:
 
   bool findRootNodes();
 
+  /**
+   * @brief Populates the graph_nodes_map_ and name_id_map_
+   * 
+   * @return true 
+   * @return false 
+   */
   bool createMaps();
 
+  /// Helps to resolve UMRF id to a GraphNode
   typedef std::map<unsigned int, GraphNode> GraphNodeMap;
   mutable MUTEX_TYPE_R graph_nodes_map_rw_mutex_;
   GUARDED_VARIABLE(GraphNodeMap graph_nodes_map_, graph_nodes_map_rw_mutex_);
 
+  /// Helps to resolve UMRF (GraphNode) name to its ID
   typedef std::map<std::string, unsigned int> NameToIdMap;
   mutable MUTEX_TYPE_R name_id_map_rw_mutex_;
   GUARDED_VARIABLE(NameToIdMap name_id_map_, name_id_map_rw_mutex_);

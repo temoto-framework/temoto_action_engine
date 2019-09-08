@@ -207,25 +207,126 @@ void ActionExecutor::cleanupLoop()
   }
 }
 
-void ActionExecutor::addUmrfGraph(const std::string& graph_name, std::vector<Umrf> umrf_jsons_vec)
+bool ActionExecutor::graphExists(const std::string& graph_name)
+{
+  LOCK_GUARD_TYPE_R guard_graphs(named_umrf_graphs_rw_mutex_);
+  if (named_umrf_graphs_.find(graph_name) == named_umrf_graphs_.end())
+  {
+    // Graph does not exist
+    return false;
+  }
+  else
+  {
+    // Graph exists
+    return true;
+  }
+}
+
+void ActionExecutor::addUmrfGraph(const std::string& graph_name, std::vector<Umrf> umrfs_vec)
 {
   try
   {
+    LOCK_GUARD_TYPE_R guard_graphs(named_umrf_graphs_rw_mutex_);
+
+    // Check if this UMRF graph exists
+    if (graphExists(graph_name))
+    {
+      CREATE_TEMOTO_ERROR_STACK("UMRF graph '" + graph_name + "' is already added");
+    }
+
     // Give each UMRF a unique ID
-    for (auto& umrf_json : umrf_jsons_vec)
+    for (auto& umrf_json : umrfs_vec)
     {
       umrf_json.setId(createId());
     }
 
     // Create an UMRF graph
-    UmrfGraphHelper ugh = UmrfGraphHelper(graph_name, umrf_jsons_vec);
+    UmrfGraphHelper ugh = UmrfGraphHelper(graph_name, umrfs_vec);
     if (ugh.checkState() == UmrfGraphHelper::State::UNINITIALIZED)
     {
       throw CREATE_TEMOTO_ERROR_STACK("Cannot add UMRF graph because it's uninitialized.");
     }
 
-    LOCK_GUARD_TYPE_R guard_graphs(named_umrf_graphs_rw_mutex_);
     named_umrf_graphs_.insert(std::pair<std::string, UmrfGraphHelper>(graph_name, ugh));
+  }
+  catch(TemotoErrorStack e)
+  {
+    throw FORWARD_TEMOTO_ERROR_STACK(e);
+  }
+}
+
+void ActionExecutor::updateUmrfGraph(const std::string& graph_name, std::vector<Umrf> umrfs_vec)
+{
+  LOCK_GUARD_TYPE_R guard_graphs(named_umrf_graphs_rw_mutex_);
+
+  try
+  {
+    // Check if this UMRF graph exists
+    if (!graphExists(graph_name))
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Could not find UMRF graph '" + graph_name + "'");
+    }
+
+    /*
+     * Check if the graphs are structurally the same
+     */
+    const UmrfGraphHelper& ugh = named_umrf_graphs_.at(graph_name);
+
+    // Check the size
+    if (umrfs_vec.size() != ugh.getUmrfs().size())
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Could not update UMRF graph '" + graph_name + "' because umrf sizes do not match.");
+    }
+
+    // Compare the UMRFs
+    for (const auto& umrf_existing : named_umrf_graphs_.at(graph_name).getUmrfs())
+    {
+      bool umrf_found = false;
+      for (const auto& umrf_in : umrfs_vec)
+      {
+        if (umrf_existing.isEqual(umrf_in, false))
+        {
+          umrf_found = true;
+          break;
+        }
+      }
+      if (!umrf_found)
+      {
+        throw CREATE_TEMOTO_ERROR_STACK("Could not update UMRF graph '" + graph_name 
+          + "' because incoming graph does not contain UMRF '" + umrf_existing.getFullName() +"'");
+      }
+    }
+
+    /*
+     * Update the UMRFs in the action handles
+     */
+    updateActionHandles(ugh, umrfs_vec);
+  }
+  catch(TemotoErrorStack e)
+  {
+    throw FORWARD_TEMOTO_ERROR_STACK(e);
+  }
+}
+
+void ActionExecutor::updateActionHandles(const UmrfGraphHelper& ugh, const std::vector<Umrf>& umrf_vec)
+{
+  LOCK_GUARD_TYPE_R guard_graphs(named_umrf_graphs_rw_mutex_);
+  LOCK_GUARD_TYPE_R guard_handles(named_action_handles_rw_mutex_);
+  try
+  {
+    for (const auto& umrf_in : umrf_vec)
+    {
+      // Get handle id
+      const unsigned int& handle_id = ugh.getNodeId(umrf_in.getFullName());
+      if (named_action_handles_.find(handle_id) == named_action_handles_.end())
+      {
+        // This handle has finished execution
+        continue;
+      }
+
+      ActionHandle& ah = named_action_handles_.at(handle_id);
+      ah.updateUmrf(umrf_in);
+    }
   }
   catch(TemotoErrorStack e)
   {
@@ -237,7 +338,6 @@ void ActionExecutor::executeUmrfGraph(const std::string& graph_name)
 {
   LOCK_GUARD_TYPE_R guard_graphs(named_umrf_graphs_rw_mutex_);
   LOCK_GUARD_TYPE_R guard_handles(named_action_handles_rw_mutex_);
-
   try
   {
     // Check if the requested graph exists
@@ -247,6 +347,10 @@ void ActionExecutor::executeUmrfGraph(const std::string& graph_name)
     }
 
     // Check if the graph is in initialized state
+    /*
+     * TODO: Also check if the graph is in running state and could it be updated
+     * i.e., does any of its actions are accepting parameters that can be updated (pvf_updatable = true)
+     */
     if (named_umrf_graphs_.at(graph_name).checkState() != UmrfGraphHelper::State::INITIALIZED)
     {
       throw CREATE_TEMOTO_ERROR_STACK("Cannot execute UMRF graph '" + graph_name + "' because it's not in initialized state.");

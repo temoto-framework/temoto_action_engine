@@ -170,7 +170,7 @@ TemotoErrorStack ActionHandle::executeAction()
        *     between actions!
        */ 
       umrf_->getOutputParametersNc().clear();
-      umrf_->getInputParametersNc().clear();
+      //umrf_->getInputParametersNc().clear();
     }
     setState(ActionHandle::State::FINISHED);
 
@@ -327,6 +327,30 @@ bool ActionHandle::addInputParameters(ActionParameters action_parameters)
     setState(ActionHandle::State::INITIALIZED);
   }
   return ret_val;
+}
+
+void ActionHandle::updateUmrf(const Umrf& umrf_in)
+{
+  LOCK_GUARD_TYPE_R guard_umrf(umrf_rw_mutex_);
+  try
+  {
+    // Don't update the action if it is in error or stop request state
+    if ((getState() == State::ERROR) ||
+        (getState() == State::STOP_REQUESTED))
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Cannot update action '" + umrf_->getFullName() + "' because it is in ERROR or STOP state.");
+    }
+
+    // If any parameter was updated and action is in RUNNING or FINISHED state, then let the action now about the update
+    if (umrf_->updateInputParams(umrf_in) && (getState() == State::RUNNING || getState() == State::FINISHED))
+    {
+      action_instance_->onParameterUpdate();
+    }
+  }
+  catch(TemotoErrorStack e)
+  {
+    throw FORWARD_TEMOTO_ERROR_STACK(e);
+  }
 }
 
 ActionHandle::~ActionHandle()

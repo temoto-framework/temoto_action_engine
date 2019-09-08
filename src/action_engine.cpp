@@ -42,11 +42,24 @@ void ActionEngine::executeUmrfGraph(const std::string& umrf_graph_name, const st
   }
   TEMOTO_PRINT("All actions in graph '" + umrf_graph_name + "' found.");
 
-  ae_.addUmrfGraph(umrf_graph_name, umrf_vec_local);
-  TEMOTO_PRINT("UMRF graph '" + umrf_graph_name + "' initialized.");
+  /*
+   * If the graph already exists, then try to update it. Otherwise create and execute a new graph
+   */
+  if (ae_.graphExists(umrf_graph_name))
+  {
+    TEMOTO_PRINT("UMRF graph '" + umrf_graph_name + "' is already running. Trying to update the graph ...");
+    ae_.updateUmrfGraph(umrf_graph_name, umrf_vec_local);
+    TEMOTO_PRINT("UMRF graph '" + umrf_graph_name + "' updated");
+  }
+  else
+  {
+    ae_.addUmrfGraph(umrf_graph_name, umrf_vec_local);
+    TEMOTO_PRINT("UMRF graph '" + umrf_graph_name + "' initialized.");
 
-  ae_.executeUmrfGraph(umrf_graph_name);
-  TEMOTO_PRINT("UMRF graph '" + umrf_graph_name + "' invoked successfully.");
+    ae_.executeUmrfGraph(umrf_graph_name);
+    TEMOTO_PRINT("UMRF graph '" + umrf_graph_name + "' invoked successfully.");
+  }
+  
 }
 
 void ActionEngine::addActionsPath(const std::string& action_packages_path)

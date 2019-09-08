@@ -43,6 +43,7 @@ static const struct PvfFields
   const char* type = "pvf_type";
   const char* value = "pvf_value";
   const char* required = "pvf_required";
+  const char* updatable = "pvf_updatable";
 }PVF_FIELDS;
 
 Umrf fromUmrfJsonStr(const std::string& umrf_json_str, bool as_descriptor = false);

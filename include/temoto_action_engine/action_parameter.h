@@ -41,18 +41,21 @@ class ActionParameter
 {
 public:
   const static int64_t UNDEFINED_SOURCE = 999;
+
   ActionParameter( std::string name
                  , std::string type
                  , std::string specification = ""
                  , int64_t source_id = UNDEFINED_SOURCE
                  , bool required = true
-                 , bool updatable = false)
+                 , bool updatable = false
+                 , bool quaranteed = false)
   : name_(name)
   , type_(type)
   , specification_(specification)
   , source_id_(source_id)
   , required_(required)
   , updatable_(updatable)
+  , quaranteed_(quaranteed)
   {}
 
   ActionParameter(const ActionParameter<T>& ap)
@@ -62,18 +65,17 @@ public:
   , source_id_(ap.source_id_)
   , timestamp_(ap.timestamp_)
   , required_(ap.required_)
+  , quaranteed_(ap.quaranteed_)
   , updatable_(ap.updatable_)
   , data_(ap.data_)
   {}
 
   ActionParameter(const std::string& name)
-  : name_(name)
-  , source_id_(UNDEFINED_SOURCE)
+  : ActionParameter(name, "undef")
   {}
 
   ActionParameter(std::string&& name)
-  : name_(std::move(name))
-  , source_id_(UNDEFINED_SOURCE)
+  : ActionParameter(std::move(name), "undef")
   {}
 
   void setData(const T& data)
@@ -183,14 +185,70 @@ public:
     type_ = type;
   }
 
+  /**
+   * @brief Operator for maining parameters in std::set. The comparison operator must stay in this form, i.e.
+   * only the names should be compared.
+   * 
+   * @param rhs 
+   * @return true 
+   * @return false 
+   */
   bool operator<(const ActionParameter<T>& rhs) const
   {
     return name_ < rhs.getName();
   }
 
+  bool isEqualNoDataNoUpdate(const ActionParameter<T>& ap) const
+  {
+    return (name_ == ap.name_ &&
+      type_ == ap.type_ &&
+      specification_ == ap.specification_ &&
+      required_ == ap.required_ &&
+      quaranteed_ == ap.quaranteed_);
+  }
+
+  /**
+   * @brief Checks if the action parameter is equal. Data is not checked.
+   * 
+   * @param ap 
+   * @return true 
+   * @return false 
+   */
+  bool isEqualNoData(const ActionParameter<T>& ap) const
+  {
+    return (name_ == ap.name_ &&
+      type_ == ap.type_ &&
+      specification_ == ap.specification_ &&
+      required_ == ap.required_ &&
+      updatable_ == ap.updatable_ &&
+      quaranteed_ == ap.quaranteed_);
+  }
+
+  /**
+   * @brief Checks if parameters are equal. Exact contents of the data is not checked.
+   * 
+   * @param ap 
+   * @return true 
+   * @return false 
+   */
+  bool isEqual(const ActionParameter<T>& ap) const
+  {
+    return (isEqualNoData(ap) && (data_.size() == ap.data_.size()));
+  }
+
   bool isRequired() const
   {
     return required_;
+  }
+
+  bool isUpdatable() const
+  {
+    return updatable_;
+  }
+
+  void setUpdatable(bool updatable)
+  {
+    updatable_ = updatable;
   }
 
   void setRequired(bool required)
@@ -214,11 +272,5 @@ private:
   bool quaranteed_;
   mutable std::vector<T> data_;
 };
-
-// template <class T>
-// bool operator<(const ActionParameter<T>& lhs, const ActionParameter<T>& rhs)
-// {
-//   return lhs.getName() < rhs.getName();
-// }
 
 #endif

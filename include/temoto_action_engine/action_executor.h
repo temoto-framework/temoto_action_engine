@@ -60,7 +60,8 @@ public:
    * @param ids Identifiers of the actions to be executed
    * @param ugh Graph where the actions are part of
    * @param initialized_requrired If true then non of the actions are executed if some action is still in
-   * uninitialized state (required input parameters not received)
+   * uninitialized state (required input parameters not received). This is a required state when root nodes
+   * of the action graph are executed.
    */
   void executeById(const std::vector<unsigned int> ids, UmrfGraphHelper& ugh, bool initialized_requrired = false);
 
@@ -85,12 +86,29 @@ public:
   bool stopAndCleanUp();
 
   /**
+   * @brief Checks if the UMRF graph with the given name already exists
+   * 
+   * @param graph_name 
+   * @return true 
+   * @return false 
+   */
+  bool graphExists(const std::string& graph_name);
+
+  /**
    * @brief Creates and stores a UMRF graph object
    * 
    * @param graph_name 
-   * @param umrf_jsons_vec Umrf vector based on which the graph will be built
+   * @param umrfs_vec Umrf vector based on which the graph will be built
    */
-  void addUmrfGraph(const std::string& graph_name, std::vector<Umrf> umrf_jsons_vec);
+  void addUmrfGraph(const std::string& graph_name, std::vector<Umrf> umrfs_vec);
+
+  /**
+   * @brief Updates the pvf_updatable parameters of UMRFs in existing graph
+   * 
+   * @param graph_name 
+   * @param umrfs_vec 
+   */
+  void updateUmrfGraph(const std::string& graph_name, std::vector<Umrf> umrfs_vec);
 
   /**
    * @brief Executes UMRF graph based on graph name
@@ -107,6 +125,13 @@ public:
   void stopUmrfGraph(const std::string& graph_name);
 
 private:
+  /**
+   * @brief Updates UMRFs of the associated action handles
+   * 
+   * @param umrf_vec 
+   */
+  void updateActionHandles(const UmrfGraphHelper& ugh, const std::vector<Umrf>& umrf_vec);
+
   /**
    * @brief Executes the cleanup loop which will remove all synchronous actions that have
    * finished executing.

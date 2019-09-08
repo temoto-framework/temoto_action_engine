@@ -36,12 +36,12 @@ UmrfGraphHelper::UmrfGraphHelper(const std::string& graph_name, const std::vecto
 {
   if (!createMaps())
   {
-    std::cout << "probs with map\n";
+    std::cout << "Could not create the UMRF name to ID resolving maps." << std::endl;;
     return;
   }
   if (!findRootNodes())
   {
-    std::cout << "probs with root nodes\n";
+    std::cout << "Could not find root nodes. UMRF graph must have at least one acyclic root node." << std::endl;
     return;
   }
 
@@ -238,4 +238,16 @@ Umrf& UmrfGraphHelper::getUmrfOfNonconst(const unsigned int& node_id)
 const std::vector<Umrf>& UmrfGraphHelper::getUmrfs() const
 {
   return umrfs_vec_;
+}
+
+const unsigned int& UmrfGraphHelper::getNodeId(const std::string& node_name) const
+{
+  if (name_id_map_.find(node_name) == name_id_map_.end())
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("UMRF graph '" + graph_name_ + "' does not contain node named '" + node_name + "'");
+  }
+  else
+  {
+    return name_id_map_.at(node_name);
+  }
 }

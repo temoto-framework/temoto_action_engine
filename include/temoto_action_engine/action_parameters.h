@@ -48,7 +48,23 @@ public:
   : parameters_(a_parameters.parameters_)
   {}
 
-  bool setParameter(const ParameterContainer& parameter_in)
+  ActionParameters& operator = (const ActionParameters& ap)
+  {
+    for (const auto& p : ap)
+    {
+      parameters_.insert(p);
+    }
+  }
+
+  /**
+   * @brief Set the Parameter object
+   * 
+   * @param parameter_in 
+   * @param merge_new Indicates whether old param data should be prioritized or new
+   * @return true 
+   * @return false 
+   */
+  bool setParameter(const ParameterContainer& parameter_in, bool merge_new = false)
   {
     try
     {
@@ -58,13 +74,22 @@ public:
       }
       else
       {
-        ParameterContainer param = *parameters_.find(parameter_in);
-        const Payload& data = parameter_in.getData();
-        parameters_.erase(parameters_.find(parameter_in));
-        param.setData(data);
-        parameters_.insert(param);
-        return true;
+        if (merge_new)
+        {
+          // Insert the new param without keeping any info about the old param
+          parameters_.erase(parameters_.find(parameter_in));
+          parameters_.insert(parameter_in);
+        }
+        else
+        {
+          // Create copy of the old parameter and assign it new params data
+          ParameterContainer param = *parameters_.find(parameter_in);
+          param.setData(parameter_in.getData());
+          parameters_.erase(parameters_.find(parameter_in));          
+          parameters_.insert(param);
+        }
       }
+      return true;
     }
     catch(TemotoErrorStack e)
     {
@@ -122,6 +147,15 @@ public:
     }
     return *parameters_.find(name);
   }
+
+  // ParameterContainer& getParameterNc(const std::string& name)
+  // {
+  //   if (!hasParameter(name))
+  //   {
+  //     throw CREATE_TEMOTO_ERROR("Could not find parameter '" + name + "'.");
+  //   }
+  //   return *parameters_.find(name);
+  // }
 
   const Parameters& getParameters() const
   {

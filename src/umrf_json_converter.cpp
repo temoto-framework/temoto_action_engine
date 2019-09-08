@@ -228,6 +228,13 @@ std::string toUmrfJsonStr(const Umrf& umrf)
         parameter_value.AddMember("pvf_type", "number", allocator);
         //parameter_value.AddMember("pvf_value", "pvf_value", allocator);
       }
+
+      // Check the updatablilty
+      if (parameter.isUpdatable())
+      {
+        parameter_value.AddMember("pvf_updatable", "true", allocator);
+      }
+
       input_object.AddMember(parameter_name, parameter_value, allocator); 
     }
     fromScratch.AddMember("input_parameters", input_object, allocator);
@@ -363,6 +370,26 @@ ActionParameters::Parameters parseParameters(const rapidjson::Value& value_in, s
       else
       {
         pc.setRequired(false);
+      }
+    }
+    catch(TemotoErrorStack e)
+    {
+      //std::cerr << e.what() << '\n';
+    }
+
+    /*
+     * Get updatable
+     */
+    try
+    {
+      std::string updatable = getStringFromValue(getJsonElement(PVF_FIELDS.updatable, value_in));
+      if (updatable == "true")
+      {
+        pc.setUpdatable(true);
+      }
+      else
+      {
+        pc.setUpdatable(false);
       }
     }
     catch(TemotoErrorStack e)
