@@ -19,7 +19,7 @@
 #include "temoto_action_engine/umrf_json_converter.h"
 #include "temoto_action_engine/temoto_error.h"
 #include <iostream>
-#include "rapidjson/writer.h"
+#include "rapidjson/prettywriter.h"
 #include "rapidjson/stringbuffer.h"
 
 namespace umrf_json_converter
@@ -223,10 +223,15 @@ std::string toUmrfJsonStr(const Umrf& umrf)
       }
       else if (parameter.getType() == "number")
       {
-        rapidjson::Value pvf_value(rapidjson::kNumberType);
-        //pvf_value.SetDouble(parameter.second.value_number);
         parameter_value.AddMember("pvf_type", "number", allocator);
-        //parameter_value.AddMember("pvf_value", "pvf_value", allocator);
+
+        if (parameter.getDataSize() != 0)
+        {
+          double pvf_value_number = boost::any_cast<double>(parameter.getData());
+          rapidjson::Value pvf_value(rapidjson::kNumberType);
+          pvf_value.SetDouble(pvf_value_number);
+          parameter_value.AddMember("pvf_value", pvf_value, allocator);
+        }
       }
 
       // Check the updatablilty
@@ -277,7 +282,7 @@ std::string toUmrfJsonStr(const Umrf& umrf)
    * Convert the JSON datastructure to a JSON string
    */
   rapidjson::StringBuffer strbuf;
-  rapidjson::Writer<rapidjson::StringBuffer> writer(strbuf);
+  rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(strbuf);
   fromScratch.Accept(writer);
   return strbuf.GetString();
 }

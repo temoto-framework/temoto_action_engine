@@ -83,7 +83,8 @@ public:
       ("help,h", "Show help message")
       ("w", po::value<std::string>(), "Optional. Additional wake words. Indicates to which wake words the action engine will respond to.")
       ("mw", po::value<std::string>(), "Required. Main wake word.")
-      ("a", po::value<std::string>(), "Required. Path to action packages path file.")
+      ("a", po::value<std::string>(), "Optional. Path to action packages path file.")
+      ("sa", po::value<std::string>(), "Optional. Path to a single action.")
       ("d", po::value<std::string>(), "Optional. Path to default UMRF that will be executed when the action engine starts up.");
 
     /* 
@@ -139,8 +140,17 @@ public:
       else
       {
         TEMOTO_PRINT("Missing action packages path file");
-        std::cout << desc << std::endl;
-        return 1;
+        //std::cout << desc << std::endl;
+        //return 1;
+      }
+
+      /*
+       * Get the single action path
+       */
+      if (vm.count("sa"))
+      {
+        std::string action_path = vm["sa"].as<std::string>();
+        action_paths_.push_back(action_path);
       }
 
       /*

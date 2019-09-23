@@ -35,7 +35,16 @@ void ActionEngine::executeUmrfGraph(const std::string& umrf_graph_name, const st
   for (auto& umrf : umrf_vec_local)
   {
     // Find a matching action for this UMRF
-    if (!amf_.findMatchingAction(umrf, ai_.getUmrfs(), name_match_required))
+    bool result;
+    try
+    {
+      result = amf_.findMatchingAction(umrf, ai_.getUmrfs(), name_match_required);
+    }
+    catch(TemotoErrorStack e)
+    {
+      throw FORWARD_TEMOTO_ERROR_STACK(e);
+    }
+    if (!result)
     {
       throw CREATE_TEMOTO_ERROR_STACK("Could not find a matching action for UMRF named " + umrf.getName());
     }

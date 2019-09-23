@@ -20,24 +20,27 @@ int main(int argc, char** argv)
   ros::init(argc, argv, "temoto_parser_node");
   ros::NodeHandle nh;
   ros::Publisher umrf_graph_pub = nh.advertise<temoto_action_engine::UmrfJsonGraph>("umrf_graph_topic", 1);
+  ros::AsyncSpinner spinner(0);
+  spinner.start();
 
   // Get the commandline arguments
   std::string base_path(argv[1]);
   std::string umrf_list_name(argv[2]);
   std::string target(argv[3]);
 
-  std::cout << "Targeting the message to '" << target << "'" << std::endl;
+  ROS_INFO_STREAM("Targeting the message to '" << target << "'");
 
   std::ifstream umrf_list_fs(base_path + "/" + umrf_list_name);
   std::vector<std::string> umrf_names;
 
   // Extract the umrf names
+  ROS_INFO_STREAM("Reading the UMRF file names from '" << umrf_list_name << "'");
   if (umrf_list_fs.is_open())
   {
     std::string umrf_name;
     while (getline(umrf_list_fs, umrf_name))
     {
-      std::cout << "umrf name: " << umrf_name << std::endl;
+      std::cout << " * umrf name: " << umrf_name << std::endl;
       umrf_names.push_back(umrf_name);
     }
     umrf_list_fs.close();
@@ -62,15 +65,23 @@ int main(int argc, char** argv)
   }
 
   /*
+   * Wait until there is somebody to publish the message to
+   */
+  ROS_INFO_STREAM("Waiting for subscribers ...");
+  while (umrf_graph_pub.getNumSubscribers() <= 0 && ros::ok())
+  {
+    ros::Duration(0.1).sleep();
+  }
+
+  /*
    * Publish the UMRF JSON graph
    */
-  umrf_graph_pub.publish(ujg_msg);
-  ros::Duration(1).sleep();
-  umrf_graph_pub.publish(ujg_msg);
+  ROS_INFO_STREAM("Publishing the UMRF Graph message ...");
+  if (ros::ok())
+  {
+    umrf_graph_pub.publish(ujg_msg);
+  }
 
-  ros::AsyncSpinner spinner(0);
-  spinner.start();
-  ros::waitForShutdown();
-
+  ROS_INFO_STREAM("UMRF Graph message published, shutting down.");
   return 0;
 }
