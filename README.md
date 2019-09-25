@@ -10,7 +10,7 @@ For more information TeMoto framework, visit [https://temoto-telerobotics.github
 ``` bash
 git clone --recursive https://github.com/temoto-telerobotics/temoto_action_engine.git
 ```
-or if you want to install Action Engine as a part of the TeMoto framework, then follow [this tutorial](https://temoto-telerobotics.github.io/tutorials/installing_temoto.html)
+or if you want to install Action Engine as a part of the TeMoto framework, then follow [this tutorial](https://temoto-telerobotics.github.io/tutorials/installing_temoto.html).
 
 ## Creating TeMoto Actions
 Follow [this tutorial](https://temoto-telerobotics.github.io/tutorials/writing_an_action.html) to create TeMoto Actions. NOTE: The tutorial instructs you to create a TeMoto workspace, which simplifies the process of creating actions and launching TeMoto.
@@ -20,7 +20,7 @@ If you want to use the Action Engine as a node in your ROS project, then use the
 ``` bash
 rosrun temoto_action_engine action_engine_node <options>
 ```
-where *options* are
+where the *options* are
 * **-h** [ --help ] - Show help message
 * **--mw** arg - Required. Main wake word.
 * **--w** arg - Optional. Additional wake words. Indicates to which wake words the action engine will respond to.
