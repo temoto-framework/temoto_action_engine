@@ -37,6 +37,8 @@ public:
 
   void executeUmrfGraph(const std::string& umrf_graph_name, const std::vector<Umrf>& umrf_vec, bool name_match_required = false);
 
+  void stopUmrfGraph(const std::string& umrf_graph_name);
+  
   void addActionsPath(const std::string& action_packages_path);
 
   ~ActionEngine();

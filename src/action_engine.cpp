@@ -68,7 +68,11 @@ void ActionEngine::executeUmrfGraph(const std::string& umrf_graph_name, const st
     ae_.executeUmrfGraph(umrf_graph_name);
     TEMOTO_PRINT("UMRF graph '" + umrf_graph_name + "' invoked successfully.");
   }
-  
+}
+
+void ActionEngine::stopUmrfGraph(const std::string& umrf_graph_name)
+{
+  ae_.stopUmrfGraph(umrf_graph_name);
 }
 
 void ActionEngine::addActionsPath(const std::string& action_packages_path)
