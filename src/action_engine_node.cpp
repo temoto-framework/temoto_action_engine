@@ -255,7 +255,7 @@ private:
         std::cout << umrf;
         umrf_vec.emplace_back(umrf);
       }
-      ae_.executeUmrfGraph(msg.graph_name, umrf_vec);
+      ae_.executeUmrfGraph(msg.graph_name, umrf_vec, bool(msg.name_match_required));
     }
     catch(const std::exception& e)
     {
