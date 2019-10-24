@@ -54,6 +54,11 @@ target_link_libraries(temoto_ae_components
   ${catkin_LIBRARIES}
 )
 
+install(TARGETS temoto_ae_components
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+)
+
 # Library that combines UMRF json converter components
 add_library(temoto_ae_umrf_json
   src/umrf_json_converter.cpp
@@ -61,6 +66,11 @@ add_library(temoto_ae_umrf_json
 add_dependencies(temoto_ae_umrf_json ${catkin_EXPORTED_TARGETS} ${${PROJECT_NAME}_EXPORTED_TARGETS})
 target_link_libraries(temoto_ae_umrf_json 
   ${catkin_LIBRARIES}
+)
+
+install(TARGETS temoto_ae_umrf_json
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
 
 # Action engine test
@@ -88,10 +98,15 @@ add_dependencies(action_engine_node
   ${catkin_EXPORTED_TARGETS}
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
 )
+
 target_link_libraries(action_engine_node
   ${catkin_LIBRARIES}
   temoto_ae_components yaml-cpp
-) 
+)
+
+install(TARGETS action_engine_node
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 # Parser node
 add_executable(parser_node
@@ -103,7 +118,18 @@ add_dependencies(parser_node
   ${catkin_EXPORTED_TARGETS}
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
 )
+
 target_link_libraries(parser_node
   ${catkin_LIBRARIES}
   temoto_ae_components 
-)  
+)
+
+install(TARGETS parser_node
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include/
+        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
+
+install(DIRECTORY include/${PROJECT_NAME}/
+        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
