@@ -99,6 +99,7 @@ bool UmrfGraphHelper::findRootNodes()
       // A node is considered root if it does not have parents
       if (graph_node_pair.second.umrf_.getParents().empty())
       {
+        std::cout << "at " << __func__ << "Got root node " << graph_node_pair.second.umrf_.getFullName() << std::endl;
         root_node_ids_.push_back(graph_node_pair.first);
       }
     }
@@ -141,7 +142,16 @@ std::vector<unsigned int> UmrfGraphHelper::getChildrenOf(const unsigned int& nod
   {
     for (const auto& child_node_full_name : graph_nodes_map_.at(node_id).umrf_.getChildren())
     {
-      child_node_ids.push_back(name_id_map_.at(child_node_full_name));
+      try
+      {
+        child_node_ids.push_back(name_id_map_.at(child_node_full_name));
+      }
+      catch(const std::exception& e)
+      {
+        throw CREATE_TEMOTO_ERROR_STACK("Could not find an action named '" + child_node_full_name
+          + "' in UMRF graph '" + graph_name_ + "'. "
+          + "Check if the UMRF graph has correct parent/children names.");
+      }
     }
   }
   return std::move(child_node_ids);

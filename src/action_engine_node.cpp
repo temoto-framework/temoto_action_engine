@@ -5,6 +5,7 @@
 #include "temoto_action_engine/umrf_json_converter.h"
 #include "temoto_action_engine/messaging.h"
 #include "temoto_action_engine/UmrfJsonGraph.h"
+#include "temoto_action_engine/StopUmrfJsonGraph.h"
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
 #include <yaml-cpp/yaml.h>
@@ -26,6 +27,7 @@ public:
   {
     // Set up the UMRF graph subscriber to a globally namespaced topic
     umrf_graph_sub_ = nh_.subscribe("/umrf_graph_topic", 1, &TemotoActionEngineNode::umrfGraphCallback, this);
+    stop_umrf_graph_sub_ = nh_.subscribe("/stop_umrf_graph_topic", 1, &TemotoActionEngineNode::stopUmrfGraphCallback, this);
 
     // Set the default action paths
     int successful_paths = 0;
@@ -263,9 +265,57 @@ private:
     }
   }
 
+  /**
+   * @brief Callback for stopping UMRF graphs
+   * 
+   * @param msg 
+   */
+  void stopUmrfGraphCallback(const temoto_action_engine::StopUmrfJsonGraph& msg)
+  {
+    TEMOTO_PRINT("Received a UMRF graph STOPPING message ...");
+
+    /*
+     * Check for the wake word
+     */
+    bool wake_word_found = false;
+    for (const auto& target : msg.targets)
+    {
+      for (const auto& ww : wake_words_)
+      {
+        if (ww == target)
+        {
+          wake_word_found = true;
+          break;
+        }  
+      }
+      if (wake_word_found)
+      {
+        break;
+      }
+    }
+
+    // If the wake word was not found then return
+    if (!wake_word_found)
+    {
+      TEMOTO_PRINT("The stop message was not targeted at this Action Engine.");
+      return;
+    }
+
+    TEMOTO_PRINT("Stopping UMRF graph '" + msg.graph_name + "' ...");
+    try
+    {
+      ae_.stopUmrfGraph(msg.graph_name);
+    }
+    catch(const std::exception& e)
+    {
+      TEMOTO_PRINT(std::string(e.what()));
+    }
+  }
+
   ActionEngine ae_;
   ros::NodeHandle nh_;
   ros::Subscriber umrf_graph_sub_;
+  ros::Subscriber stop_umrf_graph_sub_;
 
   // Action Engine setup parameters
   Umrf default_umrf_;
@@ -310,3 +360,4 @@ int main(int argc, char** argv)
 
   return 0;
 }
+

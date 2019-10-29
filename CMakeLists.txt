@@ -19,6 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 add_message_files(FILES
   UmrfJsonGraph.msg
+  StopUmrfJsonGraph.msg
 )
 
 generate_messages(
@@ -133,3 +134,4 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include/
 
 install(DIRECTORY include/${PROJECT_NAME}/
         DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
+

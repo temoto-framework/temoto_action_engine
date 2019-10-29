@@ -98,25 +98,53 @@ Umrf fromUmrfJsonStr(const std::string& umrf_json_str, bool as_descriptor)
   // Parents
   try
   {
-    std::vector<std::string> parents = getStringVectorFromValue(getRootJsonElement(UMRF_FIELDS.parents, json_doc));
-    //umrf.setParents(parents);
+    bool has_parents = false;
+    try
+    {
+      getRootJsonElement(UMRF_FIELDS.parents, json_doc);
+      has_parents = true;
+    }
+    catch(const std::exception& e)
+    {
+      // ... do nothing
+    }
+    
+    if (has_parents)
+    {
+      std::vector<std::string> parents = getStringVectorFromValue(getRootJsonElement(UMRF_FIELDS.parents, json_doc));
+      umrf.setParents(parents);
+    }
   }
-  catch(const TemotoErrorStack& e)
+  catch(TemotoErrorStack e)
   {
-    // Just print the error
-    //std::cout << e.what() << '\n';
+    // If parents field is defined but its ill formated, then throw an error
+    throw FORWARD_TEMOTO_ERROR_STACK(e);
   }
 
   // Children
   try
   {
-    std::vector<std::string> children = getStringVectorFromValue(getRootJsonElement(UMRF_FIELDS.children, json_doc));
-    //umrf.setChildren(children);
+    bool has_children = false;
+    try
+    {
+      getRootJsonElement(UMRF_FIELDS.children, json_doc);
+      has_children = true;
+    }
+    catch(const std::exception& e)
+    {
+      // ... do nothing
+    }
+    
+    if (has_children)
+    {
+      std::vector<std::string> children = getStringVectorFromValue(getRootJsonElement(UMRF_FIELDS.children, json_doc));
+      umrf.setChildren(children);
+    }
   }
-  catch(const TemotoErrorStack& e)
+  catch(TemotoErrorStack e)
   {
-    // Just print the error
-    //std::cout << e.what() << '\n';
+    // If children field is defined but its ill formated, then throw an error
+    throw FORWARD_TEMOTO_ERROR_STACK(e);
   }
 
   // Input parameters
