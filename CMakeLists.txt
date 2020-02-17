@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   class_loader
   message_generation
+  temoto_core
 )
 
 add_message_files(FILES
@@ -102,7 +103,7 @@ add_dependencies(action_engine_node
 
 target_link_libraries(action_engine_node
   ${catkin_LIBRARIES}
-  temoto_ae_components yaml-cpp
+  temoto_ae_components
 )
 
 install(TARGETS action_engine_node
