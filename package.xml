@@ -14,7 +14,6 @@
   <depend>std_msgs</depend>
   <depend>class_loader</depend>
   <depend>message_generation</depend>
-  <depend>temoto_core</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
