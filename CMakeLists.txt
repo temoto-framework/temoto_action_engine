@@ -35,7 +35,9 @@ ExternalProject_Add(yaml-cpp062
   BINARY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/yaml-cpp/build
   CMAKE_ARGS
     -DBUILD_SHARED_LIBS=ON
-  BUILD_COMMAND make
+    -DYAML_CPP_BUILD_TESTS=OFF
+    -Wno-dev
+  BUILD_COMMAND $(MAKE) -j
   INSTALL_COMMAND cmake -E echo "Skipping install step."
 )
 
