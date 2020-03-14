@@ -8,7 +8,7 @@
 #include "temoto_action_engine/StopUmrfJsonGraph.h"
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
-#include <yaml-cpp/yaml.h>
+#include "yaml-cpp/yaml.h"
 #include <fstream>
 
 class TemotoActionEngineNode

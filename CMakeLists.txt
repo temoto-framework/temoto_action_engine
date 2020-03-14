@@ -44,19 +44,19 @@ ExternalProject_Add(yaml-cpp062
 set(headers
   include
   ${catkin_INCLUDE_DIRS}
-  "${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include"
-  "${CMAKE_CURRENT_SOURCE_DIR}/yaml-cpp/include"
+  ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/yaml-cpp/include
 )
 
 set(libraries
-  "${CMAKE_CURRENT_SOURCE_DIR}/yaml-cpp/build/libyaml-cpp.so"
+  ${CMAKE_CURRENT_SOURCE_DIR}/yaml-cpp/build/libyaml-cpp.so
 )
 
 catkin_package(
   INCLUDE_DIRS ${headers}
-  LIBRARIES temoto_ae_components temoto_ae_umrf_json
+  LIBRARIES temoto_ae_components temoto_ae_umrf_json ${libraries}
   CATKIN_DEPENDS roscpp std_msgs class_loader
-#  DEPENDS system_lib
+  #DEPENDS
 ) 
 
 include_directories(
@@ -174,4 +174,3 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include/
 
 install(DIRECTORY include/${PROJECT_NAME}/
         DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
-
