@@ -45,7 +45,6 @@ set(headers
   include
   ${catkin_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/yaml-cpp/include
 )
 
 set(libraries
@@ -54,13 +53,14 @@ set(libraries
 
 catkin_package(
   INCLUDE_DIRS ${headers}
-  LIBRARIES temoto_ae_components temoto_ae_umrf_json ${libraries}
+  LIBRARIES temoto_ae_components temoto_ae_umrf_json
   CATKIN_DEPENDS roscpp std_msgs class_loader
   #DEPENDS
 ) 
 
 include_directories(
   ${headers}
+  ${CMAKE_CURRENT_SOURCE_DIR}/yaml-cpp/include
 )
 
 # Library that combines core components of the action engine
