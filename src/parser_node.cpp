@@ -80,6 +80,8 @@ int main(int argc, char** argv)
   ROS_INFO_STREAM("Publishing the UMRF Graph message ...");
   if (ros::ok())
   {
+    // Sleep for some time, so that "all" possible pub/sub connections are made
+    ros::Duration(3).sleep();
     umrf_graph_pub.publish(ujg_msg);
   }
 

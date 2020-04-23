@@ -388,6 +388,7 @@ void ActionExecutor::stopUmrfGraph(const std::string& graph_name)
     {
       action_handle_it->second.clearAction();
       named_action_handles_.erase(action_handle_it);
+      named_umrf_graphs_.erase(graph_name);
     }
     catch (TemotoErrorStack e)
     {
