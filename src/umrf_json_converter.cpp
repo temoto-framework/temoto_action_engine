@@ -261,6 +261,13 @@ std::string toUmrfJsonStr(const Umrf& umrf)
           parameter_value.AddMember("pvf_value", pvf_value, allocator);
         }
       }
+      else
+      {
+        rapidjson::Value pvf_type(rapidjson::kStringType);
+        pvf_type.SetString(parameter.getType().c_str(), parameter.getType().size(), allocator);
+        parameter_value.AddMember("pvf_type", pvf_type, allocator);
+      }
+      
 
       // Check the updatablilty
       if (parameter.isUpdatable())
@@ -301,6 +308,13 @@ std::string toUmrfJsonStr(const Umrf& umrf)
         parameter_value.AddMember("pvf_type", "number", allocator);
         //parameter_value.AddMember("pvf_value", "pvf_value", allocator);
       }
+      else
+      {
+        rapidjson::Value pvf_type(rapidjson::kStringType);
+        pvf_type.SetString(parameter.getType().c_str(), parameter.getType().size(), allocator);
+        parameter_value.AddMember("pvf_type", pvf_type, allocator);
+      }
+
       output_object.AddMember(parameter_name, parameter_value, allocator); 
     }
     fromScratch.AddMember("output_parameters", output_object, allocator);
