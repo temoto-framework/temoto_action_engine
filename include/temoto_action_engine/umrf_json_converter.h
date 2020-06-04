@@ -62,5 +62,17 @@ std::vector<std::string> getStringVectorFromValue(const rapidjson::Value& value)
 
 ActionParameters::Parameters parseParameters(const rapidjson::Value& value, std::string parent_member_name);
 
+void parseParameter(
+  rapidjson::Value& json_value,
+  rapidjson::Document::AllocatorType& allocator,
+  const ActionParameters::ParameterContainer& pc
+);
+
+void parsePvfFields(
+  rapidjson::Value& json_value,
+  rapidjson::Document::AllocatorType& allocator,
+  const ActionParameters::ParameterContainer& parameter
+);
+
 }// umrf_json_converter namespace
 #endif

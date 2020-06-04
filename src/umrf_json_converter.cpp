@@ -21,6 +21,7 @@
 #include <iostream>
 #include "rapidjson/prettywriter.h"
 #include "rapidjson/stringbuffer.h"
+#include <boost/algorithm/string.hpp>
 
 namespace umrf_json_converter
 {
@@ -212,7 +213,7 @@ std::string toUmrfJsonStr(const Umrf& umrf)
   }
 
   // Set the notation
-  if (!umrf.getSuffix().empty())
+  if (!umrf.getNotation().empty())
   {
     rapidjson::Value notation_value(rapidjson::kStringType);
     notation_value.SetString(umrf.getNotation().c_str(), umrf.getNotation().size(), allocator);
@@ -233,49 +234,7 @@ std::string toUmrfJsonStr(const Umrf& umrf)
     rapidjson::Value input_object(rapidjson::kObjectType);
     for (const auto& parameter : umrf.getInputParameters())
     {
-      rapidjson::Value parameter_name(rapidjson::kStringType);
-      parameter_name.SetString(parameter.getName().c_str(), parameter.getName().size(), allocator);
-
-      rapidjson::Value parameter_value(rapidjson::kObjectType);
-      if (parameter.getType() == "string")
-      {
-        parameter_value.AddMember("pvf_type", "string", allocator);
-
-        if (parameter.getDataSize() != 0)
-        {
-          std::string pvf_value_str = boost::any_cast<std::string>(parameter.getData());
-          rapidjson::Value pvf_value(rapidjson::kStringType);
-          pvf_value.SetString(pvf_value_str.c_str(), pvf_value_str.size(), allocator);
-          parameter_value.AddMember("pvf_value", pvf_value, allocator);
-        }
-      }
-      else if (parameter.getType() == "number")
-      {
-        parameter_value.AddMember("pvf_type", "number", allocator);
-
-        if (parameter.getDataSize() != 0)
-        {
-          double pvf_value_number = boost::any_cast<double>(parameter.getData());
-          rapidjson::Value pvf_value(rapidjson::kNumberType);
-          pvf_value.SetDouble(pvf_value_number);
-          parameter_value.AddMember("pvf_value", pvf_value, allocator);
-        }
-      }
-      else
-      {
-        rapidjson::Value pvf_type(rapidjson::kStringType);
-        pvf_type.SetString(parameter.getType().c_str(), parameter.getType().size(), allocator);
-        parameter_value.AddMember("pvf_type", pvf_type, allocator);
-      }
-      
-
-      // Check the updatablilty
-      if (parameter.isUpdatable())
-      {
-        parameter_value.AddMember("pvf_updatable", "true", allocator);
-      }
-
-      input_object.AddMember(parameter_name, parameter_value, allocator); 
+      parseParameter(input_object, allocator, parameter);
     }
     fromScratch.AddMember("input_parameters", input_object, allocator);
   }
@@ -486,6 +445,149 @@ ActionParameters::Parameters parseParameters(const rapidjson::Value& value_in, s
   }
   
   return action_parameters;
+}
+
+std::string removeFirstToken(const std::vector<std::string>& tokens_in)
+{
+  if (tokens_in.empty())
+  {
+    return std::string("");
+  }
+  else if (tokens_in.size() == 1)
+  {
+    return tokens_in.at(0);
+  }
+  else
+  {
+    std::string name;
+    std::vector<std::string> name_tokens_renamed(tokens_in.begin() + 2, tokens_in.end());
+  
+    for (const auto& name_token : name_tokens_renamed)
+    {
+      if (name_token.empty())
+      {
+        continue;
+      }
+      else if (name.empty())
+      {
+        name += name_token;
+      }
+      else
+      {
+        name += "::" + name_token
+      }
+    }
+    return name;
+  }
+}
+
+void parseParameter(
+  rapidjson::Value& json_value,
+  rapidjson::Document::AllocatorType& allocator,
+  const ActionParameters::ParameterContainer& pc)
+{
+  // Split the name of the parameter into tokens
+  std::vector<std::string> name_tokens;
+  boost::split(name_tokens, pc.getName(), boost::is_any_of("::"));
+
+  if (name_tokens.empty())
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("No name tokens received");
+  }
+
+  // Extract the "first_token" and check if such "sub_json_object" exists in the "input_json_object"
+  if (json_value.HasMember(name_tokens.at(0)))
+  {
+    // IF there are more tokens left then:
+    if(name_tokens.size() > 1)
+    {
+      // Rename the "parameter" by removing the first token and leaving the rest as "renamed_parameter"
+      ActionParameters::ParameterContainer renamed_param = pc;
+      renamed_param.setName(removeFirstToken(name_tokens));
+
+      // Recursively invoke parseParameter("sub_json_object", "renamed_parameter")
+      parseParameter(json_value[name_tokens.at(0)], allocator, renamed_param)
+    }
+    else
+    {
+      // Throw an error, because it's a duplicate entry
+      throw CREATE_TEMOTO_ERROR_STACK("Duplicate entry detected");
+    }
+  }
+  else
+  {
+    if(name_tokens.size() > 1)
+    {
+      // Rename the "parameter" by removing the first token and leaving the rest as "renamed_parameter"
+      ActionParameters::ParameterContainer renamed_param = pc;
+      renamed_param.setName(removeFirstToken(name_tokens));
+
+      // Create new json object and Recursively invoke parseParameter
+      rapidjson::Value new_json_name(rapidjson::kStringType);
+      new_json_name.SetString(name_tokens.at(0).c_str(), name_tokens.at(0).size(), allocator);
+
+      rapidjson::Value new_json_value(rapidjson::kObjectType);
+      parseParameter(new_json_value, allocator, renamed_param);
+
+      json_value.AddMember(new_json_name, new_json_value, allocator);
+      return;
+    }
+    else
+    {
+      // Parse the all the pvf_values of the parameter and insert them to the json object
+      parsePvfFields(json_value, allocator, pc);
+      return;
+    }
+  }
+}
+
+void parsePvfFields(
+  rapidjson::Value& json_value,
+  rapidjson::Document::AllocatorType& allocator,
+  const ActionParameters::ParameterContainer& parameter)
+{
+  rapidjson::Value parameter_name(rapidjson::kStringType);
+  parameter_name.SetString(parameter.getName().c_str(), parameter.getName().size(), allocator);
+
+  rapidjson::Value parameter_value(rapidjson::kObjectType);
+  if (parameter.getType() == "string")
+  {
+    parameter_value.AddMember("pvf_type", "string", allocator);
+
+    if (parameter.getDataSize() != 0)
+    {
+      std::string pvf_value_str = boost::any_cast<std::string>(parameter.getData());
+      rapidjson::Value pvf_value(rapidjson::kStringType);
+      pvf_value.SetString(pvf_value_str.c_str(), pvf_value_str.size(), allocator);
+      parameter_value.AddMember("pvf_value", pvf_value, allocator);
+    }
+  }
+  else if (parameter.getType() == "number")
+  {
+    parameter_value.AddMember("pvf_type", "number", allocator);
+
+    if (parameter.getDataSize() != 0)
+    {
+      double pvf_value_number = boost::any_cast<double>(parameter.getData());
+      rapidjson::Value pvf_value(rapidjson::kNumberType);
+      pvf_value.SetDouble(pvf_value_number);
+      parameter_value.AddMember("pvf_value", pvf_value, allocator);
+    }
+  }
+  else
+  {
+    rapidjson::Value pvf_type(rapidjson::kStringType);
+    pvf_type.SetString(parameter.getType().c_str(), parameter.getType().size(), allocator);
+    parameter_value.AddMember("pvf_type", pvf_type, allocator);
+  }
+  
+  // Check the updatablilty
+  if (parameter.isUpdatable())
+  {
+    parameter_value.AddMember("pvf_updatable", "true", allocator);
+  }
+
+  json_value.AddMember(parameter_name, parameter_value, allocator);
 }
 
 }// umrf_json_converter namespace
