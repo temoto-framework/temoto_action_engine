@@ -245,36 +245,7 @@ std::string toUmrfJsonStr(const Umrf& umrf)
     rapidjson::Value output_object(rapidjson::kObjectType);
     for (const auto& parameter : umrf.getOutputParameters())
     {
-      rapidjson::Value parameter_name(rapidjson::kStringType);
-      parameter_name.SetString(parameter.getName().c_str(), parameter.getName().size()), allocator;
-
-      rapidjson::Value parameter_value(rapidjson::kObjectType);
-      if (parameter.getType() == "string")
-      {
-        parameter_value.AddMember("pvf_type", "string", allocator);
-        if (parameter.getDataSize() != 0)
-        {
-          std::string pvf_value_str = boost::any_cast<std::string>(parameter.getData());
-          rapidjson::Value pvf_value(rapidjson::kStringType);
-          pvf_value.SetString(pvf_value_str.c_str(), pvf_value_str.size(), allocator);
-          parameter_value.AddMember("pvf_value", pvf_value, allocator);
-        }
-      }
-      else if (parameter.getType() == "number")
-      {
-        rapidjson::Value pvf_value(rapidjson::kNumberType);
-        //pvf_value.SetDouble(parameter.second.value_number);
-        parameter_value.AddMember("pvf_type", "number", allocator);
-        //parameter_value.AddMember("pvf_value", "pvf_value", allocator);
-      }
-      else
-      {
-        rapidjson::Value pvf_type(rapidjson::kStringType);
-        pvf_type.SetString(parameter.getType().c_str(), parameter.getType().size(), allocator);
-        parameter_value.AddMember("pvf_type", pvf_type, allocator);
-      }
-
-      output_object.AddMember(parameter_name, parameter_value, allocator); 
+      parseParameter(output_object, allocator, parameter);
     }
     fromScratch.AddMember("output_parameters", output_object, allocator);
   }
@@ -474,7 +445,7 @@ std::string removeFirstToken(const std::vector<std::string>& tokens_in)
       }
       else
       {
-        name += "::" + name_token
+        name += "::" + name_token;
       }
     }
     return name;
@@ -496,7 +467,7 @@ void parseParameter(
   }
 
   // Extract the "first_token" and check if such "sub_json_object" exists in the "input_json_object"
-  if (json_value.HasMember(name_tokens.at(0)))
+  if (json_value.HasMember(name_tokens.at(0).c_str()))
   {
     // IF there are more tokens left then:
     if(name_tokens.size() > 1)
@@ -506,7 +477,7 @@ void parseParameter(
       renamed_param.setName(removeFirstToken(name_tokens));
 
       // Recursively invoke parseParameter("sub_json_object", "renamed_parameter")
-      parseParameter(json_value[name_tokens.at(0)], allocator, renamed_param)
+      parseParameter(json_value[name_tokens.at(0).c_str()], allocator, renamed_param);
     }
     else
     {

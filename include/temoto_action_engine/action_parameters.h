@@ -172,9 +172,9 @@ public:
     return true;
   }
 
-  std::set<ParameterContainer> getParameterGroup(const std::set<std::string>& param_names) const
+  Parameters getParameterGroup(const std::set<std::string>& param_names) const
   {
-    std::set<ParameterContainer> parameters_out;
+    Parameters parameters_out;
     if (!containsAll(param_names))
     {
       return parameters_out;
