@@ -44,6 +44,7 @@ public:
   {
     name_ = umrf.name_;
     package_name_ = umrf.package_name_;
+    description_ = umrf.description_;
     suffix_ = umrf.suffix_;
     notation_ = umrf.notation_;
     effect_ = umrf.effect_;
@@ -168,6 +169,9 @@ public:
   const std::string& getPackageName() const;
   bool setPackageName(const std::string& name);
 
+  const std::string& getDescription() const;
+  bool setDescription(const std::string& description);
+
   const std::string& getSuffix() const;
   bool setSuffix(const std::string& suffix);
 
@@ -218,6 +222,7 @@ public:
 private:
   std::string name_;
   std::string package_name_;
+  std::string description_;
   std::string suffix_;
   std::string notation_;
   std::string effect_;

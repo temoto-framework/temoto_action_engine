@@ -32,6 +32,7 @@ static const struct UmrfFields
   const char* children = "children";
   const char* library_path = "library_path";
   const char* name = "name";
+  const char* description = "description";
   const char* suffix = "suffix";
   const char* effect = "effect";
   const char* input_parameters = "input_parameters";

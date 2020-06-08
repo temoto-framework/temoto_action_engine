@@ -67,6 +67,16 @@ const std::string& Umrf::getPackageName() const
   return package_name_;
 }
 
+const std::string& Umrf::getDescription() const
+{
+  return description_;
+}
+
+bool Umrf::setDescription(const std::string& description)
+{
+  description_ = description;
+}
+
 bool Umrf::setPackageName(const std::string& package_name)
 {
   if (!package_name.empty())

@@ -50,6 +50,12 @@ Umrf fromUmrfJsonStr(const std::string& umrf_json_str, bool as_descriptor)
       throw CREATE_TEMOTO_ERROR_STACK("Illegal value in name field.");
     }
 
+    std::string description = getStringFromValue(getRootJsonElement(UMRF_FIELDS.description, json_doc));
+    if (!umrf.setDescription(description))
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Illegal value in description field.");
+    }
+
     std::string effect = getStringFromValue(getRootJsonElement(UMRF_FIELDS.effect, json_doc));
     if (!umrf.setEffect(effect))
     {
@@ -202,6 +208,14 @@ std::string toUmrfJsonStr(const Umrf& umrf)
     rapidjson::Value package_name_value(rapidjson::kStringType);
     package_name_value.SetString(umrf.getPackageName().c_str(), umrf.getPackageName().size(), allocator);
     fromScratch.AddMember("package_name", package_name_value, allocator);
+  }
+
+  // Set the description name
+  if (!umrf.getDescription().empty())
+  {
+    rapidjson::Value description_value(rapidjson::kStringType);
+    description_value.SetString(umrf.getDescription().c_str(), umrf.getDescription().size(), allocator);
+    fromScratch.AddMember("description", description_value, allocator);
   }
 
   // Set the suffix
