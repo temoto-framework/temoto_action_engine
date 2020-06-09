@@ -43,6 +43,7 @@ static const struct PvfFields
 {
   const char* type = "pvf_type";
   const char* value = "pvf_value";
+  const char* example = "pvf_example";
   const char* required = "pvf_required";
   const char* updatable = "pvf_updatable";
 }PVF_FIELDS;

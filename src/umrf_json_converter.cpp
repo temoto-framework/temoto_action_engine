@@ -50,12 +50,6 @@ Umrf fromUmrfJsonStr(const std::string& umrf_json_str, bool as_descriptor)
       throw CREATE_TEMOTO_ERROR_STACK("Illegal value in name field.");
     }
 
-    std::string description = getStringFromValue(getRootJsonElement(UMRF_FIELDS.description, json_doc));
-    if (!umrf.setDescription(description))
-    {
-      throw CREATE_TEMOTO_ERROR_STACK("Illegal value in description field.");
-    }
-
     std::string effect = getStringFromValue(getRootJsonElement(UMRF_FIELDS.effect, json_doc));
     if (!umrf.setEffect(effect))
     {
@@ -98,8 +92,21 @@ Umrf fromUmrfJsonStr(const std::string& umrf_json_str, bool as_descriptor)
   }
   catch(const TemotoErrorStack& e)
   {
-    // Just print the error
-    //std::cout << e.what() << '\n';
+    // ... do nothing
+  }
+
+  // Description
+  try
+  {
+    std::string description = getStringFromValue(getRootJsonElement(UMRF_FIELDS.description, json_doc));
+    if (!umrf.setDescription(description))
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Illegal value in description field.");
+    }
+  }
+  catch(const TemotoErrorStack& e)
+  {
+    // ... do nothing
   }
 
   // Parents
@@ -389,6 +396,19 @@ ActionParameters::Parameters parseParameters(const rapidjson::Value& value_in, s
     }
 
     /*
+     * Get example
+     */
+    try
+    {
+      std::string example = getStringFromValue(getJsonElement(PVF_FIELDS.example, value_in));
+      pc.setExample(example);
+    }
+    catch(TemotoErrorStack e)
+    {
+      //std::cerr << e.what() << '\n';
+    }
+
+    /*
      * Get value
      */ 
     try
@@ -531,45 +551,63 @@ void parsePvfFields(
   rapidjson::Document::AllocatorType& allocator,
   const ActionParameters::ParameterContainer& parameter)
 {
+
   rapidjson::Value parameter_name(rapidjson::kStringType);
   parameter_name.SetString(parameter.getName().c_str(), parameter.getName().size(), allocator);
+
+  rapidjson::Value pvf_value_json_value(rapidjson::kStringType);
+  rapidjson::Value pvf_type_json_value(rapidjson::kStringType);
+  rapidjson::Value pvf_example_json_value(rapidjson::kStringType);
+  rapidjson::Value pvf_updatable_json_value(rapidjson::kStringType);
+  pvf_value_json_value.SetString(PVF_FIELDS.value, allocator);
+  pvf_type_json_value.SetString(PVF_FIELDS.type, allocator);
+  pvf_example_json_value.SetString(PVF_FIELDS.example, allocator);
+  pvf_updatable_json_value.SetString(PVF_FIELDS.updatable, allocator);
 
   rapidjson::Value parameter_value(rapidjson::kObjectType);
   if (parameter.getType() == "string")
   {
-    parameter_value.AddMember("pvf_type", "string", allocator);
+    parameter_value.AddMember(pvf_type_json_value, "string", allocator);
 
     if (parameter.getDataSize() != 0)
     {
       std::string pvf_value_str = boost::any_cast<std::string>(parameter.getData());
       rapidjson::Value pvf_value(rapidjson::kStringType);
       pvf_value.SetString(pvf_value_str.c_str(), pvf_value_str.size(), allocator);
-      parameter_value.AddMember("pvf_value", pvf_value, allocator);
+      parameter_value.AddMember(pvf_value_json_value, pvf_value, allocator);
     }
   }
   else if (parameter.getType() == "number")
   {
-    parameter_value.AddMember("pvf_type", "number", allocator);
+    parameter_value.AddMember(pvf_type_json_value, "number", allocator);
 
     if (parameter.getDataSize() != 0)
     {
       double pvf_value_number = boost::any_cast<double>(parameter.getData());
       rapidjson::Value pvf_value(rapidjson::kNumberType);
       pvf_value.SetDouble(pvf_value_number);
-      parameter_value.AddMember("pvf_value", pvf_value, allocator);
+      parameter_value.AddMember(pvf_value_json_value, pvf_value, allocator);
     }
   }
   else
   {
     rapidjson::Value pvf_type(rapidjson::kStringType);
     pvf_type.SetString(parameter.getType().c_str(), parameter.getType().size(), allocator);
-    parameter_value.AddMember("pvf_type", pvf_type, allocator);
+    parameter_value.AddMember(pvf_type_json_value, pvf_type, allocator);
   }
   
-  // Check the updatablilty
+  // Parse the updatablilty
   if (parameter.isUpdatable())
   {
-    parameter_value.AddMember("pvf_updatable", "true", allocator);
+    parameter_value.AddMember(pvf_updatable_json_value, "true", allocator);
+  }
+
+  // Parse the example
+  if (!parameter.getExample().empty())
+  {
+    rapidjson::Value parameter_example(rapidjson::kStringType);
+    parameter_example.SetString(parameter.getExample().c_str(), parameter.getExample().size(), allocator);
+    parameter_value.AddMember(pvf_example_json_value, parameter_example, allocator);
   }
 
   json_value.AddMember(parameter_name, parameter_value, allocator);
