@@ -271,6 +271,32 @@ std::string toUmrfJsonStr(const Umrf& umrf)
     fromScratch.AddMember("output_parameters", output_object, allocator);
   }
 
+  // Set children
+  if (!umrf.getChildren().empty())
+  {
+    rapidjson::Value children_object(rapidjson::kArrayType);
+    for (const auto& child : umrf.getChildren())
+    {
+      rapidjson::Value child_name_value;
+      child_name_value.SetString(child.c_str(), child.size(), allocator);
+      children_object.PushBack(child_name_value, allocator);
+    }
+    fromScratch.AddMember("children", children_object, allocator);
+  }
+
+  // Set parents
+  if (!umrf.getParents().empty())
+  {
+    rapidjson::Value parents_object(rapidjson::kArrayType);
+    for (const auto& parent : umrf.getParents())
+    {
+      rapidjson::Value parent_name_value;
+      parent_name_value.SetString(parent.c_str(), parent.size(), allocator);
+      parents_object.PushBack(parent_name_value, allocator);
+    }
+    fromScratch.AddMember("parents", parents_object, allocator);
+  }
+
   /*
    * Convert the JSON datastructure to a JSON string
    */

@@ -185,9 +185,15 @@ public:
 
   const std::vector<std::string>& getParents() const;
   bool setParents(const std::vector<std::string>& parents);
+  void clearParents();
+  bool addParent(const std::string& parent);
+  bool removeParent(const std::string& parent);
 
   const std::vector<std::string>& getChildren() const;
   bool setChildren(const std::vector<std::string>& children);
+  void clearChildren();
+  bool addChild(const std::string& child);
+  bool removeChild(const std::string& child);
 
   const std::string& getEffect() const;
   std::string& getEffectNc();

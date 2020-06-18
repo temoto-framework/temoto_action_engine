@@ -131,6 +131,38 @@ bool Umrf::setParents(const std::vector<std::string>& parents)
   }
 }
 
+void Umrf::clearParents()
+{
+  parents_.clear();
+}
+
+bool Umrf::addParent(const std::string& parent)
+{
+  if (!parent.empty())
+  {
+    parents_.push_back(parent);
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+bool Umrf::removeParent(const std::string& parent)
+{
+  auto parent_it = std::find(parents_.begin(), parents_.end(), parent);
+  if (parent_it != parents_.end())
+  {
+    parents_.erase(parent_it);
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
 const std::vector<std::string>& Umrf::getChildren() const
 {
   return children_;
@@ -142,6 +174,38 @@ bool Umrf::setChildren(const std::vector<std::string>& children)
   {
     children_ = children;
     return true;  
+  }
+  else
+  {
+    return false;
+  }
+}
+
+void Umrf::clearChildren()
+{
+  children_.clear();
+}
+
+bool Umrf::addChild(const std::string& child)
+{
+  if (!child.empty())
+  {
+    children_.push_back(child);
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+bool Umrf::removeChild(const std::string& child)
+{
+  auto child_it = std::find(children_.begin(), children_.end(), child);
+  if (child_it != children_.end())
+  {
+    children_.erase(child_it);
+    return true;
   }
   else
   {
