@@ -25,6 +25,7 @@ Umrf::Umrf()
 
 Umrf::Umrf(const Umrf& uj)
 : name_(uj.name_)
+, description_(uj.description_)
 , package_name_(uj.package_name_)
 , suffix_(uj.suffix_)
 , notation_(uj.notation_)
