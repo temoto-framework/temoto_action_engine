@@ -55,18 +55,16 @@ void ActionIndexer::indexActions()
 
   try
   {
-    // Clear the old indexed action semantic frames
+    // Clear the old indexed umrfs frames
     indexed_umrfs_.clear();
 
     for (const std::string action_path : action_paths_)
     {
       boost::filesystem::directory_entry full_path_b = boost::filesystem::directory_entry(action_path);
-      TEMOTO_PRINT("Indexing actions at " + full_path_b.path().string());
-      // std::cout << "Indexing actions at "<< full_path_b.path().string() << std::endl;
-
+      // TEMOTO_PRINT("Indexing actions at " + full_path_b.path().string());
       findActionFilesys("", full_path_b, 2);
     }
-    TEMOTO_PRINT("Found " + std::to_string(indexed_umrfs_.size()) + " actions");
+    //TEMOTO_PRINT("Found " + std::to_string(indexed_umrfs_.size()) + " actions");
   }
   catch(TemotoErrorStack e)
   {
