@@ -140,15 +140,15 @@ std::vector<unsigned int> UmrfGraphHelper::getChildrenOf(const unsigned int& nod
   std::vector<unsigned int> child_node_ids;
   if (partOfGraph(node_id))
   {
-    for (const auto& child_node_full_name : graph_nodes_map_.at(node_id).umrf_.getChildren())
+    for (const auto& child_node_relation : graph_nodes_map_.at(node_id).umrf_.getChildren())
     {
       try
       {
-        child_node_ids.push_back(name_id_map_.at(child_node_full_name));
+        child_node_ids.push_back(name_id_map_.at(child_node_relation.getFullName()));
       }
       catch(const std::exception& e)
       {
-        throw CREATE_TEMOTO_ERROR_STACK("Could not find an action named '" + child_node_full_name
+        throw CREATE_TEMOTO_ERROR_STACK("Could not find an action named '" + child_node_relation.getFullName()
           + "' in UMRF graph '" + graph_name_ + "'. "
           + "Check if the UMRF graph has correct parent/children names.");
       }

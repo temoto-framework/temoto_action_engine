@@ -68,11 +68,12 @@ Umrf fromUmrfJsonStr(const std::string& umrf_json_str, bool as_descriptor)
     }
     else
     {
-      std::string suffix = getStringFromValue(getRootJsonElement(UMRF_FIELDS.suffix, json_doc));
-      if (!umrf.setSuffix(suffix))
-      {
-        throw CREATE_TEMOTO_ERROR_STACK("Illegal value in suffix field.");
-      }
+      // TODO
+      // std::string suffix = getStringFromValue(getRootJsonElement(UMRF_FIELDS.suffix, json_doc));
+      // if (!umrf.setSuffix(suffix))
+      // {
+      //   throw CREATE_TEMOTO_ERROR_STACK("Illegal value in suffix field.");
+      // }
     }
   }
   catch(TemotoErrorStack e)
@@ -125,8 +126,8 @@ Umrf fromUmrfJsonStr(const std::string& umrf_json_str, bool as_descriptor)
     
     if (has_parents)
     {
-      std::vector<std::string> parents = getStringVectorFromValue(getRootJsonElement(UMRF_FIELDS.parents, json_doc));
-      umrf.setParents(parents);
+      //std::vector<std::string> parents = getStringVectorFromValue(getRootJsonElement(UMRF_FIELDS.parents, json_doc));
+      //umrf.setParents(parents);
     }
   }
   catch(TemotoErrorStack e)
@@ -151,8 +152,8 @@ Umrf fromUmrfJsonStr(const std::string& umrf_json_str, bool as_descriptor)
     
     if (has_children)
     {
-      std::vector<std::string> children = getStringVectorFromValue(getRootJsonElement(UMRF_FIELDS.children, json_doc));
-      umrf.setChildren(children);
+      //std::vector<std::string> children = getStringVectorFromValue(getRootJsonElement(UMRF_FIELDS.children, json_doc));
+      //umrf.setChildren(children);
     }
   }
   catch(TemotoErrorStack e)
@@ -226,12 +227,12 @@ std::string toUmrfJsonStr(const Umrf& umrf)
   }
 
   // Set the suffix
-  if (!umrf.getSuffix().empty())
-  {
-    rapidjson::Value suffix_value(rapidjson::kStringType);
-    suffix_value.SetString(umrf.getSuffix().c_str(), umrf.getSuffix().size(), allocator);
-    fromScratch.AddMember("suffix", suffix_value, allocator);
-  }
+  // if (!umrf.getSuffix().empty())
+  // {
+  //   rapidjson::Value suffix_value(rapidjson::kStringType);
+  //   suffix_value.SetString(umrf.getSuffix().c_str(), umrf.getSuffix().size(), allocator);
+  //   fromScratch.AddMember("suffix", suffix_value, allocator);
+  // }
 
   // Set the notation
   if (!umrf.getNotation().empty())
@@ -271,31 +272,31 @@ std::string toUmrfJsonStr(const Umrf& umrf)
     fromScratch.AddMember("output_parameters", output_object, allocator);
   }
 
-  // Set children
-  if (!umrf.getChildren().empty())
-  {
-    rapidjson::Value children_object(rapidjson::kArrayType);
-    for (const auto& child : umrf.getChildren())
-    {
-      rapidjson::Value child_name_value;
-      child_name_value.SetString(child.c_str(), child.size(), allocator);
-      children_object.PushBack(child_name_value, allocator);
-    }
-    fromScratch.AddMember("children", children_object, allocator);
-  }
+  // // Set children
+  // if (!umrf.getChildren().empty())
+  // {
+  //   rapidjson::Value children_object(rapidjson::kArrayType);
+  //   for (const auto& child : umrf.getChildren())
+  //   {
+  //     rapidjson::Value child_name_value;
+  //     child_name_value.SetString(child.c_str(), child.size(), allocator);
+  //     children_object.PushBack(child_name_value, allocator);
+  //   }
+  //   fromScratch.AddMember("children", children_object, allocator);
+  // }
 
-  // Set parents
-  if (!umrf.getParents().empty())
-  {
-    rapidjson::Value parents_object(rapidjson::kArrayType);
-    for (const auto& parent : umrf.getParents())
-    {
-      rapidjson::Value parent_name_value;
-      parent_name_value.SetString(parent.c_str(), parent.size(), allocator);
-      parents_object.PushBack(parent_name_value, allocator);
-    }
-    fromScratch.AddMember("parents", parents_object, allocator);
-  }
+  // // Set parents
+  // if (!umrf.getParents().empty())
+  // {
+  //   rapidjson::Value parents_object(rapidjson::kArrayType);
+  //   for (const auto& parent : umrf.getParents())
+  //   {
+  //     rapidjson::Value parent_name_value;
+  //     parent_name_value.SetString(parent.c_str(), parent.size(), allocator);
+  //     parents_object.PushBack(parent_name_value, allocator);
+  //   }
+  //   fromScratch.AddMember("parents", parents_object, allocator);
+  // }
 
   /*
    * Convert the JSON datastructure to a JSON string

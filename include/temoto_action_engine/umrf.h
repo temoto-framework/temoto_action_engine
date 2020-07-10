@@ -36,6 +36,57 @@ namespace action_effect
 class Umrf
 {
 public:
+  /**
+   * @brief Embeds infromation about a parent/child connection
+   * 
+   */
+  struct Relation
+  {
+    Relation(const std::string& name, const unsigned int& suffix)
+    : name_(name)
+    , suffix_(suffix)
+    {}
+
+    Relation(const Relation& r_in)
+    : name_(r_in.getName())
+    , suffix_(r_in.getSuffix())
+    {}
+
+    void operator=(const Relation& r_in)
+    {
+      name_ = r_in.getName();
+      suffix_ = r_in.getSuffix();
+    }
+
+    bool operator==(const Relation& r_in) const
+    {
+      return (name_ == r_in.getName()) && (suffix_ == r_in.getSuffix());
+    }
+
+    const std::string& getName() const
+    {
+      return name_;
+    }
+
+    const unsigned int& getSuffix() const
+    {
+      return suffix_;
+    }
+
+    std::string getFullName() const
+    {
+      return name_ + "_" + std::to_string(suffix_);
+    }
+
+    bool empty() const
+    {
+      return name_.empty();
+    }
+
+    std::string name_;
+    unsigned int suffix_;
+  };
+
   Umrf();
 
   Umrf(const Umrf& uj);
@@ -57,110 +108,7 @@ public:
     output_parameters_ = umrf.output_parameters_;
   }
 
-  bool isEqual(const Umrf& umrf_in, bool check_updatable = true) const
-  {
-    LOCK_GUARD_TYPE_R guard_input_params(input_params_rw_mutex_);
-    LOCK_GUARD_TYPE_R guard_output_params(output_params_rw_mutex_);
-
-    /*
-     * Compare the general parameters
-     */
-    if ((name_ != umrf_in.name_) ||
-        (suffix_ != umrf_in.suffix_) ||
-        (notation_ != umrf_in.notation_) ||
-        (effect_ != umrf_in.effect_))
-    {
-      return false;
-    }
-
-    /*
-     * Compare graph connections
-     */
-    // Compare parent & children connection sizes
-    if ((children_.size() != umrf_in.children_.size()) ||
-        (parents_.size() != umrf_in.parents_.size()))
-    {
-      return false;
-    }
-
-    // Compare the connections
-    for (const auto& parent_in : umrf_in.parents_)
-    {
-      if (std::find(parents_.begin(), parents_.end(), parent_in) == parents_.end())
-      {
-        return false;
-      }
-    }
-
-    for (const auto& child_in : umrf_in.children_)
-    {
-      if (std::find(children_.begin(), children_.end(), child_in) == children_.end())
-      {
-        return false;
-      }
-    }
-
-    /*
-     * Compare the parameters
-     */
-    const ActionParameters& input_parameters_in = umrf_in.getInputParameters();
-    const ActionParameters& output_parameters_in = umrf_in.getOutputParameters();
-
-    if ((input_parameters_.getParameterCount() != input_parameters_in.getParameterCount()) ||
-        (output_parameters_.getParameterCount() != output_parameters_in.getParameterCount()))
-    {
-      return false;
-    }
-
-    // Check each input parameter individually
-    for (const auto& input_param : input_parameters_)
-    {
-      if (input_parameters_in.hasParameter(input_param.getName()))
-      {
-        // Check if updatability has to be controlled
-        if (check_updatable)
-        {
-          if (!input_param.isEqualNoData(input_parameters_in.getParameter(input_param.getName())))
-          {
-            // Params not equal
-            return false;
-          }
-        }
-        else
-        {
-          if (!input_param.isEqualNoDataNoUpdate(input_parameters_in.getParameter(input_param.getName())))
-          {
-            // Params not equal
-            return false;
-          }
-        }
-      }
-      else
-      {
-        // Does not have the parameter
-        return false;
-      }
-    }
-
-    // Check each output parameter individually
-    for (const auto& output_param : output_parameters_)
-    {
-      if (output_parameters_in.hasParameter(output_param.getName()))
-      {
-        if (!output_param.isEqualNoData(output_parameters_in.getParameter(output_param.getName())))
-        {
-          // Params not equal
-          return false;
-        }
-      }
-      else
-      {
-        // Does not have the parameter
-        return false;
-      }
-    }
-    return true;
-  }
+  bool isEqual(const Umrf& umrf_in, bool check_updatable = true) const;
 
   const std::string& getName() const;
   std::string& getNameNc();
@@ -172,8 +120,8 @@ public:
   const std::string& getDescription() const;
   bool setDescription(const std::string& description);
 
-  const std::string& getSuffix() const;
-  bool setSuffix(const std::string& suffix);
+  const unsigned int& getSuffix() const;
+  bool setSuffix(const unsigned int& suffix);
 
   const std::string& getNotation() const;
   bool setNotation(const std::string& notation);
@@ -183,17 +131,17 @@ public:
   const std::string& getLibraryPath() const;
   bool setLibraryPath(const std::string& library_path);
 
-  const std::vector<std::string>& getParents() const;
-  bool setParents(const std::vector<std::string>& parents);
+  const std::vector<Relation>& getParents() const;
+  bool setParents(const std::vector<Relation>& parents);
   void clearParents();
-  bool addParent(const std::string& parent);
-  bool removeParent(const std::string& parent);
+  bool addParent(const Relation& parent);
+  bool removeParent(const Relation& parent);
 
-  const std::vector<std::string>& getChildren() const;
-  bool setChildren(const std::vector<std::string>& children);
+  const std::vector<Relation>& getChildren() const;
+  bool setChildren(const std::vector<Relation>& children);
   void clearChildren();
-  bool addChild(const std::string& child);
-  bool removeChild(const std::string& child);
+  bool addChild(const Relation& child);
+  bool removeChild(const Relation& child);
 
   const std::string& getEffect() const;
   std::string& getEffectNc();
@@ -218,6 +166,8 @@ public:
   bool isUmrfCorrect() const;
 
   bool updateInputParams(const Umrf& umrf_in);
+
+  Relation asRelation() const;
   
   ~Umrf()
   {
@@ -229,11 +179,11 @@ private:
   std::string name_;
   std::string package_name_;
   std::string description_;
-  std::string suffix_;
+  unsigned int suffix_ = 0;
   std::string notation_;
   std::string effect_;
-  std::vector<std::string> parents_;
-  std::vector<std::string> children_;
+  std::vector<Relation> parents_;
+  std::vector<Relation> children_;
 
   mutable MUTEX_TYPE_R input_params_rw_mutex_;
   GUARDED_VARIABLE(ActionParameters input_parameters_, input_params_rw_mutex_);
