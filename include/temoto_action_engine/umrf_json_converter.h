@@ -32,9 +32,11 @@ static const struct UmrfFields
   const char* children = "children";
   const char* library_path = "library_path";
   const char* name = "name";
+  const char* package_name = "package_name";
   const char* description = "description";
-  const char* suffix = "suffix";
+  const char* suffix = "id";
   const char* effect = "effect";
+  const char* notation = "notation";
   const char* input_parameters = "input_parameters";
   const char* output_parameters = "output_parameters";
 }UMRF_FIELDS;
@@ -48,6 +50,12 @@ static const struct PvfFields
   const char* updatable = "pvf_updatable";
 }PVF_FIELDS;
 
+static const struct RelationFields
+{
+  const char* name = "name";
+  const char* suffix = "id";
+}RELATION_FIELDS;
+
 Umrf fromUmrfJsonStr(const std::string& umrf_json_str, bool as_descriptor = false);
 
 std::string toUmrfJsonStr(const Umrf& umrf);
@@ -60,9 +68,9 @@ std::string getStringFromValue(const rapidjson::Value& value);
 
 float getNumberFromValue(const rapidjson::Value& value);
 
-std::vector<std::string> getStringVectorFromValue(const rapidjson::Value& value);
+std::vector<Umrf::Relation> parseRelations(const rapidjson::Value& value_in);
 
-ActionParameters::Parameters parseParameters(const rapidjson::Value& value, std::string parent_member_name);
+ActionParameters::Parameters parseParameters(const rapidjson::Value& value_in, std::string parent_member_name);
 
 void parseParameter(
   rapidjson::Value& json_value,
