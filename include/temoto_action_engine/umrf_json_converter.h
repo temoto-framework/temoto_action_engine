@@ -58,7 +58,7 @@ static const struct RelationFields
 
 Umrf fromUmrfJsonStr(const std::string& umrf_json_str, bool as_descriptor = false);
 
-std::string toUmrfJsonStr(const Umrf& umrf);
+std::string toUmrfJsonStr(const Umrf& umrf, bool as_descriptor = false);
 
 const rapidjson::Value& getRootJsonElement(const char* element_name, const rapidjson::Document& json_doc);
 

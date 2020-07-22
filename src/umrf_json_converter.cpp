@@ -188,7 +188,7 @@ Umrf fromUmrfJsonStr(const std::string& umrf_json_str, bool as_descriptor)
   return umrf;
 }
 
-std::string toUmrfJsonStr(const Umrf& umrf)
+std::string toUmrfJsonStr(const Umrf& umrf, bool as_descriptor)
 {
   /*
    * Create UMRF JSON string from scratch.
@@ -226,7 +226,11 @@ std::string toUmrfJsonStr(const Umrf& umrf)
   }
 
   // Set the suffix
-  if (umrf.getSuffix() != 0)
+  if (as_descriptor)
+  {
+    /* do not add the suffix field */
+  }
+  else
   {
     rapidjson::Value suffix_value(rapidjson::kNumberType);
     suffix_value.SetInt(umrf.getSuffix());
