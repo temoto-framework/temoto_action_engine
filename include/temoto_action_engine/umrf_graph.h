@@ -22,8 +22,8 @@
  *  - Graph analysis (loop detection, potential error analysis[guaranteed vs required])
  */ 
 
-#ifndef TEMOTO_ACTION_ENGINE__UMRF_GRAPH_HELPER_H
-#define TEMOTO_ACTION_ENGINE__UMRF_GRAPH_HELPER_H
+#ifndef TEMOTO_ACTION_ENGINE__UMRF_GRAPH_H
+#define TEMOTO_ACTION_ENGINE__UMRF_GRAPH_H
 
 #include <string>
 #include <vector>
@@ -49,7 +49,7 @@ struct GraphNode
   GraphNode(const GraphNode& gn);
 };
 
-class UmrfGraphHelper
+class UmrfGraph
 {
 public:
   enum class State: unsigned int
@@ -60,10 +60,20 @@ public:
     FINISHED,
     ERROR
   };
+  
+  UmrfGraph(const std::string& graph_name);
 
-  UmrfGraphHelper(const std::string& graph_name, const std::vector<Umrf>& umrfs_vec);
+  UmrfGraph(const std::string& graph_name, const std::vector<Umrf>& umrfs_vec, bool initialize_graph = true);
 
-  UmrfGraphHelper(const UmrfGraphHelper& ugh);
+  UmrfGraph(const UmrfGraph& ugh);
+
+  bool initialize();
+
+  const std::string getName() const;
+
+  const std::string getDescription() const;
+
+  void setDescription(const std::string description);
 
   std::vector<unsigned int> getChildrenOf(const unsigned int& node_id) const;
 
@@ -117,6 +127,7 @@ private:
   GUARDED_VARIABLE(State state_, state_rw_mutex_);
 
   std::string graph_name_;
+  std::string graph_description_;
   const std::vector<Umrf> umrfs_vec_;
 
   mutable unsigned int nr_of_uninitialized_nodes_ = 0;

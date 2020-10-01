@@ -96,7 +96,10 @@ bool ActionMatchFinder::findMatchingAction(Umrf& umrf_in, const std::vector<Umrf
       for (const auto& known_umrf_param : known_umrf.getInputParameters())
       {
         ActionParameters::ParameterContainer new_param = known_umrf_param;
-        new_param.setData(umrf_in.getInputParameters().getParameter(known_umrf_param.getName()).getData());
+        if (known_umrf_param.getDataSize() != 0)
+        {
+          new_param.setData(umrf_in.getInputParameters().getParameter(known_umrf_param.getName()).getData());
+        }
         umrf_in.getInputParametersNc().setParameter(new_param, true);
       }
 

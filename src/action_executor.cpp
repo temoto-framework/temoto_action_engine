@@ -40,7 +40,7 @@ void ActionExecutor::notifyFinished(const unsigned int& parent_action_id, const 
   {
     for (auto& umrf_graph_pair : named_umrf_graphs_)
     {
-      if ((umrf_graph_pair.second.checkState() != UmrfGraphHelper::State::ACTIVE) ||
+      if ((umrf_graph_pair.second.checkState() != UmrfGraph::State::ACTIVE) ||
           (umrf_graph_pair.second.getChildrenOf(parent_action_id).empty()))
       {
         continue;
@@ -48,7 +48,8 @@ void ActionExecutor::notifyFinished(const unsigned int& parent_action_id, const 
 
       /*
        * Transfer the parameters from parent to child action
-       */ 
+       */
+      std::cout << "Jeboi AN ACTION FINISHED, PASSING PARAMETERS ..." << std::endl;
       for (const auto& child_id : umrf_graph_pair.second.getChildrenOf(parent_action_id))
       {
         Umrf& child_umrf = umrf_graph_pair.second.getUmrfOfNonconst(child_id);
@@ -172,7 +173,7 @@ void ActionExecutor::cleanupLoop()
                     continue;
                   }
                   nug_it->second.setNodeFinished(nah_it->first);
-                  if (nug_it->second.checkState() == UmrfGraphHelper::State::FINISHED)
+                  if (nug_it->second.checkState() == UmrfGraph::State::FINISHED)
                   {
                     TEMOTO_PRINT(nug_it->first + " is finished");
                     named_umrf_graphs_.erase(nug_it++);
@@ -241,13 +242,13 @@ void ActionExecutor::addUmrfGraph(const std::string& graph_name, std::vector<Umr
     }
 
     // Create an UMRF graph
-    UmrfGraphHelper ugh = UmrfGraphHelper(graph_name, umrfs_vec);
-    if (ugh.checkState() == UmrfGraphHelper::State::UNINITIALIZED)
+    UmrfGraph ugh = UmrfGraph(graph_name, umrfs_vec);
+    if (ugh.checkState() == UmrfGraph::State::UNINITIALIZED)
     {
       throw CREATE_TEMOTO_ERROR_STACK("Cannot add UMRF graph because it's uninitialized.");
     }
 
-    named_umrf_graphs_.insert(std::pair<std::string, UmrfGraphHelper>(graph_name, ugh));
+    named_umrf_graphs_.insert(std::pair<std::string, UmrfGraph>(graph_name, ugh));
   }
   catch(TemotoErrorStack e)
   {
@@ -270,7 +271,7 @@ void ActionExecutor::updateUmrfGraph(const std::string& graph_name, std::vector<
     /*
      * Check if the graphs are structurally the same
      */
-    const UmrfGraphHelper& ugh = named_umrf_graphs_.at(graph_name);
+    const UmrfGraph& ugh = named_umrf_graphs_.at(graph_name);
 
     // Check the size
     if (umrfs_vec.size() != ugh.getUmrfs().size())
@@ -308,7 +309,7 @@ void ActionExecutor::updateUmrfGraph(const std::string& graph_name, std::vector<
   }
 }
 
-void ActionExecutor::updateActionHandles(const UmrfGraphHelper& ugh, const std::vector<Umrf>& umrf_vec)
+void ActionExecutor::updateActionHandles(const UmrfGraph& ugh, const std::vector<Umrf>& umrf_vec)
 {
   LOCK_GUARD_TYPE_R guard_graphs(named_umrf_graphs_rw_mutex_);
   LOCK_GUARD_TYPE_R guard_handles(named_action_handles_rw_mutex_);
@@ -351,12 +352,12 @@ void ActionExecutor::executeUmrfGraph(const std::string& graph_name)
      * TODO: Also check if the graph is in running state and could it be updated
      * i.e., does any of its actions are accepting parameters that can be updated (pvf_updatable = true)
      */
-    if (named_umrf_graphs_.at(graph_name).checkState() != UmrfGraphHelper::State::INITIALIZED)
+    if (named_umrf_graphs_.at(graph_name).checkState() != UmrfGraph::State::INITIALIZED)
     {
       throw CREATE_TEMOTO_ERROR_STACK("Cannot execute UMRF graph '" + graph_name + "' because it's not in initialized state.");
     }
 
-    UmrfGraphHelper& ugh = named_umrf_graphs_.at(graph_name);
+    UmrfGraph& ugh = named_umrf_graphs_.at(graph_name);
     std::vector<unsigned int> action_ids = ugh.getRootNodes();
     executeById(action_ids, ugh, true);
   }
@@ -401,10 +402,12 @@ void ActionExecutor::stopUmrfGraph(const std::string& graph_name)
   }
 }
 
-void ActionExecutor::executeById(const std::vector<unsigned int> ids, UmrfGraphHelper& ugh, bool initialized_requrired)
+void ActionExecutor::executeById(const std::vector<unsigned int> ids, UmrfGraph& ugh, bool initialized_requrired)
 {
   LOCK_GUARD_TYPE_R guard_graphs(named_umrf_graphs_rw_mutex_);
   LOCK_GUARD_TYPE_R guard_handles(named_action_handles_rw_mutex_);
+
+  std::cout << "D0" << std::endl;
 
   std::set<unsigned int> action_rollback_list;
   std::set<unsigned int> init_action_ids;
@@ -413,12 +416,15 @@ void ActionExecutor::executeById(const std::vector<unsigned int> ids, UmrfGraphH
     /*
      * Load the action handles
      */ 
+    std::cout << "D1" << std::endl;
     HandleMap named_action_handles_tmp;
     for (const auto& action_id : ids)
     {
+      std::cout << "D2" << std::endl;
       ActionHandle ah = ActionHandle(ugh.getUmrfOf(action_id), this);
       if (ah.getState() != ActionHandle::State::INITIALIZED)
       {
+        std::cout << "D2_a" << std::endl;
         if (initialized_requrired)
         {
           throw CREATE_TEMOTO_ERROR_STACK("Cannot execute the actions because all actions were not fully initialized.");
@@ -426,6 +432,7 @@ void ActionExecutor::executeById(const std::vector<unsigned int> ids, UmrfGraphH
       }
       else
       {
+        std::cout << "D2_b" << std::endl;
         named_action_handles_tmp.insert(std::pair<unsigned int, ActionHandle>(ah.getHandleId(), ah));
         init_action_ids.insert(ah.getHandleId());
         action_rollback_list.insert(ah.getHandleId());
@@ -444,6 +451,7 @@ void ActionExecutor::executeById(const std::vector<unsigned int> ids, UmrfGraphH
       // Instantiate the action
       try
       {
+        std::cout << "D3" << std::endl;
         named_action_handles_.at(action_id).instantiateAction();
         action_rollback_list.insert(action_id);
       }
@@ -469,6 +477,7 @@ void ActionExecutor::executeById(const std::vector<unsigned int> ids, UmrfGraphH
       // Execute the action
       try
       {
+        std::cout << "D4" << std::endl;
         named_action_handles_.at(action_id).executeActionThread();
         action_rollback_list.insert(action_id);
         ugh.setNodeActive(action_id);

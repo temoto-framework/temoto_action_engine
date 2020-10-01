@@ -54,18 +54,18 @@ public:
     ae_.start();
 
     // Execute the default action
-    if (!default_umrf_.getName().empty())
-    {
-      try
-      {
-        ae_.executeUmrfGraph("default graph", std::vector<Umrf> {default_umrf_});
-      }
-      catch(const std::exception& e)
-      {
-        TEMOTO_PRINT(std::string(e.what()));
-        return false;
-      }
-    }
+    // if (!default_umrf_.getName().empty())
+    // {
+    //   try
+    //   {
+    //     ae_.executeUmrfGraph("default graph", std::vector<Umrf> {default_umrf_});
+    //   }
+    //   catch(const std::exception& e)
+    //   {
+    //     TEMOTO_PRINT(std::string(e.what()));
+    //     return false;
+    //   }
+    // }
     return true;
   }
 
@@ -249,15 +249,8 @@ private:
      */
     try
     {
-      std::vector<Umrf> umrf_vec;
-      for (const auto& umrf_json_str : msg.umrf_json_strings)
-      {
-        Umrf umrf = umrf_json_converter::fromUmrfJsonStr(umrf_json_str);
-        TEMOTO_PRINT("Parsed " + umrf.getFullName());
-        std::cout << umrf;
-        umrf_vec.emplace_back(umrf);
-      }
-      ae_.executeUmrfGraph(msg.graph_name, umrf_vec, bool(msg.name_match_required));
+      UmrfGraph umrf_graph = umrf_json_converter::fromUmrfGraphJsonStr(msg.umrf_graph_json);
+      ae_.executeUmrfGraph(umrf_graph, bool(msg.name_match_required));
     }
     catch(const std::exception& e)
     {

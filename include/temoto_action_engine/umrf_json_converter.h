@@ -22,16 +22,19 @@
 #include <string>
 #include <vector>
 #include "temoto_action_engine/umrf.h"
+#include "temoto_action_engine/umrf_graph.h"
 #include "rapidjson/document.h"
 
 namespace umrf_json_converter
 {
 static const struct UmrfFields
 {
+  const char* umrf_actions = "umrf_actions";
   const char* parents = "parents";
   const char* children = "children";
   const char* library_path = "library_path";
   const char* name = "name";
+  const char* graph_name = "graph_name";
   const char* package_name = "package_name";
   const char* description = "description";
   const char* suffix = "id";
@@ -48,7 +51,7 @@ static const struct PvfFields
   const char* example = "pvf_example";
   const char* required = "pvf_required";
   const char* updatable = "pvf_updatable";
-  const char* restricted_to = "pvf_restricted_to";
+  const char* allowed_values = "pvf_allowed_values";
 }PVF_FIELDS;
 
 static const struct RelationFields
@@ -59,9 +62,20 @@ static const struct RelationFields
 
 Umrf fromUmrfJsonStr(const std::string& umrf_json_str, bool as_descriptor = false);
 
+Umrf fromUmrfJsonValue(const rapidjson::Value& json_doc, bool as_descriptor = false);
+
+UmrfGraph fromUmrfGraphJsonStr(const std::string& umrf_graph_json_str);
+
 std::string toUmrfJsonStr(const Umrf& umrf, bool as_descriptor = false);
 
-const rapidjson::Value& getRootJsonElement(const char* element_name, const rapidjson::Document& json_doc);
+void toUmrfJsonValue(rapidjson::Value& from_scratch
+, rapidjson::Document::AllocatorType& allocator
+, const Umrf& umrf
+, bool as_descriptor = false);
+
+std::string toUmrfGraphJsonStr(const UmrfGraph& umrf_graph);
+
+const rapidjson::Value& getRootJsonElement(const char* element_name, const rapidjson::Value& json_doc);
 
 const rapidjson::Value& getJsonElement(const char* element_name, const rapidjson::Value& value_in);
 

@@ -18,8 +18,8 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 add_message_files(FILES
-  UmrfJsonGraph.msg
-  StopUmrfJsonGraph.msg
+  UmrfGraph.msg
+  StopUmrfGraph.msg
 )
 
 generate_messages(
@@ -66,7 +66,7 @@ include_directories(
 # Library that combines core components of the action engine
 add_library(temoto_ae_components 
   src/action_handle.cpp
-  src/umrf_graph_helper.cpp
+  src/umrf_graph.cpp
   src/umrf.cpp
   src/action_indexer.cpp
   src/action_match_finder.cpp

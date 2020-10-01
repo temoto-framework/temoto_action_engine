@@ -16,7 +16,7 @@
 
 /* Author: Robert Valner */
 
-#include "temoto_action_engine/umrf_graph_helper.h"
+#include "temoto_action_engine/umrf_graph.h"
 #include <iostream>
 
 GraphNode::GraphNode(const Umrf& umrf)
@@ -29,31 +29,23 @@ GraphNode::GraphNode(const GraphNode& gn)
 , state_(gn.state_)
 {}
 
-UmrfGraphHelper::UmrfGraphHelper(const std::string& graph_name, const std::vector<Umrf>& umrfs_vec)
+UmrfGraph::UmrfGraph(const std::string& graph_name)
+: state_(State::UNINITIALIZED)
+, graph_name_(graph_name)
+{}
+
+UmrfGraph::UmrfGraph(const std::string& graph_name, const std::vector<Umrf>& umrfs_vec, bool initialize_graph)
 : state_(State::UNINITIALIZED)
 , graph_name_(graph_name)
 , umrfs_vec_(umrfs_vec)
 {
-  if (!createMaps())
+  if (initialize_graph)
   {
-    std::cout << "Could not create the UMRF name to ID resolving maps." << std::endl;;
-    return;
+    initialize();
   }
-  if (!findRootNodes())
-  {
-    std::cout << "Could not find root nodes. UMRF graph must have at least one acyclic root node." << std::endl;
-    return;
-  }
-
-  /*
-   * TODO: Check that parents are pointing to existing children and vice versa
-   */ 
-
-  LOCK_GUARD_TYPE guard_state(state_rw_mutex_);
-  state_ = UmrfGraphHelper::State::INITIALIZED;
 }
 
-UmrfGraphHelper::UmrfGraphHelper(const UmrfGraphHelper& ugh)
+UmrfGraph::UmrfGraph(const UmrfGraph& ugh)
 : graph_nodes_map_(ugh.graph_nodes_map_)
 , name_id_map_(ugh.name_id_map_)
 , root_node_ids_(ugh.root_node_ids_)
@@ -62,7 +54,49 @@ UmrfGraphHelper::UmrfGraphHelper(const UmrfGraphHelper& ugh)
 , umrfs_vec_(ugh.umrfs_vec_)
 {}
 
-bool UmrfGraphHelper::createMaps()
+bool UmrfGraph::initialize()
+{
+  LOCK_GUARD_TYPE guard_state(state_rw_mutex_);
+  if (state_ != UmrfGraph::State::UNINITIALIZED)
+  {
+    return true;
+  }
+
+  if (!createMaps())
+  {
+    std::cout << "Could not create the UMRF name to ID resolving maps." << std::endl;;
+    return false;
+  }
+  if (!findRootNodes())
+  {
+    std::cout << "Could not find root nodes. UMRF graph must have at least one acyclic root node." << std::endl;
+    return false;
+  }
+
+  /*
+   * TODO: Check that parents are pointing to existing children and vice versa
+   */ 
+
+  state_ = UmrfGraph::State::INITIALIZED;
+  return true;
+}
+
+const std::string UmrfGraph::getName() const
+{
+  return graph_name_;
+}
+
+void UmrfGraph::setDescription(const std::string description)
+{
+  graph_description_ = description;
+}
+
+const std::string UmrfGraph::getDescription() const
+{
+  return graph_description_;
+}
+
+bool UmrfGraph::createMaps()
 {
   LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);
   LOCK_GUARD_TYPE_R guard_name_id_map_(name_id_map_rw_mutex_);
@@ -87,7 +121,7 @@ bool UmrfGraphHelper::createMaps()
   return true;
 }
 
-bool UmrfGraphHelper::findRootNodes()
+bool UmrfGraph::findRootNodes()
 {
   LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);
   LOCK_GUARD_TYPE guard_root_node_ids_(root_node_ids_rw_mutex_);
@@ -120,19 +154,19 @@ bool UmrfGraphHelper::findRootNodes()
   }
 }
 
-const std::vector<unsigned int>& UmrfGraphHelper::getRootNodes() const
+const std::vector<unsigned int>& UmrfGraph::getRootNodes() const
 {
   LOCK_GUARD_TYPE guard_root_node_ids_(root_node_ids_rw_mutex_);
   return root_node_ids_;
 }
 
-bool UmrfGraphHelper::partOfGraph(const unsigned int& node_id) const
+bool UmrfGraph::partOfGraph(const unsigned int& node_id) const
 {
   LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);
   return (graph_nodes_map_.find(node_id) != graph_nodes_map_.end());
 }
 
-std::vector<unsigned int> UmrfGraphHelper::getChildrenOf(const unsigned int& node_id) const
+std::vector<unsigned int> UmrfGraph::getChildrenOf(const unsigned int& node_id) const
 {
   LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);
   LOCK_GUARD_TYPE_R guard_name_id_map_(name_id_map_rw_mutex_);
@@ -157,7 +191,7 @@ std::vector<unsigned int> UmrfGraphHelper::getChildrenOf(const unsigned int& nod
   return std::move(child_node_ids);
 }
 
-bool UmrfGraphHelper::setNodeState(const unsigned int& node_id, GraphNode::State node_state)
+bool UmrfGraph::setNodeState(const unsigned int& node_id, GraphNode::State node_state)
 {
   LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);
   if (!partOfGraph(node_id))
@@ -171,22 +205,22 @@ bool UmrfGraphHelper::setNodeState(const unsigned int& node_id, GraphNode::State
   }
 }
 
-bool UmrfGraphHelper::setNodeActive(const unsigned int& node_id)
+bool UmrfGraph::setNodeActive(const unsigned int& node_id)
 {
   return setNodeState(node_id, GraphNode::State::ACTIVE);
 }
 
-bool UmrfGraphHelper::setNodeFinished(const unsigned int& node_id)
+bool UmrfGraph::setNodeFinished(const unsigned int& node_id)
 {
   return setNodeState(node_id, GraphNode::State::FINISHED);
 }
 
-bool UmrfGraphHelper::setNodeError(const unsigned int& node_id)
+bool UmrfGraph::setNodeError(const unsigned int& node_id)
 {
   return setNodeState(node_id, GraphNode::State::ERROR);
 }
 
-UmrfGraphHelper::State UmrfGraphHelper::checkState()
+UmrfGraph::State UmrfGraph::checkState()
 {
   LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);
   LOCK_GUARD_TYPE guard_state_(state_rw_mutex_);
@@ -211,20 +245,20 @@ UmrfGraphHelper::State UmrfGraphHelper::checkState()
 
   if (nr_of_errored_nodes_ > 0)
   {
-    state_ = UmrfGraphHelper::State::ERROR;
+    state_ = UmrfGraph::State::ERROR;
   }
   else if (nr_of_active_nodes_ > 0)
   {
-    state_ = UmrfGraphHelper::State::ACTIVE;
+    state_ = UmrfGraph::State::ACTIVE;
   }
   else if (nr_of_finished_nodes_ == graph_nodes_map_.size())
   {
-    state_ = UmrfGraphHelper::State::FINISHED;
+    state_ = UmrfGraph::State::FINISHED;
   }
   return state_;
 }
 
-const Umrf& UmrfGraphHelper::getUmrfOf(const unsigned int& node_id) const
+const Umrf& UmrfGraph::getUmrfOf(const unsigned int& node_id) const
 {
   LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);
   if (!partOfGraph(node_id))
@@ -234,7 +268,7 @@ const Umrf& UmrfGraphHelper::getUmrfOf(const unsigned int& node_id) const
   return graph_nodes_map_.at(node_id).umrf_;
 }
 
-Umrf& UmrfGraphHelper::getUmrfOfNonconst(const unsigned int& node_id)
+Umrf& UmrfGraph::getUmrfOfNonconst(const unsigned int& node_id)
 {
   // TODO: Use const cast
   LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);
@@ -245,12 +279,12 @@ Umrf& UmrfGraphHelper::getUmrfOfNonconst(const unsigned int& node_id)
   return graph_nodes_map_.at(node_id).umrf_;
 }
 
-const std::vector<Umrf>& UmrfGraphHelper::getUmrfs() const
+const std::vector<Umrf>& UmrfGraph::getUmrfs() const
 {
   return umrfs_vec_;
 }
 
-const unsigned int& UmrfGraphHelper::getNodeId(const std::string& node_name) const
+const unsigned int& UmrfGraph::getNodeId(const std::string& node_name) const
 {
   if (name_id_map_.find(node_name) == name_id_map_.end())
   {

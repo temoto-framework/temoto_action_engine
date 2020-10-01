@@ -26,6 +26,42 @@
 namespace umrf_json_converter
 {
 
+UmrfGraph fromUmrfGraphJsonStr(const std::string& umrf_graph_json_str)
+{
+  try
+  {
+    rapidjson::Document json_doc;
+    json_doc.Parse(umrf_graph_json_str.c_str());
+
+    if (json_doc.HasParseError())
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("The provided JSON string contains syntax errors.");
+    }
+
+    std::string graph_name = getStringFromValue(getRootJsonElement(UMRF_FIELDS.graph_name, json_doc));
+
+    //Parse the UMRF actions
+    const rapidjson::Value& umrf_actions_json_value = getRootJsonElement(UMRF_FIELDS.umrf_actions, json_doc);
+    if (!umrf_actions_json_value.IsArray())
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("The umrf_actions field must be an array");
+    }
+
+    std::vector<Umrf> umrf_actions;
+    for (rapidjson::SizeType i=0; i<umrf_actions_json_value.Size(); i++)
+    {
+      umrf_actions.push_back(fromUmrfJsonValue(umrf_actions_json_value[i]));
+    }
+
+    // Parse the umrf json string to umrf datastructure
+    return UmrfGraph(graph_name, umrf_actions, false);
+  }
+  catch(TemotoErrorStack e)
+  {
+    throw FORWARD_TEMOTO_ERROR_STACK(e);
+  }
+}
+
 Umrf fromUmrfJsonStr(const std::string& umrf_json_str, bool as_descriptor)
 {
   rapidjson::Document json_doc;
@@ -36,6 +72,11 @@ Umrf fromUmrfJsonStr(const std::string& umrf_json_str, bool as_descriptor)
     throw CREATE_TEMOTO_ERROR_STACK("The provided JSON string contains syntax errors.");
   }
 
+  return fromUmrfJsonValue(json_doc, as_descriptor);
+}
+
+Umrf fromUmrfJsonValue(const rapidjson::Value& json_doc, bool as_descriptor)
+{
   // Parse the umrf json string to umrf datastructure
   Umrf umrf;
 
@@ -188,18 +229,81 @@ Umrf fromUmrfJsonStr(const std::string& umrf_json_str, bool as_descriptor)
   return umrf;
 }
 
+std::string toUmrfGraphJsonStr(const UmrfGraph& umrf_graph)
+{
+  /*
+   * Create UMRF Graph JSON string from scratch.
+   * reference: http://www.thomaswhitton.com/blog/2013/06/28/json-c-plus-plus-examples/
+   */ 
+  rapidjson::Document from_scratch; // document is the root of a json message
+  from_scratch.SetObject(); // define the document as an object rather than an array
+
+  // must pass an allocator when the object may need to allocate memory
+  rapidjson::Document::AllocatorType& allocator = from_scratch.GetAllocator();
+
+  /*
+   * Set the name of the UMRF Graph
+   */ 
+  rapidjson::Value graph_name_value(rapidjson::kStringType);
+  graph_name_value.SetString(umrf_graph.getName().c_str(), umrf_graph.getName().size(), allocator);
+  from_scratch.AddMember("graph_name", graph_name_value, allocator);
+
+  /*
+   * Set the description of the UMRF Graph
+   */ 
+  rapidjson::Value graph_description_value(rapidjson::kStringType);
+  graph_description_value.SetString(umrf_graph.getDescription().c_str(), umrf_graph.getDescription().size(), allocator);
+  from_scratch.AddMember("graph_description", graph_description_value, allocator);
+
+  /*
+   * Parse the UMRF Actions
+   */
+  rapidjson::Value umrf_actions_value(rapidjson::kArrayType);
+  for (const auto& umrf : umrf_graph.getUmrfs())
+  {
+    rapidjson::Value umrf_value(rapidjson::kObjectType);
+    toUmrfJsonValue(umrf_value, allocator, umrf);
+    umrf_actions_value.PushBack(umrf_value, allocator);
+  }
+
+  from_scratch.AddMember("umrf_actions", umrf_actions_value, allocator);
+
+  /*
+   * Convert the JSON datastructure to a JSON string
+   */
+  rapidjson::StringBuffer strbuf;
+  rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(strbuf);
+  from_scratch.Accept(writer);
+  return strbuf.GetString();
+}
+
 std::string toUmrfJsonStr(const Umrf& umrf, bool as_descriptor)
 {
   /*
    * Create UMRF JSON string from scratch.
-   * reference: http://www.thomaswhitton.com/blog/2013/06/28/json-c-plus-plus-examples/
    */ 
-  rapidjson::Document fromScratch; // document is the root of a json message
-  fromScratch.SetObject(); // define the document as an object rather than an array
+  rapidjson::Document from_scratch; // document is the root of a json message
+  from_scratch.SetObject(); // define the document as an object rather than an array
 
   // must pass an allocator when the object may need to allocate memory
-  rapidjson::Document::AllocatorType& allocator = fromScratch.GetAllocator();
+  rapidjson::Document::AllocatorType& allocator = from_scratch.GetAllocator();
 
+  toUmrfJsonValue(from_scratch, allocator, umrf, as_descriptor);
+
+  /*
+   * Convert the JSON datastructure to a JSON string
+   */
+  rapidjson::StringBuffer strbuf;
+  rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(strbuf);
+  from_scratch.Accept(writer);
+  return strbuf.GetString();
+}
+
+void toUmrfJsonValue(rapidjson::Value& from_scratch
+, rapidjson::Document::AllocatorType& allocator
+, const Umrf& umrf
+, bool as_descriptor)
+{
   /*
    * Fill the JSON datastructure according to UMRF format
    */ 
@@ -207,14 +311,14 @@ std::string toUmrfJsonStr(const Umrf& umrf, bool as_descriptor)
   // Set the name of the UMRF frame
   rapidjson::Value name_value(rapidjson::kStringType);
   name_value.SetString(umrf.getName().c_str(), umrf.getName().size(), allocator);
-  fromScratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.name), name_value, allocator);
+  from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.name), name_value, allocator);
 
   // Set the package name
   if (!umrf.getPackageName().empty())
   {
     rapidjson::Value package_name_value(rapidjson::kStringType);
     package_name_value.SetString(umrf.getPackageName().c_str(), umrf.getPackageName().size(), allocator);
-    fromScratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.package_name), package_name_value, allocator);
+    from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.package_name), package_name_value, allocator);
   }
 
   // Set the description name
@@ -222,7 +326,7 @@ std::string toUmrfJsonStr(const Umrf& umrf, bool as_descriptor)
   {
     rapidjson::Value description_value(rapidjson::kStringType);
     description_value.SetString(umrf.getDescription().c_str(), umrf.getDescription().size(), allocator);
-    fromScratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.description), description_value, allocator);
+    from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.description), description_value, allocator);
   }
 
   // Set the suffix
@@ -234,7 +338,7 @@ std::string toUmrfJsonStr(const Umrf& umrf, bool as_descriptor)
   {
     rapidjson::Value suffix_value(rapidjson::kNumberType);
     suffix_value.SetInt(umrf.getSuffix());
-    fromScratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.suffix), suffix_value, allocator);
+    from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.suffix), suffix_value, allocator);
   }
 
   // Set the notation
@@ -242,7 +346,7 @@ std::string toUmrfJsonStr(const Umrf& umrf, bool as_descriptor)
   {
     rapidjson::Value notation_value(rapidjson::kStringType);
     notation_value.SetString(umrf.getNotation().c_str(), umrf.getNotation().size(), allocator);
-    fromScratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.notation), notation_value, allocator);
+    from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.notation), notation_value, allocator);
   }
 
   // Set the effect
@@ -250,7 +354,7 @@ std::string toUmrfJsonStr(const Umrf& umrf, bool as_descriptor)
   {
     rapidjson::Value effect_value(rapidjson::kStringType);
     effect_value.SetString(umrf.getEffect().c_str(), umrf.getEffect().size(), allocator);
-    fromScratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.effect), effect_value, allocator);
+    from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.effect), effect_value, allocator);
   }
 
   // Set the input parameters via a rapidjson object type
@@ -261,7 +365,7 @@ std::string toUmrfJsonStr(const Umrf& umrf, bool as_descriptor)
     {
       parseParameter(input_object, allocator, parameter);
     }
-    fromScratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.input_parameters), input_object, allocator);
+    from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.input_parameters), input_object, allocator);
   }
 
   // Set the output parameters via a rapidjson object type
@@ -272,7 +376,7 @@ std::string toUmrfJsonStr(const Umrf& umrf, bool as_descriptor)
     {
       parseParameter(output_object, allocator, parameter);
     }
-    fromScratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.output_parameters), output_object, allocator);
+    from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.output_parameters), output_object, allocator);
   }
 
   // Set children
@@ -291,7 +395,7 @@ std::string toUmrfJsonStr(const Umrf& umrf, bool as_descriptor)
 
       children_object.PushBack(child_object, allocator);
     }
-    fromScratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.children), children_object, allocator);
+    from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.children), children_object, allocator);
   }
 
   // Set parents
@@ -310,19 +414,11 @@ std::string toUmrfJsonStr(const Umrf& umrf, bool as_descriptor)
 
       parents_object.PushBack(parent_object, allocator);
     }
-    fromScratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.parents), parents_object, allocator);
+    from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.parents), parents_object, allocator);
   }
-
-  /*
-   * Convert the JSON datastructure to a JSON string
-   */
-  rapidjson::StringBuffer strbuf;
-  rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(strbuf);
-  fromScratch.Accept(writer);
-  return strbuf.GetString();
 }
 
-const rapidjson::Value& getRootJsonElement(const char* element_name, const rapidjson::Document& json_doc)
+const rapidjson::Value& getRootJsonElement(const char* element_name, const rapidjson::Value& json_doc)
 {
   if(!json_doc.HasMember(element_name))
   {
@@ -453,6 +549,19 @@ ActionParameters::Parameters parseParameters(const rapidjson::Value& value_in, s
     }
 
     /*
+     * Get allowed values
+     */
+    try
+    {
+      std::string allowed_val = getStringFromValue(getJsonElement(PVF_FIELDS.allowed_values, value_in));
+      pc.addAllowedData(boost::any(allowed_val));
+    }
+    catch(TemotoErrorStack e)
+    {
+      //std::cerr << e.what() << '\n';
+    }
+
+    /*
      * Get value
      */ 
     try
@@ -530,10 +639,9 @@ std::string removeFirstToken(const std::vector<std::string>& tokens_in)
   }
 }
 
-void parseParameter(
-  rapidjson::Value& json_value,
-  rapidjson::Document::AllocatorType& allocator,
-  const ActionParameters::ParameterContainer& pc)
+void parseParameter(rapidjson::Value& json_value
+, rapidjson::Document::AllocatorType& allocator
+, const ActionParameters::ParameterContainer& pc)
 {
   // Split the name of the parameter into tokens
   std::vector<std::string> name_tokens;
@@ -595,7 +703,6 @@ void parsePvfFields(
   rapidjson::Document::AllocatorType& allocator,
   const ActionParameters::ParameterContainer& parameter)
 {
-
   rapidjson::Value parameter_name(rapidjson::kStringType);
   parameter_name.SetString(parameter.getName().c_str(), parameter.getName().size(), allocator);
 
@@ -603,10 +710,12 @@ void parsePvfFields(
   rapidjson::Value pvf_type_json_value(rapidjson::kStringType);
   rapidjson::Value pvf_example_json_value(rapidjson::kStringType);
   rapidjson::Value pvf_updatable_json_value(rapidjson::kStringType);
+  rapidjson::Value pvf_allowed_values_json_value(rapidjson::kStringType);
   pvf_value_json_value.SetString(PVF_FIELDS.value, allocator);
   pvf_type_json_value.SetString(PVF_FIELDS.type, allocator);
   pvf_example_json_value.SetString(PVF_FIELDS.example, allocator);
   pvf_updatable_json_value.SetString(PVF_FIELDS.updatable, allocator);
+  pvf_allowed_values_json_value.SetString(PVF_FIELDS.allowed_values, allocator);
 
   rapidjson::Value parameter_value(rapidjson::kObjectType);
   if (parameter.getType() == "string")
@@ -652,6 +761,15 @@ void parsePvfFields(
     rapidjson::Value parameter_example(rapidjson::kStringType);
     parameter_example.SetString(parameter.getExample().c_str(), parameter.getExample().size(), allocator);
     parameter_value.AddMember(pvf_example_json_value, parameter_example, allocator);
+  }
+
+  // Parse allowed values
+  if (!parameter.getAllowedData().empty())
+  {
+    std::string pvf_allowed_data = boost::any_cast<std::string>(parameter.getAllowedData().front());
+    rapidjson::Value pvf_allowed_data_value(rapidjson::kStringType);
+    pvf_allowed_data_value.SetString(pvf_allowed_data.c_str(), pvf_allowed_data.size(), allocator);
+    parameter_value.AddMember(pvf_allowed_values_json_value, pvf_allowed_data_value, allocator);
   }
 
   json_value.AddMember(parameter_name, parameter_value, allocator);

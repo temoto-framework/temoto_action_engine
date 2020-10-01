@@ -27,9 +27,9 @@ void ActionEngine::start()
   ae_.start();
 }
 
-void ActionEngine::executeUmrfGraph(const std::string& umrf_graph_name, const std::vector<Umrf>& umrf_vec, bool name_match_required)
+void ActionEngine::executeUmrfGraph(UmrfGraph umrf_graph, bool name_match_required)
 {
-  std::vector<Umrf> umrf_vec_local = umrf_vec;
+  std::vector<Umrf> umrf_vec_local = umrf_graph.getUmrfs();
 
   // Find a matching action for this UMRF
   for (auto& umrf : umrf_vec_local)
@@ -49,24 +49,24 @@ void ActionEngine::executeUmrfGraph(const std::string& umrf_graph_name, const st
       throw CREATE_TEMOTO_ERROR_STACK("Could not find a matching action for UMRF named " + umrf.getName());
     }
   }
-  TEMOTO_PRINT("All actions in graph '" + umrf_graph_name + "' found.");
+  TEMOTO_PRINT("All actions in graph '" + umrf_graph.getName() + "' found.");
 
   /*
    * If the graph already exists, then try to update it. Otherwise create and execute a new graph
    */
-  if (ae_.graphExists(umrf_graph_name))
+  if (ae_.graphExists(umrf_graph.getName()))
   {
-    TEMOTO_PRINT("UMRF graph '" + umrf_graph_name + "' is already running. Trying to update the graph ...");
-    ae_.updateUmrfGraph(umrf_graph_name, umrf_vec_local);
-    TEMOTO_PRINT("UMRF graph '" + umrf_graph_name + "' updated");
+    TEMOTO_PRINT("UMRF graph '" + umrf_graph.getName() + "' is already running. Trying to update the graph ...");
+    ae_.updateUmrfGraph(umrf_graph.getName(), umrf_vec_local);
+    TEMOTO_PRINT("UMRF graph '" + umrf_graph.getName() + "' updated");
   }
   else
   {
-    ae_.addUmrfGraph(umrf_graph_name, umrf_vec_local);
-    TEMOTO_PRINT("UMRF graph '" + umrf_graph_name + "' initialized.");
+    ae_.addUmrfGraph(umrf_graph.getName(), umrf_vec_local);
+    TEMOTO_PRINT("UMRF graph '" + umrf_graph.getName() + "' initialized.");
 
-    ae_.executeUmrfGraph(umrf_graph_name);
-    TEMOTO_PRINT("UMRF graph '" + umrf_graph_name + "' invoked successfully.");
+    ae_.executeUmrfGraph(umrf_graph.getName());
+    TEMOTO_PRINT("UMRF graph '" + umrf_graph.getName() + "' invoked successfully.");
   }
 }
 

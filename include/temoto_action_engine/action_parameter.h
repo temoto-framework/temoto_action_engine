@@ -24,6 +24,8 @@
 #include <map>
 #include "temoto_action_engine/temoto_error.h"
 #include <boost/algorithm/string.hpp>
+#include <iostream>
+
 
 /*
  * Action Parameter
@@ -56,7 +58,9 @@ public:
   , required_(required)
   , updatable_(updatable)
   , quaranteed_(quaranteed)
-  {}
+  {
+    std::cout << "TERE" << std::endl;
+  }
 
   ActionParameter(const ActionParameter<T>& ap)
   : name_(ap.name_)
@@ -68,15 +72,28 @@ public:
   , quaranteed_(ap.quaranteed_)
   , updatable_(ap.updatable_)
   , data_(ap.data_)
+  , allowed_data_(ap.allowed_data_)
   {}
+
+  void operator=(const ActionParameter<T>& ap)
+  {
+    name_ = ap.name_;
+    type_ = ap.type_;
+    example_ = ap.example_;
+    source_id_ = ap.source_id_;
+    timestamp_ = ap.timestamp_;
+    required_ = ap.required_;
+    quaranteed_ = ap.quaranteed_;
+    updatable_ = ap.updatable_;
+    data_ = ap.data_;
+    allowed_data_ = ap.allowed_data_;
+  }
 
   ActionParameter(const std::string& name)
   : ActionParameter(name, "undef")
-  {}
-
-  ActionParameter(std::string&& name)
-  : ActionParameter(std::move(name), "undef")
-  {}
+  {
+    std::cout << "NEIIIIII " << std::endl;
+  }
 
   void setData(const T& data)
   {
@@ -101,6 +118,16 @@ public:
   const int64_t& getSourceId() const
   {
     return source_id_;
+  }
+
+  void addAllowedData(const T& allowed_data)
+  {
+    allowed_data_.push_back(allowed_data);
+  }
+
+  const std::vector<T>& getAllowedData() const
+  {
+    return allowed_data_;
   }
 
   const std::string& getName() const
@@ -278,7 +305,8 @@ private:
   bool required_;
   bool updatable_;
   bool quaranteed_;
-  mutable std::vector<T> data_;
+  std::vector<T> data_;
+  std::vector<T> allowed_data_;
 };
 
 #endif

@@ -26,7 +26,7 @@
 #include <algorithm>
 #include "temoto_action_engine/compiler_macros.h"
 #include "temoto_action_engine/umrf.h"
-#include "temoto_action_engine/umrf_graph_helper.h"
+#include "temoto_action_engine/umrf_graph.h"
 #include "temoto_action_engine/action_handle.h"
 
 /**
@@ -63,7 +63,7 @@ public:
    * uninitialized state (required input parameters not received). This is a required state when root nodes
    * of the action graph are executed.
    */
-  void executeById(const std::vector<unsigned int> ids, UmrfGraphHelper& ugh, bool initialized_requrired = false);
+  void executeById(const std::vector<unsigned int> ids, UmrfGraph& ugh, bool initialized_requrired = false);
 
   /**
    * @brief Returns the number of actions that are active in the ActionExecutor
@@ -130,7 +130,7 @@ private:
    * 
    * @param umrf_vec 
    */
-  void updateActionHandles(const UmrfGraphHelper& ugh, const std::vector<Umrf>& umrf_vec);
+  void updateActionHandles(const UmrfGraph& ugh, const std::vector<Umrf>& umrf_vec);
 
   /**
    * @brief Executes the cleanup loop which will remove all synchronous actions that have
@@ -160,7 +160,7 @@ private:
    * There should be more approproate way for doing this
    */ 
   typedef std::map<unsigned int, ActionHandle> HandleMap;
-  typedef std::map<std::string, UmrfGraphHelper> UmrfGraphMap;
+  typedef std::map<std::string, UmrfGraph> UmrfGraphMap;
 
   mutable MUTEX_TYPE_R named_action_handles_rw_mutex_;
   GUARDED_VARIABLE(HandleMap named_action_handles_, named_action_handles_rw_mutex_);

@@ -26,6 +26,7 @@
 #include "temoto_action_engine/action_parameter.h"
 #include "temoto_action_engine/temoto_error.h"
 #include "boost/any.hpp"
+#include <iostream>
 
 /*
  * Action Parameters
@@ -50,10 +51,7 @@ public:
 
   ActionParameters& operator = (const ActionParameters& ap)
   {
-    for (const auto& p : ap)
-    {
-      parameters_.insert(p);
-    }
+    parameters_ = ap.parameters_;
   }
 
   /**
@@ -68,23 +66,42 @@ public:
   {
     try
     {
-      if (parameters_.find(parameter_in) == parameters_.end())
+      auto local_parameter_it = parameters_.find(parameter_in);
+      std::cout << "local_param " << local_parameter_it->getName() << " found. allowed_data=" << local_parameter_it->getAllowedData().size() << std::endl;
+      if (local_parameter_it == parameters_.end())
       {
         return parameters_.insert(parameter_in).second;
       }
       else
       {
+        /*
+         * Modify the existing parameter. First check if the types match
+         */
+        if (local_parameter_it->getType() != parameter_in.getType())
+        {
+          return false;
+        }
+
         if (merge_new)
         {
           // Insert the new param without keeping any info about the old param
-          parameters_.erase(parameters_.find(parameter_in));
+          parameters_.erase(local_parameter_it);
           parameters_.insert(parameter_in);
         }
         else
         {
+          // Check if the "parameter-to-be-set" is restricted to certain data values
+          if (!checkParamAllowedData(*local_parameter_it, parameter_in))
+          {
+            return false;
+          }
+
           // Create copy of the old parameter and assign it new params data
           ParameterContainer param = *parameters_.find(parameter_in);
-          param.setData(parameter_in.getData());
+          if (parameter_in.getDataSize() != 0)
+          {
+            param.setData(parameter_in.getData());
+          }
           parameters_.erase(parameters_.find(parameter_in));          
           parameters_.insert(param);
         }
@@ -104,17 +121,80 @@ public:
     setParameter(pc);
   }
 
+  /**
+   * @brief Checks if the destination parameter is constrained to any particular allowed values or not.
+   * TODO: This method should be embedded into the ActionParameter<T> class via a generic comparison method.
+   * 
+   * @param param_dest
+   * @param param_source 
+   * @return true if there are no restrictions or these are satisfied
+   * @return false 
+   */
+  bool checkParamAllowedData(const ParameterContainer& param_dest, const ParameterContainer& param_source) const
+  {
+    if (param_dest.getAllowedData().empty())
+    {
+      std::cout << "no restrictions on this param" << std::endl;
+      return true;
+    }
+    std::cout << "WE GOTTA LIVE ONE" << std::endl;
+
+    Payload param_source_data = param_source.getData();
+
+    // Check each allowed data instance
+    for (const auto& allowed_dest_data : param_dest.getAllowedData())
+    {
+      // TODO: due to the lack of knowledge, only generic types such as strings and numbers
+      // are checked. I guess one can serialize the data and compare it byte-by-byte ...
+      if (param_dest.getType() == "string")
+      {
+        if (boost::any_cast<std::string>(allowed_dest_data) == boost::any_cast<std::string>(param_source_data))
+        {
+          return true;
+        }
+      }
+      else if (param_dest.getType() == "number")
+      {
+        if (boost::any_cast<double>(allowed_dest_data) == boost::any_cast<double>(param_source_data))
+        {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   bool copyParameters(const ActionParameters& params_in)
   {
     try
     {
+      std::cout << "Alright, the finished action outputs " << params_in.getParameterCount() << " params" << std::endl;
       std::set<std::string> param_names = getParamNames();
+      std::cout << "And, the next action accepts " << param_names.size() << " params" << std::endl;
+      for (const auto& prm : parameters_)
+      {
+        std::cout << " * name=" << prm.getName() << ". type=" << prm.getType() << ". alwd=" << prm.getAllowedData().size() << std::endl;
+      }
       while(!param_names.empty())
       {
         std::set<std::string> params_in_group = checkParamSourceGroup(*parameters_.find(*param_names.begin()));
+
+        // First make sure that the parameters are of same type
+        bool all_params_correct = true;
         for (const auto& param_in : params_in.getParameterGroup(params_in_group))
         {
-          setParameter(param_in);
+          if (!hasParameter(param_in))
+          {
+            all_params_correct = false;
+            break;
+          }
+        }
+        if (all_params_correct)
+        {
+          for (const auto& param_in : params_in.getParameterGroup(params_in_group))
+          {
+            setParameter(param_in);
+          }
         }
         for (const auto param_in_group : params_in_group)
         {
@@ -181,6 +261,19 @@ public:
   bool hasParameter(const std::string& parameter_name) const
   {
     return (parameters_.find(parameter_name) != parameters_.end());
+  }
+
+  bool hasParameter(const ParameterContainer& param_in) const
+  {
+    const auto& local_param_it = parameters_.find(param_in.getName());
+    if (local_param_it == parameters_.end() || local_param_it->getType() != param_in.getType())
+    {
+      return false;
+    }
+    else
+    {
+      return true;
+    }
   }
 
   unsigned int getParameterCount() const
