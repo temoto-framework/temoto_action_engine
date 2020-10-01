@@ -108,23 +108,13 @@ public:
   {
     try
     {
-      // std::cout << "incoming params:\n" << params_in.toString();
-      // std::cout << "this params:\n" << toString();
       std::set<std::string> param_names = getParamNames();
-      // std::cout << " so a total of: " << param_names.size() << std::endl;
       while(!param_names.empty())
       {
         std::set<std::string> params_in_group = checkParamSourceGroup(*parameters_.find(*param_names.begin()));
-        // std::cout << " got a grup of: " << params_in_group.size() << std::endl;
         for (const auto& param_in : params_in.getParameterGroup(params_in_group))
         {
-          // std::cout << "  D1_4\n";
           setParameter(param_in);
-        }
-        // std::cout << " erasing params\n";
-        for (const auto& p : params_in_group)
-        {
-          // std::cout << " - " << p << std::endl;
         }
         for (const auto param_in_group : params_in_group)
         {

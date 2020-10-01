@@ -48,6 +48,7 @@ static const struct PvfFields
   const char* example = "pvf_example";
   const char* required = "pvf_required";
   const char* updatable = "pvf_updatable";
+  const char* restricted_to = "pvf_restricted_to";
 }PVF_FIELDS;
 
 static const struct RelationFields

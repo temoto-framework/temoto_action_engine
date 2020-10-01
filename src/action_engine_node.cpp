@@ -4,8 +4,8 @@
 #include "temoto_action_engine/temoto_error.h" 
 #include "temoto_action_engine/umrf_json_converter.h"
 #include "temoto_action_engine/messaging.h"
-#include "temoto_action_engine/UmrfJsonGraph.h"
-#include "temoto_action_engine/StopUmrfJsonGraph.h"
+#include "temoto_action_engine/UmrfGraph.h"
+#include "temoto_action_engine/StopUmrfGraph.h"
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
 #include "yaml-cpp/yaml.h"
@@ -213,7 +213,7 @@ private:
    * 
    * @param msg 
    */
-  void umrfGraphCallback(const temoto_action_engine::UmrfJsonGraph& msg)
+  void umrfGraphCallback(const temoto_action_engine::UmrfGraph& msg)
   {
     TEMOTO_PRINT("Received a UMRF graph message ...");
 
@@ -270,7 +270,7 @@ private:
    * 
    * @param msg 
    */
-  void stopUmrfGraphCallback(const temoto_action_engine::StopUmrfJsonGraph& msg)
+  void stopUmrfGraphCallback(const temoto_action_engine::StopUmrfGraph& msg)
   {
     TEMOTO_PRINT("Received a UMRF graph STOPPING message ...");
 
