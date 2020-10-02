@@ -75,19 +75,19 @@ public:
   , allowed_data_(ap.allowed_data_)
   {}
 
-  void operator=(const ActionParameter<T>& ap)
-  {
-    name_ = ap.name_;
-    type_ = ap.type_;
-    example_ = ap.example_;
-    source_id_ = ap.source_id_;
-    timestamp_ = ap.timestamp_;
-    required_ = ap.required_;
-    quaranteed_ = ap.quaranteed_;
-    updatable_ = ap.updatable_;
-    data_ = ap.data_;
-    allowed_data_ = ap.allowed_data_;
-  }
+  // void operator=(const ActionParameter<T>& ap)
+  // {
+  //   name_ = ap.name_;
+  //   type_ = ap.type_;
+  //   example_ = ap.example_;
+  //   source_id_ = ap.source_id_;
+  //   timestamp_ = ap.timestamp_;
+  //   required_ = ap.required_;
+  //   quaranteed_ = ap.quaranteed_;
+  //   updatable_ = ap.updatable_;
+  //   data_ = ap.data_;
+  //   allowed_data_ = ap.allowed_data_;
+  // }
 
   ActionParameter(const std::string& name)
   : ActionParameter(name, "undef")
@@ -118,6 +118,11 @@ public:
   const int64_t& getSourceId() const
   {
     return source_id_;
+  }
+
+  void setAllowedData(const std::vector<T>& allowed_data_in)
+  {
+    allowed_data_ = allowed_data_in;
   }
 
   void addAllowedData(const T& allowed_data)

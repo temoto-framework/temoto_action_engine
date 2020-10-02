@@ -52,6 +52,10 @@ public:
   ActionParameters& operator = (const ActionParameters& ap)
   {
     parameters_ = ap.parameters_;
+    // for (const auto& p : ap)
+    // {
+    //   parameters_.insert(p);
+    // }
   }
 
   /**
@@ -169,6 +173,10 @@ public:
     try
     {
       std::cout << "Alright, the finished action outputs " << params_in.getParameterCount() << " params" << std::endl;
+      for (const auto& prm : params_in)
+      {
+        std::cout << " * name=" << prm.getName() << ". type=" << prm.getType() << ". alwd=" << prm.getAllowedData().size() << ". data=" << prm.getDataSize() << std::endl;
+      }
       std::set<std::string> param_names = getParamNames();
       std::cout << "And, the next action accepts " << param_names.size() << " params" << std::endl;
       for (const auto& prm : parameters_)
@@ -211,10 +219,13 @@ public:
 
   const ParameterContainer& getParameter(const std::string& name) const
   {
+    std::cout << __func__ << " getting param " << name << std::endl;
     if (!hasParameter(name))
     {
+      std::cout << __func__ << " couldnt find the param " << std::endl;
       throw CREATE_TEMOTO_ERROR("Could not find parameter '" + name + "'.");
     }
+    std::cout << __func__ << " fot it " << std::endl;
     return *parameters_.find(name);
   }
 

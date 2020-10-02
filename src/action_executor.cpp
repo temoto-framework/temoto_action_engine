@@ -481,6 +481,7 @@ void ActionExecutor::executeById(const std::vector<unsigned int> ids, UmrfGraph&
         named_action_handles_.at(action_id).executeActionThread();
         action_rollback_list.insert(action_id);
         ugh.setNodeActive(action_id);
+        std::cout << "D5" << std::endl;
       }
       catch(TemotoErrorStack e)
       {
