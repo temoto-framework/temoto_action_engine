@@ -26,7 +26,6 @@
 #include "temoto_action_engine/action_parameter.h"
 #include "temoto_action_engine/temoto_error.h"
 #include "boost/any.hpp"
-#include <iostream>
 
 /*
  * Action Parameters
@@ -71,7 +70,6 @@ public:
     try
     {
       auto local_parameter_it = parameters_.find(parameter_in);
-      std::cout << "local_param " << local_parameter_it->getName() << " found. allowed_data=" << local_parameter_it->getAllowedData().size() << std::endl;
       if (local_parameter_it == parameters_.end())
       {
         return parameters_.insert(parameter_in).second;
@@ -125,6 +123,14 @@ public:
     setParameter(pc);
   }
 
+  template <class T> void setParameterData(const std::string& param_name, const T& data)
+  {
+    ParameterContainer new_param = *parameters_.find(param_name);
+    new_param.setData(boost::any(data));
+    parameters_.erase(parameters_.find(param_name));
+    parameters_.insert(new_param);
+  }
+
   /**
    * @brief Checks if the destination parameter is constrained to any particular allowed values or not.
    * TODO: This method should be embedded into the ActionParameter<T> class via a generic comparison method.
@@ -138,10 +144,8 @@ public:
   {
     if (param_dest.getAllowedData().empty())
     {
-      std::cout << "no restrictions on this param" << std::endl;
       return true;
     }
-    std::cout << "WE GOTTA LIVE ONE" << std::endl;
 
     Payload param_source_data = param_source.getData();
 
@@ -172,17 +176,7 @@ public:
   {
     try
     {
-      std::cout << "Alright, the finished action outputs " << params_in.getParameterCount() << " params" << std::endl;
-      for (const auto& prm : params_in)
-      {
-        std::cout << " * name=" << prm.getName() << ". type=" << prm.getType() << ". alwd=" << prm.getAllowedData().size() << ". data=" << prm.getDataSize() << std::endl;
-      }
       std::set<std::string> param_names = getParamNames();
-      std::cout << "And, the next action accepts " << param_names.size() << " params" << std::endl;
-      for (const auto& prm : parameters_)
-      {
-        std::cout << " * name=" << prm.getName() << ". type=" << prm.getType() << ". alwd=" << prm.getAllowedData().size() << std::endl;
-      }
       while(!param_names.empty())
       {
         std::set<std::string> params_in_group = checkParamSourceGroup(*parameters_.find(*param_names.begin()));
@@ -219,14 +213,35 @@ public:
 
   const ParameterContainer& getParameter(const std::string& name) const
   {
-    std::cout << __func__ << " getting param " << name << std::endl;
     if (!hasParameter(name))
     {
-      std::cout << __func__ << " couldnt find the param " << std::endl;
       throw CREATE_TEMOTO_ERROR("Could not find parameter '" + name + "'.");
     }
-    std::cout << __func__ << " fot it " << std::endl;
     return *parameters_.find(name);
+  }
+
+  template <class T> T getParameterData(const std::string& name) const
+  {
+    try
+    {
+      const ParameterContainer& pc = getParameter(name);
+      if (pc.getDataSize() > 0)
+      {
+        return boost::any_cast<T>(pc.getData());
+      }
+      else
+      {
+        return T();
+      }
+    }
+    catch(TemotoErrorStack e)
+    {
+      throw FORWARD_TEMOTO_ERROR_STACK(e);
+    }
+    catch(std::exception e)
+    {
+      throw CREATE_TEMOTO_ERROR_STACK(e.what());
+    }
   }
 
   // ParameterContainer& getParameterNc(const std::string& name)
@@ -354,7 +369,6 @@ private:
 
   std::set<std::string> checkParamSourceGroup(const ParameterContainer& param_in) const
   {
-    // std::cout << " checking group of param: " << param_in.getName() << std::endl;
     std::set<std::string> params_in_same_group;
     params_in_same_group.insert(param_in.getName());
 
@@ -368,7 +382,6 @@ private:
     {
       if (parameter.getSourceId() == param_in.getSourceId())
       {
-        // std::cout << " belogs to same group: " << parameter.getName() << std::endl;
         params_in_same_group.insert(parameter.getName());
       }
     }

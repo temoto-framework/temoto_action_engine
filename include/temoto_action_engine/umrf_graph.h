@@ -95,6 +95,8 @@ public:
 
   const unsigned int& getNodeId(const std::string& node_name) const;
 
+  std::vector<unsigned int> getNodeIds() const;
+
   State checkState();
 
 private:

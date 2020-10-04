@@ -357,13 +357,10 @@ bool Umrf::inputParametersReceived() const
   bool params_received = true;
   for (const auto& input_parameter : input_parameters_)
   {
-    std::cout << __func__ << ": param_name=" << input_parameter.getName() << " alwd=" << input_parameter.getAllowedData().size();
     if (!input_parameter.isRequired())
     {
-      std::cout << " required=false" << std::endl;
       continue;
     }
-    std::cout << " required=true " << " data_size=" << input_parameter.getDataSize() << std::endl;
     if (input_parameter.getDataSize() == 0)
     {
       params_received = false;
@@ -407,6 +404,7 @@ std::ostream& operator<<( std::ostream& stream, const Umrf& umrf)
       << "name=" << ip.getName() << "; "
       << "type=" << ip.getType() << "; "
       << "required=" << ip.isRequired() << "; "
+      << "data_size=" << ip.getDataSize() << "; "
       << "allowed_data_size=" << ip.getAllowedData().size() << std::endl;
     }
   }
@@ -416,7 +414,10 @@ std::ostream& operator<<( std::ostream& stream, const Umrf& umrf)
     stream << "  output_parameters:" << std::endl;
     for (const auto& op : umrf.getOutputParameters())
     {
-      stream << "   - " << op.getName() << " : " << op.getType() << std::endl;
+      stream << "   - " 
+      << "name=" << op.getName() << "; "
+      << "type=" << op.getType() << "; "
+      << "data_size=" << op.getDataSize() << std::endl;
     }
   }
 

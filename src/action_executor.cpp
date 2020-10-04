@@ -49,7 +49,6 @@ void ActionExecutor::notifyFinished(const unsigned int& parent_action_id, const 
       /*
        * Transfer the parameters from parent to child action
        */
-      std::cout << "Jeboi AN ACTION FINISHED, PASSING PARAMETERS ..." << std::endl;
       for (const auto& child_id : umrf_graph_pair.second.getChildrenOf(parent_action_id))
       {
         Umrf& child_umrf = umrf_graph_pair.second.getUmrfOfNonconst(child_id);
@@ -148,7 +147,7 @@ void ActionExecutor::cleanupLoop()
           /*
            * TODO: Handle actions that have reached to error state
            */
-          if (/*(nah_it->second.getState() == ActionHandle::State::FINISHED) &&*/
+          if ((nah_it->second.getState() == ActionHandle::State::FINISHED) &&
               nah_it->second.futureIsReady() &&
               nah_it->second.getEffect() == "synchronous")
           {
@@ -159,33 +158,23 @@ void ActionExecutor::cleanupLoop()
               {
                 std::cout << error_message << std::endl;
               }
-              
               // Notify the graph that the node has finished
               {
                 LOCK_GUARD_TYPE_R guard_graphs(named_umrf_graphs_rw_mutex_);
                 for ( auto nug_it=named_umrf_graphs_.begin()
                     ; nug_it!=named_umrf_graphs_.end()
-                    ; /* empty */)
+                    ; nug_it++)
                 {
                   if (!nug_it->second.partOfGraph(nah_it->first))
                   {
-                    ++nug_it;
                     continue;
                   }
                   nug_it->second.setNodeFinished(nah_it->first);
-                  if (nug_it->second.checkState() == UmrfGraph::State::FINISHED)
-                  {
-                    TEMOTO_PRINT(nug_it->first + " is finished");
-                    named_umrf_graphs_.erase(nug_it++);
-                  }
-                  else
-                  {
-                    ++nug_it;
-                  }
                 }
               }
               nah_it->second.clearAction();
-              named_action_handles_.erase(nah_it++);
+              //named_action_handles_.erase(nah_it++); // TODO - currently the synchronous action handle is not erased but it should be ...
+              nah_it++;
             }
             catch(TemotoErrorStack e)
             {
@@ -198,10 +187,34 @@ void ActionExecutor::cleanupLoop()
             ++nah_it;
           }
         }
+
+        /*
+         * Remove all graphs and associated actions that have finished
+         */
+        LOCK_GUARD_TYPE_R guard_graphs(named_umrf_graphs_rw_mutex_);
+        for ( auto nug_it=named_umrf_graphs_.begin()
+            ; nug_it!=named_umrf_graphs_.end()
+            ; /* empty */)
+        {
+          if (nug_it->second.checkState() == UmrfGraph::State::FINISHED)
+          {
+            TEMOTO_PRINT("Graph '" + nug_it->first + "' has finished.");
+            // for (const auto& action_handle_id : nug_it->second.getNodeIds())
+            // {
+            //   TEMOTO_PRINT("erasing " + std::to_string(action_handle_id) + " ...");
+            //   named_action_handles_.erase(action_handle_id);
+            // }
+            named_umrf_graphs_.erase(nug_it++);
+          }
+          else
+          {
+            ++nug_it;
+          }
+        }
       }
       else
       {
-        TEMOTO_PRINT("no actions in executing state");
+        //TEMOTO_PRINT("no actions in executing state");
       }
     } // Lock guard scope
     std::this_thread::sleep_for(std::chrono::milliseconds(2000));
@@ -407,8 +420,6 @@ void ActionExecutor::executeById(const std::vector<unsigned int> ids, UmrfGraph&
   LOCK_GUARD_TYPE_R guard_graphs(named_umrf_graphs_rw_mutex_);
   LOCK_GUARD_TYPE_R guard_handles(named_action_handles_rw_mutex_);
 
-  std::cout << "D0" << std::endl;
-
   std::set<unsigned int> action_rollback_list;
   std::set<unsigned int> init_action_ids;
   try
@@ -416,15 +427,12 @@ void ActionExecutor::executeById(const std::vector<unsigned int> ids, UmrfGraph&
     /*
      * Load the action handles
      */ 
-    std::cout << "D1" << std::endl;
     HandleMap named_action_handles_tmp;
     for (const auto& action_id : ids)
     {
-      std::cout << "D2" << std::endl;
       ActionHandle ah = ActionHandle(ugh.getUmrfOf(action_id), this);
       if (ah.getState() != ActionHandle::State::INITIALIZED)
       {
-        std::cout << "D2_a" << std::endl;
         if (initialized_requrired)
         {
           throw CREATE_TEMOTO_ERROR_STACK("Cannot execute the actions because all actions were not fully initialized.");
@@ -432,7 +440,6 @@ void ActionExecutor::executeById(const std::vector<unsigned int> ids, UmrfGraph&
       }
       else
       {
-        std::cout << "D2_b" << std::endl;
         named_action_handles_tmp.insert(std::pair<unsigned int, ActionHandle>(ah.getHandleId(), ah));
         init_action_ids.insert(ah.getHandleId());
         action_rollback_list.insert(ah.getHandleId());
@@ -451,7 +458,6 @@ void ActionExecutor::executeById(const std::vector<unsigned int> ids, UmrfGraph&
       // Instantiate the action
       try
       {
-        std::cout << "D3" << std::endl;
         named_action_handles_.at(action_id).instantiateAction();
         action_rollback_list.insert(action_id);
       }
@@ -477,11 +483,9 @@ void ActionExecutor::executeById(const std::vector<unsigned int> ids, UmrfGraph&
       // Execute the action
       try
       {
-        std::cout << "D4" << std::endl;
         named_action_handles_.at(action_id).executeActionThread();
         action_rollback_list.insert(action_id);
         ugh.setNodeActive(action_id);
-        std::cout << "D5" << std::endl;
       }
       catch(TemotoErrorStack e)
       {

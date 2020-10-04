@@ -24,8 +24,6 @@
 #include <map>
 #include "temoto_action_engine/temoto_error.h"
 #include <boost/algorithm/string.hpp>
-#include <iostream>
-
 
 /*
  * Action Parameter
@@ -58,9 +56,7 @@ public:
   , required_(required)
   , updatable_(updatable)
   , quaranteed_(quaranteed)
-  {
-    std::cout << "TERE" << std::endl;
-  }
+  {}
 
   ActionParameter(const ActionParameter<T>& ap)
   : name_(ap.name_)
@@ -91,9 +87,7 @@ public:
 
   ActionParameter(const std::string& name)
   : ActionParameter(name, "undef")
-  {
-    std::cout << "NEIIIIII " << std::endl;
-  }
+  {}
 
   void setData(const T& data)
   {

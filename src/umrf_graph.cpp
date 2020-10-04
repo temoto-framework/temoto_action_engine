@@ -133,7 +133,6 @@ bool UmrfGraph::findRootNodes()
       // A node is considered root if it does not have parents
       if (graph_node_pair.second.umrf_.getParents().empty())
       {
-        std::cout << "at " << __func__ << "Got root node " << graph_node_pair.second.umrf_.getFullName() << std::endl;
         root_node_ids_.push_back(graph_node_pair.first);
       }
     }
@@ -251,7 +250,8 @@ UmrfGraph::State UmrfGraph::checkState()
   {
     state_ = UmrfGraph::State::ACTIVE;
   }
-  else if (nr_of_finished_nodes_ == graph_nodes_map_.size())
+  else if (nr_of_finished_nodes_ + nr_of_uninitialized_nodes_ == graph_nodes_map_.size() &&
+           nr_of_finished_nodes_ != 0)
   {
     state_ = UmrfGraph::State::FINISHED;
   }
@@ -294,4 +294,14 @@ const unsigned int& UmrfGraph::getNodeId(const std::string& node_name) const
   {
     return name_id_map_.at(node_name);
   }
+}
+
+std::vector<unsigned int> UmrfGraph::getNodeIds() const
+{
+  std::vector<unsigned int> node_ids;
+  for(const auto& graph_node : graph_nodes_map_)
+  {
+    node_ids.push_back(graph_node.first);
+  }
+  return node_ids;
 }
