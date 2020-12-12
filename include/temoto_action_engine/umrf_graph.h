@@ -144,6 +144,7 @@ private:
 
   std::string graph_name_;
   std::string graph_description_;
+  const std::vector<Umrf> umrfs_vec_;
 
   mutable unsigned int nr_of_uninitialized_nodes_ = 0;
   mutable unsigned int nr_of_initialized_nodes_ = 0;

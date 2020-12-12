@@ -37,6 +37,7 @@ UmrfGraph::UmrfGraph(const std::string& graph_name)
 UmrfGraph::UmrfGraph(const std::string& graph_name, const std::vector<Umrf>& umrfs_vec, bool initialize_graph)
 : state_(State::UNINITIALIZED)
 , graph_name_(graph_name)
+, umrfs_vec_(umrfs_vec)
 {
   if (initialize_graph)
   {
@@ -50,6 +51,7 @@ UmrfGraph::UmrfGraph(const UmrfGraph& ugh)
 , root_node_ids_(ugh.root_node_ids_)
 , state_(ugh.state_)
 , graph_name_(ugh.graph_name_)
+, umrfs_vec_ (ugh.umrfs_vec_)
 {}
 
 bool UmrfGraph::initialize(const std::vector<Umrf>& umrfs_vec)
@@ -287,12 +289,19 @@ std::vector<Umrf> UmrfGraph::getUmrfs() const
 {
   LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);
 
-  std::vector<Umrf> umrfs;
-  for (const auto& graph_node_it : graph_nodes_map_)
+  if (graph_nodes_map_.empty())
   {
-    umrfs.push_back(graph_node_it.second.umrf_);
+    return umrfs_vec_;
   }
-  return umrfs;
+  else
+  {
+    std::vector<Umrf> umrfs;
+    for (const auto& graph_node_it : graph_nodes_map_)
+    {
+      umrfs.push_back(graph_node_it.second.umrf_);
+    }
+    return umrfs;
+  }
 }
 
 const unsigned int& UmrfGraph::getNodeId(const std::string& node_name) const

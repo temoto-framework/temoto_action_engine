@@ -66,6 +66,8 @@ Umrf fromUmrfJsonValue(const rapidjson::Value& json_doc, bool as_descriptor = fa
 
 UmrfGraph fromUmrfGraphJsonStr(const std::string& umrf_graph_json_str);
 
+// std::vector<Umrf> fromUmrfListStr(const rapidjson::Value& json_doc);
+
 std::string toUmrfJsonStr(const Umrf& umrf, bool as_descriptor = false);
 
 void toUmrfJsonValue(rapidjson::Value& from_scratch

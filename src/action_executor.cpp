@@ -359,6 +359,7 @@ void ActionExecutor::modifyGraph(const std::string& graph_name, const UmrfGraphD
     return;
   }
 
+  TEMOTO_PRINT("Received a request to modify UMRF graph '" + graph_name + "' ...");
   UmrfGraph& ugh = named_umrf_graphs_.at(graph_name);
 
   /*
@@ -392,27 +393,32 @@ void ActionExecutor::modifyGraph(const std::string& graph_name, const UmrfGraphD
   {
     if (graph_diff.operation == UmrfGraphDiff::Operation::add_umrf)
     {
+      TEMOTO_PRINT("Applying an '" + graph_diff.operation + "' operation to UMRF '" + graph_diff.umrf.getFullName() + "' ...");
       Umrf umrf_cpy = graph_diff.umrf;
       umrf_cpy.setId(createId());
       ugh.addUmrf(umrf_cpy);
     }
     else if (graph_diff.operation == UmrfGraphDiff::Operation::remove_umrf)
     {
+      TEMOTO_PRINT("Applying an '" + graph_diff.operation + "' operation to UMRF '" + graph_diff.umrf.getFullName() + "' ...");
       unsigned int action_handle_id = ugh.removeUmrf(graph_diff.umrf);
       stopAction(action_handle_id);
     }
     else if (graph_diff.operation == UmrfGraphDiff::Operation::add_child)
     {
+      TEMOTO_PRINT("Applying an '" + graph_diff.operation + "' operation to UMRF '" + graph_diff.umrf.getFullName() + "' ...");
       ugh.addChild(graph_diff.umrf);
     }
     else if (graph_diff.operation == UmrfGraphDiff::Operation::remove_child)
     {
+      TEMOTO_PRINT("Applying an '" + graph_diff.operation + "' operation to UMRF '" + graph_diff.umrf.getFullName() + "' ...");
       ugh.removeChild(graph_diff.umrf);
     }
     else
     {
       throw CREATE_TEMOTO_ERROR_STACK("No such operation as " + graph_diff.operation);
     }
+    TEMOTO_PRINT("Finished with the '" + graph_diff.operation + "' operation.");
   }
 }
 
