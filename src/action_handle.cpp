@@ -240,7 +240,7 @@ void ActionHandle::clearAction()
 {
   try
   {
-    stopAction(5);
+    stopAction(10);
     LOCK_GUARD_TYPE guard_action_instance(action_instance_rw_mutex_);
     LOCK_GUARD_TYPE_R guard_action_future(action_future_rw_mutex_);
     action_instance_.reset();

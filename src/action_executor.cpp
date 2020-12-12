@@ -324,8 +324,8 @@ void ActionExecutor::updateUmrfGraph(const std::string& graph_name, std::vector<
 
 void ActionExecutor::updateActionHandles(const UmrfGraph& ugh, const std::vector<Umrf>& umrf_vec)
 {
-  LOCK_GUARD_TYPE_R guard_graphs(named_umrf_graphs_rw_mutex_);
   LOCK_GUARD_TYPE_R guard_handles(named_action_handles_rw_mutex_);
+  LOCK_GUARD_TYPE_R guard_graphs(named_umrf_graphs_rw_mutex_);
   try
   {
     for (const auto& umrf_in : umrf_vec)
@@ -348,14 +348,82 @@ void ActionExecutor::updateActionHandles(const UmrfGraph& ugh, const std::vector
   }
 }
 
+void ActionExecutor::modifyGraph(const std::string& graph_name, const UmrfGraphDiffs& graph_diffs)
+{
+  LOCK_GUARD_TYPE_R guard_handles(named_action_handles_rw_mutex_);
+  LOCK_GUARD_TYPE_R guard_graphs(named_umrf_graphs_rw_mutex_);
+
+  if (!graphExists(graph_name))
+  {
+    TEMOTO_PRINT("Cannot modify graph '" + graph_name + "' because it does not exist.");
+    return;
+  }
+
+  UmrfGraph& ugh = named_umrf_graphs_.at(graph_name);
+
+  /*
+   * Before modyfing the graph, check if the graph contains the UMRFs which are menitoned in the diffs
+   */ 
+  for (const auto& graph_diff : graph_diffs)
+  {
+    if (graph_diff.operation == UmrfGraphDiff::Operation::add_umrf)
+    {
+      if (ugh.partOfGraph(graph_diff.umrf.getFullName()))
+      {
+        throw CREATE_TEMOTO_ERROR_STACK("Cannot add UMRF '" + graph_diff.umrf.getFullName()
+          + "', as it is already part of graph '" + graph_name + "'");
+      }
+    }
+    else
+    {
+      if (!ugh.partOfGraph(graph_diff.umrf.getFullName()))
+      {
+        throw CREATE_TEMOTO_ERROR_STACK("Cannot perform operation '" + graph_diff.operation
+        + "' because UMRF graph '" + graph_name + "' does not contain node named '"
+        + graph_diff.umrf.getFullName() + "'");
+      }
+    }
+  }
+
+  /*
+   * Apply the diffs
+   */ 
+  for (const auto& graph_diff : graph_diffs)
+  {
+    if (graph_diff.operation == UmrfGraphDiff::Operation::add_umrf)
+    {
+      Umrf umrf_cpy = graph_diff.umrf;
+      umrf_cpy.setId(createId());
+      ugh.addUmrf(umrf_cpy);
+    }
+    else if (graph_diff.operation == UmrfGraphDiff::Operation::remove_umrf)
+    {
+      unsigned int action_handle_id = ugh.removeUmrf(graph_diff.umrf);
+      stopAction(action_handle_id);
+    }
+    else if (graph_diff.operation == UmrfGraphDiff::Operation::add_child)
+    {
+      ugh.addChild(graph_diff.umrf);
+    }
+    else if (graph_diff.operation == UmrfGraphDiff::Operation::remove_child)
+    {
+      ugh.removeChild(graph_diff.umrf);
+    }
+    else
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("No such operation as " + graph_diff.operation);
+    }
+  }
+}
+
 void ActionExecutor::executeUmrfGraph(const std::string& graph_name)
 {
-  LOCK_GUARD_TYPE_R guard_graphs(named_umrf_graphs_rw_mutex_);
   LOCK_GUARD_TYPE_R guard_handles(named_action_handles_rw_mutex_);
+  LOCK_GUARD_TYPE_R guard_graphs(named_umrf_graphs_rw_mutex_);
   try
   {
     // Check if the requested graph exists
-    if (named_umrf_graphs_.find(graph_name) == named_umrf_graphs_.end())
+    if (!graphExists(graph_name))
     {
       throw CREATE_TEMOTO_ERROR_STACK("Cannot execute UMRF graph '" + graph_name + "' because it doesn't exist.");
     }
@@ -382,8 +450,8 @@ void ActionExecutor::executeUmrfGraph(const std::string& graph_name)
 
 void ActionExecutor::stopUmrfGraph(const std::string& graph_name)
 {
-  LOCK_GUARD_TYPE_R guard_graphs(named_umrf_graphs_rw_mutex_);
   LOCK_GUARD_TYPE_R guard_handles(named_action_handles_rw_mutex_);
+  LOCK_GUARD_TYPE_R guard_graphs(named_umrf_graphs_rw_mutex_);
 
   // Check if the requested graph exists
   if (named_umrf_graphs_.find(graph_name) == named_umrf_graphs_.end())
@@ -393,16 +461,9 @@ void ActionExecutor::stopUmrfGraph(const std::string& graph_name)
 
   for (const auto& umrf : named_umrf_graphs_.at(graph_name).getUmrfs())
   {
-    auto action_handle_it = named_action_handles_.find(umrf.getId());
-    if (action_handle_it == named_action_handles_.end())
-    {
-      continue;
-    }
     try
     {
-      action_handle_it->second.clearAction();
-      named_action_handles_.erase(action_handle_it);
-      named_umrf_graphs_.erase(graph_name);
+      stopAction(umrf.getId());
     }
     catch (TemotoErrorStack e)
     {
@@ -413,12 +474,37 @@ void ActionExecutor::stopUmrfGraph(const std::string& graph_name)
       throw CREATE_TEMOTO_ERROR_STACK(e.what());
     }
   }
+  named_umrf_graphs_.erase(graph_name);
+}
+
+void ActionExecutor::stopAction(unsigned int action_handle_id)
+{
+  LOCK_GUARD_TYPE_R guard_handles(named_action_handles_rw_mutex_);
+
+  auto action_handle_it = named_action_handles_.find(action_handle_id);
+  if (action_handle_it == named_action_handles_.end())
+  {
+    return;
+  }
+  try
+  {
+    action_handle_it->second.clearAction();
+    named_action_handles_.erase(action_handle_it);
+  }
+  catch (TemotoErrorStack e)
+  {
+    throw FORWARD_TEMOTO_ERROR_STACK(e);
+  }
+  catch (std::exception& e)
+  {
+    throw CREATE_TEMOTO_ERROR_STACK(e.what());
+  }
 }
 
 void ActionExecutor::executeById(const std::vector<unsigned int> ids, UmrfGraph& ugh, bool initialized_requrired)
 {
-  LOCK_GUARD_TYPE_R guard_graphs(named_umrf_graphs_rw_mutex_);
   LOCK_GUARD_TYPE_R guard_handles(named_action_handles_rw_mutex_);
+  LOCK_GUARD_TYPE_R guard_graphs(named_umrf_graphs_rw_mutex_);
 
   std::set<unsigned int> action_rollback_list;
   std::set<unsigned int> init_action_ids;

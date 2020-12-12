@@ -19,6 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 add_message_files(FILES
   UmrfGraph.msg
+  UmrfGraphDiff.msg
   StopUmrfGraph.msg
 )
 
@@ -169,6 +170,29 @@ install(TARGETS parser_node
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
+# Graph modifier node
+add_executable(graph_modifier_node
+  src/graph_modifier_node.cpp
+  src/umrf_json_converter.cpp
+)
+
+add_dependencies(graph_modifier_node
+  ${catkin_EXPORTED_TARGETS}
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  yaml-cpp062
+)
+
+target_link_libraries(graph_modifier_node
+  ${catkin_LIBRARIES}
+  temoto_ae_components
+  ${libraries}
+)
+
+install(TARGETS graph_modifier_node
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+# Install other stuff
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include/
         DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
 

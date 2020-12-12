@@ -3,6 +3,7 @@
 #include "temoto_action_engine/action_engine.h"
 #include "temoto_action_engine/temoto_error.h" 
 #include "temoto_action_engine/umrf_json_converter.h"
+#include "temoto_action_engine/umrf_graph_diff.h"
 #include "temoto_action_engine/messaging.h"
 #include "temoto_action_engine/UmrfGraph.h"
 #include "temoto_action_engine/StopUmrfGraph.h"
@@ -240,21 +241,52 @@ private:
     // If the wake word was not found then return
     if (!wake_word_found)
     {
-      TEMOTO_PRINT("The UMRF graph was not targeted at this Action Engine.");
+      TEMOTO_PRINT("The UMRF graph message was not targeted at this Action Engine.");
       return;
     }
 
     /*
-     * Read the UMRF jsons and parse them to Umrf
-     */
-    try
+     * Check wether it's a diff request or new graph request
+     */ 
+    if (!msg.umrf_graph_json.empty())
     {
-      UmrfGraph umrf_graph = umrf_json_converter::fromUmrfGraphJsonStr(msg.umrf_graph_json);
-      ae_.executeUmrfGraph(umrf_graph, bool(msg.name_match_required));
+      /*
+       * Instantiate a new umrf graph
+       */ 
+      try
+      {
+        UmrfGraph umrf_graph = umrf_json_converter::fromUmrfGraphJsonStr(msg.umrf_graph_json);
+        ae_.executeUmrfGraph(umrf_graph, bool(msg.name_match_required));
+      }
+      catch(const std::exception& e)
+      {
+        TEMOTO_PRINT(std::string(e.what()));
+      }
     }
-    catch(const std::exception& e)
+    else if (!msg.umrf_graph_diffs.empty())
     {
-      TEMOTO_PRINT(std::string(e.what()));
+      /*
+       * Modify an existing umrf graph according to the diff specifiers
+       */
+      try
+      {
+        UmrfGraphDiffs umrf_graph_diffs;
+        for(const auto& umrf_graph_diff_msg : msg.umrf_graph_diffs)
+        {
+          Umrf umrf_diff = umrf_json_converter::fromUmrfJsonStr(umrf_graph_diff_msg.umrf_json);
+          umrf_graph_diffs.emplace_back(umrf_graph_diff_msg.operation, umrf_diff);
+        }
+
+        ae_.modifyGraph(msg.graph_name, umrf_graph_diffs);
+      }
+      catch(const std::exception& e)
+      {
+        TEMOTO_PRINT(std::string(e.what()));
+      }
+    }
+    else
+    {
+      TEMOTO_PRINT("The UMRF graph message has no content, aborting the request.");
     }
   }
 

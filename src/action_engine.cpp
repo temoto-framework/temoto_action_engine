@@ -70,6 +70,11 @@ void ActionEngine::executeUmrfGraph(UmrfGraph umrf_graph, bool name_match_requir
   }
 }
 
+void ActionEngine::modifyGraph(const std::string& graph_name, const UmrfGraphDiffs& graph_diffs)
+{
+  ae_.modifyGraph(graph_name, graph_diffs);
+}
+
 void ActionEngine::stopUmrfGraph(const std::string& umrf_graph_name)
 {
   ae_.stopUmrfGraph(umrf_graph_name);

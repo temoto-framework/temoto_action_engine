@@ -37,11 +37,10 @@ UmrfGraph::UmrfGraph(const std::string& graph_name)
 UmrfGraph::UmrfGraph(const std::string& graph_name, const std::vector<Umrf>& umrfs_vec, bool initialize_graph)
 : state_(State::UNINITIALIZED)
 , graph_name_(graph_name)
-, umrfs_vec_(umrfs_vec)
 {
   if (initialize_graph)
   {
-    initialize();
+    initialize(umrfs_vec);
   }
 }
 
@@ -51,10 +50,9 @@ UmrfGraph::UmrfGraph(const UmrfGraph& ugh)
 , root_node_ids_(ugh.root_node_ids_)
 , state_(ugh.state_)
 , graph_name_(ugh.graph_name_)
-, umrfs_vec_(ugh.umrfs_vec_)
 {}
 
-bool UmrfGraph::initialize()
+bool UmrfGraph::initialize(const std::vector<Umrf>& umrfs_vec)
 {
   LOCK_GUARD_TYPE guard_state(state_rw_mutex_);
   if (state_ != UmrfGraph::State::UNINITIALIZED)
@@ -62,7 +60,7 @@ bool UmrfGraph::initialize()
     return true;
   }
 
-  if (!createMaps())
+  if (!createMaps(umrfs_vec))
   {
     std::cout << "Could not create the UMRF name to ID resolving maps." << std::endl;;
     return false;
@@ -96,12 +94,12 @@ const std::string UmrfGraph::getDescription() const
   return graph_description_;
 }
 
-bool UmrfGraph::createMaps()
+bool UmrfGraph::createMaps(const std::vector<Umrf>& umrfs_vec)
 {
   LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);
   LOCK_GUARD_TYPE_R guard_name_id_map_(name_id_map_rw_mutex_);
 
-  for (const auto& umrf : umrfs_vec_)
+  for (const auto& umrf : umrfs_vec)
   {
     try
     {
@@ -163,6 +161,12 @@ bool UmrfGraph::partOfGraph(const unsigned int& node_id) const
 {
   LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);
   return (graph_nodes_map_.find(node_id) != graph_nodes_map_.end());
+}
+
+bool UmrfGraph::partOfGraph(const std::string& node_name) const
+{
+  LOCK_GUARD_TYPE_R guard_name_id_map_(name_id_map_rw_mutex_);
+  return (name_id_map_.find(node_name) != name_id_map_.end());
 }
 
 std::vector<unsigned int> UmrfGraph::getChildrenOf(const unsigned int& node_id) const
@@ -279,13 +283,22 @@ Umrf& UmrfGraph::getUmrfOfNonconst(const unsigned int& node_id)
   return graph_nodes_map_.at(node_id).umrf_;
 }
 
-const std::vector<Umrf>& UmrfGraph::getUmrfs() const
+std::vector<Umrf> UmrfGraph::getUmrfs() const
 {
-  return umrfs_vec_;
+  LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);
+
+  std::vector<Umrf> umrfs;
+  for (const auto& graph_node_it : graph_nodes_map_)
+  {
+    umrfs.push_back(graph_node_it.second.umrf_);
+  }
+  return umrfs;
 }
 
 const unsigned int& UmrfGraph::getNodeId(const std::string& node_name) const
 {
+  LOCK_GUARD_TYPE_R guard_name_id_map_(name_id_map_rw_mutex_);
+
   if (name_id_map_.find(node_name) == name_id_map_.end())
   {
     throw CREATE_TEMOTO_ERROR_STACK("UMRF graph '" + graph_name_ + "' does not contain node named '" + node_name + "'");
@@ -298,10 +311,129 @@ const unsigned int& UmrfGraph::getNodeId(const std::string& node_name) const
 
 std::vector<unsigned int> UmrfGraph::getNodeIds() const
 {
+  LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);
+
   std::vector<unsigned int> node_ids;
   for(const auto& graph_node : graph_nodes_map_)
   {
     node_ids.push_back(graph_node.first);
   }
   return node_ids;
+}
+
+void UmrfGraph::addUmrf(const Umrf& umrf)
+{
+  LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);
+  LOCK_GUARD_TYPE_R guard_name_id_map_(name_id_map_rw_mutex_);
+
+  if (partOfGraph(umrf.getFullName()))
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("Cannot add UMRF '" + umrf.getFullName() + "', as it is already part of graph '" 
+      + graph_name_ + "'");
+  }
+
+  graph_nodes_map_.emplace(umrf.getId(), umrf).second;
+  name_id_map_.emplace(umrf.getFullName(), umrf.getId()).second;
+
+  // If the new UMRF has parents then modify the parent UMRFs accordingly
+  for (const auto& parent_umrf_relation : umrf.getParents())
+  {
+    unsigned int parent_node_id = getNodeId(parent_umrf_relation.getFullName());
+    auto parent_node_itr = graph_nodes_map_.find(parent_node_id);
+    parent_node_itr->second.umrf_.addChild(umrf.asRelation());
+  }
+
+  // If the new UMRF has children then modify the child UMRFs accordingly
+  for (const auto& child_umrf_relation : umrf.getChildren())
+  {
+    unsigned int child_node_id = getNodeId(child_umrf_relation.getFullName());
+    auto child_node_itr = graph_nodes_map_.find(child_node_id);
+    child_node_itr->second.umrf_.addParent(umrf.asRelation());
+  }
+  return;
+}
+
+unsigned int UmrfGraph::removeUmrf(const Umrf& umrf)
+{
+  LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);
+  LOCK_GUARD_TYPE_R guard_name_id_map_(name_id_map_rw_mutex_);
+
+  if (!partOfGraph(umrf.getFullName()))
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("UMRF graph '" + graph_name_ + "' does not contain node named '" 
+      + umrf.getFullName() + "'");
+  }
+
+  unsigned int node_id = getNodeId(umrf.getFullName());
+  auto umrf_node_itr = graph_nodes_map_.find(node_id);
+
+  // Detach this umrf as a parent of any children
+  for (const auto& child_umrf_relation : umrf_node_itr->second.umrf_.getChildren())
+  {
+    unsigned int child_node_id = getNodeId(child_umrf_relation.getFullName());
+    auto child_node_itr = graph_nodes_map_.find(child_node_id);
+    child_node_itr->second.umrf_.removeParent(umrf_node_itr->second.umrf_.asRelation());
+  }
+
+  // Detach this umrf as a child of any parents
+  for (const auto& parent_umrf_relation : umrf_node_itr->second.umrf_.getParents())
+  {
+    unsigned int parent_node_id = getNodeId(parent_umrf_relation.getFullName());
+    auto parent_node_itr = graph_nodes_map_.find(parent_node_id);
+    parent_node_itr->second.umrf_.removeChild(umrf_node_itr->second.umrf_.asRelation());
+  }
+
+  //Remove the umrf node
+  name_id_map_.erase(umrf.getFullName());
+  graph_nodes_map_.erase(umrf_node_itr);
+
+  //Return the id of the removed umrf node
+  return node_id;
+}
+
+void UmrfGraph::addChild(const Umrf& umrf)
+{
+  LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);
+  LOCK_GUARD_TYPE_R guard_name_id_map_(name_id_map_rw_mutex_);
+
+  if (!partOfGraph(umrf.getFullName()))
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("UMRF graph '" + graph_name_ + "' does not contain node named '" 
+      + umrf.getFullName() + "'");
+  }
+
+  unsigned int node_id = getNodeId(umrf.getFullName());
+  auto umrf_node_itr = graph_nodes_map_.find(node_id);
+
+  for (const auto& child_umrf_relation : umrf.getChildren())
+  {
+    umrf_node_itr->second.umrf_.addChild(child_umrf_relation);
+    unsigned int child_node_id = getNodeId(child_umrf_relation.getFullName());
+    auto child_node_itr = graph_nodes_map_.find(child_node_id);
+    child_node_itr->second.umrf_.addParent(umrf.asRelation());
+  }
+}
+
+void UmrfGraph::removeChild(const Umrf& umrf)
+{
+  // TODO check if both locks are actually needed
+  LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);
+  LOCK_GUARD_TYPE_R guard_name_id_map_(name_id_map_rw_mutex_);
+
+  if (!partOfGraph(umrf.getFullName()))
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("UMRF graph '" + graph_name_ + "' does not contain node named '" 
+      + umrf.getFullName() + "'");
+  }
+
+  unsigned int umrf_node_id = getNodeId(umrf.getFullName());
+  auto umrf_node_itr = graph_nodes_map_.find(umrf_node_id);
+
+  for (const auto& child_umrf_relation : umrf.getChildren())
+  {
+    umrf_node_itr->second.umrf_.removeChild(child_umrf_relation);
+    unsigned int child_node_id = getNodeId(child_umrf_relation.getFullName());
+    auto child_node_itr = graph_nodes_map_.find(child_node_id);
+    child_node_itr->second.umrf_.removeParent(umrf.asRelation());
+  }
 }

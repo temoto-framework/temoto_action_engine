@@ -14,8 +14,6 @@
  * limitations under the License.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* Author: Robert Valner */
-
 #ifndef TEMOTO_ACTION_ENGINE__ACTION_EXECUTOR_H
 #define TEMOTO_ACTION_ENGINE__ACTION_EXECUTOR_H
 
@@ -28,6 +26,7 @@
 #include "temoto_action_engine/umrf.h"
 #include "temoto_action_engine/umrf_graph.h"
 #include "temoto_action_engine/action_handle.h"
+#include "temoto_action_engine/umrf_graph_diff.h"
 
 /**
  * @brief Handles loading and execution of TeMoto Actions
@@ -118,11 +117,26 @@ public:
   void executeUmrfGraph(const std::string& graph_name);
 
   /**
+   * @brief Modifies a UMRF graph according to the graph_diffs
+   * 
+   * @param graph_name 
+   * @param graph_diffs 
+   */
+  void modifyGraph(const std::string& graph_name, const UmrfGraphDiffs& graph_diffs);
+
+  /**
    * @brief Stops all actions associated with this graph
    * 
    * @param graph_name 
    */
   void stopUmrfGraph(const std::string& graph_name);
+
+  /**
+   * @brief 
+   * 
+   * @param action_handle_id 
+   */
+  void stopAction(unsigned int action_handle_id);
 
 private:
   /**

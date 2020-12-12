@@ -67,7 +67,7 @@ public:
 
   UmrfGraph(const UmrfGraph& ugh);
 
-  bool initialize();
+  bool initialize(const std::vector<Umrf>& umrfs_vec);
 
   const std::string getName() const;
 
@@ -89,15 +89,29 @@ public:
 
   bool setNodeError(const unsigned int& node_id);
 
-  const std::vector<Umrf>& getUmrfs() const;
+  std::vector<Umrf> getUmrfs() const;
 
   bool partOfGraph(const unsigned int& node_id) const;
+
+  bool partOfGraph(const std::string& node_name) const;
 
   const unsigned int& getNodeId(const std::string& node_name) const;
 
   std::vector<unsigned int> getNodeIds() const;
 
   State checkState();
+
+  /*
+   * Methods for modifying the graph
+   */
+
+  void addUmrf(const Umrf& umrf);
+
+  void addChild(const Umrf& umrf);
+
+  unsigned int removeUmrf(const Umrf& umrf);
+
+  void removeChild(const Umrf& umrf);
 
 private:
   bool setNodeState(const unsigned int& node_id, GraphNode::State node_state);
@@ -110,7 +124,7 @@ private:
    * @return true 
    * @return false 
    */
-  bool createMaps();
+  bool createMaps(const std::vector<Umrf>& umrfs_vec);
 
   /// Helps to resolve UMRF id to a GraphNode
   typedef std::map<unsigned int, GraphNode> GraphNodeMap;
@@ -130,7 +144,6 @@ private:
 
   std::string graph_name_;
   std::string graph_description_;
-  const std::vector<Umrf> umrfs_vec_;
 
   mutable unsigned int nr_of_uninitialized_nodes_ = 0;
   mutable unsigned int nr_of_initialized_nodes_ = 0;
