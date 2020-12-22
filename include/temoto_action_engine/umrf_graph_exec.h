@@ -14,24 +14,21 @@
  * limitations under the License.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef TEMOTO_ACTION_ENGINE__UMRF_GRAPH_BASE_H
-#define TEMOTO_ACTION_ENGINE__UMRF_GRAPH_BASE_H
+#ifndef TEMOTO_ACTION_ENGINE__UMRF_GRAPH_EXEC_H
+#define TEMOTO_ACTION_ENGINE__UMRF_GRAPH_EXEC_H
 
 #include "temoto_action_engine/umrf_graph_base.h"
-#include "temoto_action_engine/umrf_graph_node.h"
+#include "temoto_action_engine/umrf_graph_node_exec.h"
 
-class UmrfGraph : public UmrfGraphBase
+class UmrfGraphExec : public UmrfGraphBase
 {
-public:
- 
-
-private:
-
+private: 
   virtual bool createMaps(const std::vector<Umrf>& umrfs_vec);
 
   /// Helps to resolve UMRF name to a GraphNode
-  typedef std::map<std::string, UmrfGraphNode> UmrfGraphNodeMap;
+  typedef std::map<std::string, UmrfGraphNodeExec> UmrfGraphNodeMap;
   mutable MUTEX_TYPE_R graph_node_map_rw_mutex_;
   GUARDED_VARIABLE(UmrfGraphNodeMap graph_node_map_, graph_node_map_rw_mutex_);
-};
+}
+
 #endif

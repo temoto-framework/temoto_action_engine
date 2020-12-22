@@ -1,5 +1,5 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * Copyright 2019 TeMoto Telerobotics
+ * Copyright 2020 TeMoto Telerobotics
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,23 @@
  * limitations under the License.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef TEMOTO_ACTION_ENGINE__UMRF_GRAPH_BASE_H
-#define TEMOTO_ACTION_ENGINE__UMRF_GRAPH_BASE_H
+#ifndef TEMOTO_ACTION_ENGINE__UMRF_GRAPH_NODE_EXEC_H
+#define TEMOTO_ACTION_ENGINE__UMRF_GRAPH_NODE_EXEC_H
 
-#include "temoto_action_engine/umrf_graph_base.h"
+#include <memory>
+#include <string>
+#include <future>
+#include <class_loader/class_loader.hpp>
+#include <boost/shared_ptr.hpp>
+#include "temoto_action_engine/compiler_macros.h"
+#include "temoto_action_engine/temoto_error.h"
 #include "temoto_action_engine/umrf_graph_node.h"
 
-class UmrfGraph : public UmrfGraphBase
+class UmrfGraphNodeExec : public UmrfGraphNode
 {
 public:
- 
+  UmrfGraphNodeExec();
 
-private:
-
-  virtual bool createMaps(const std::vector<Umrf>& umrfs_vec);
-
-  /// Helps to resolve UMRF name to a GraphNode
-  typedef std::map<std::string, UmrfGraphNode> UmrfGraphNodeMap;
-  mutable MUTEX_TYPE_R graph_node_map_rw_mutex_;
-  GUARDED_VARIABLE(UmrfGraphNodeMap graph_node_map_, graph_node_map_rw_mutex_);
 };
+
 #endif
