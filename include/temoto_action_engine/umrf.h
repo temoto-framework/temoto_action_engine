@@ -42,14 +42,21 @@ public:
    */
   struct Relation
   {
-    Relation(const std::string& name, const unsigned int& suffix)
+    Relation()
+    {}
+
+    Relation(const std::string& name, const unsigned int& suffix, bool required = false)
     : name_(name)
     , suffix_(suffix)
+    , required_(required)
+    , received_(false)
     {}
 
     Relation(const Relation& r_in)
     : name_(r_in.getName())
     , suffix_(r_in.getSuffix())
+    , required_(r_in.getRequired())
+    , received_(r_in.getReceived())
     {}
 
     void operator=(const Relation& r_in)
@@ -73,6 +80,16 @@ public:
       return suffix_;
     }
 
+    bool getRequired() const
+    {
+      return required_;
+    }
+
+    bool getReceived() const
+    {
+      return received_;
+    }
+
     std::string getFullName() const
     {
       return name_ + "_" + std::to_string(suffix_);
@@ -85,6 +102,8 @@ public:
 
     std::string name_;
     unsigned int suffix_;
+    bool required_; // Indicates whether the child can only execute once the parent has finished the execution  
+    bool received_; // Indicates whether the parent has finished execution. Applies only to parent-type relations
   };
 
   Umrf();

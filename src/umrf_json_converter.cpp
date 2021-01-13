@@ -405,12 +405,17 @@ void toUmrfJsonValue(rapidjson::Value& from_scratch
     for (const auto& parent : umrf.getParents())
     {
       rapidjson::Value parent_object(rapidjson::kObjectType);
-      //rapidjson::Value parent_name_value = rapidjson::StringRef(parent.getName().c_str());
+      
+      // Add name
       parent_object.AddMember(rapidjson::StringRef(RELATION_FIELDS.name), rapidjson::StringRef(parent.getName().c_str()), allocator);
 
+      // Add suffix
       rapidjson::Value parent_suffix_value(rapidjson::kNumberType);
       parent_suffix_value.SetInt(parent.getSuffix());
       parent_object.AddMember(rapidjson::StringRef(RELATION_FIELDS.suffix), parent_suffix_value, allocator);
+
+      // Add required
+      parent_object.AddMember(rapidjson::StringRef(RELATION_FIELDS.required), parent.getRequired(), allocator);
 
       parents_object.PushBack(parent_object, allocator);
     }
@@ -445,6 +450,15 @@ std::string getStringFromValue(const rapidjson::Value& value)
   return value.GetString();
 }
 
+bool getBoolFromValue(const rapidjson::Value& value)
+{
+  if (!value.IsBool())
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("This JSON value is not a boolean");
+  }
+  return value.GetBool();
+}
+
 float getNumberFromValue(const rapidjson::Value& value)
 {
   if (!value.IsNumber())
@@ -464,16 +478,30 @@ std::vector<Umrf::Relation> parseRelations(const rapidjson::Value& value_in)
   std::vector<Umrf::Relation> umrf_relations;
   for (rapidjson::SizeType i=0; i<value_in.Size(); i++)
   {
+    Umrf::Relation relation;
+
+    // Parse the required fields
     try
     {
-      std::string name = getStringFromValue(getJsonElement(RELATION_FIELDS.name, value_in[i]));
-      unsigned int suffix = getNumberFromValue(getJsonElement(RELATION_FIELDS.suffix, value_in[i]));
-      umrf_relations.emplace_back(name, suffix);
+      relation.name_ = getStringFromValue(getJsonElement(RELATION_FIELDS.name, value_in[i]));
+      relation.suffix_ = getNumberFromValue(getJsonElement(RELATION_FIELDS.suffix, value_in[i]));
     }
     catch(TemotoErrorStack e)
     {
       throw FORWARD_TEMOTO_ERROR_STACK(e);
     }
+
+    // Parse the not required fields
+    try
+    {
+      relation.required_ = getBoolFromValue(getJsonElement(RELATION_FIELDS.required, value_in[i]));
+    }
+    catch(TemotoErrorStack e)
+    {
+      // Do nothing
+    }
+
+    umrf_relations.push_back(relation);
   }
 
   return umrf_relations;

@@ -58,6 +58,7 @@ static const struct RelationFields
 {
   const char* name = "name";
   const char* suffix = "id";
+  const char* required = "required";
 }RELATION_FIELDS;
 
 Umrf fromUmrfJsonStr(const std::string& umrf_json_str, bool as_descriptor = false);
@@ -82,6 +83,8 @@ const rapidjson::Value& getRootJsonElement(const char* element_name, const rapid
 const rapidjson::Value& getJsonElement(const char* element_name, const rapidjson::Value& value_in);
 
 std::string getStringFromValue(const rapidjson::Value& value);
+
+bool getBoolFromValue(const rapidjson::Value& value);
 
 float getNumberFromValue(const rapidjson::Value& value);
 
