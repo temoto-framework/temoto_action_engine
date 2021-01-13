@@ -189,6 +189,10 @@ public:
   bool updateInputParams(const Umrf& umrf_in);
 
   Relation asRelation() const;
+
+  bool requiredParentsFinished() const;
+
+  void setParentReceived(const Umrf::Relation& parent);
   
   ~Umrf()
   {

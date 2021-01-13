@@ -468,95 +468,68 @@ bool Umrf::updateInputParams(const Umrf& umrf_in)
 
 bool Umrf::isEqual(const Umrf& umrf_in, bool check_updatable) const
 {
-    LOCK_GUARD_TYPE_R guard_input_params(input_params_rw_mutex_);
-    LOCK_GUARD_TYPE_R guard_output_params(output_params_rw_mutex_);
+  LOCK_GUARD_TYPE_R guard_input_params(input_params_rw_mutex_);
+  LOCK_GUARD_TYPE_R guard_output_params(output_params_rw_mutex_);
 
-    /*
-     * Compare the general parameters
-     */
-    if ((name_ != umrf_in.name_) ||
-        (suffix_ != umrf_in.suffix_) ||
-        (notation_ != umrf_in.notation_) ||
-        (effect_ != umrf_in.effect_))
+  /*
+   * Compare the general parameters
+   */
+  if ((name_ != umrf_in.name_) ||
+      (suffix_ != umrf_in.suffix_) ||
+      (notation_ != umrf_in.notation_) ||
+      (effect_ != umrf_in.effect_))
+  {
+    return false;
+  }
+
+  /*
+   * Compare graph connections
+   */
+  // Compare parent & children connection sizes
+  if ((children_.size() != umrf_in.children_.size()) ||
+      (parents_.size() != umrf_in.parents_.size()))
+  {
+    return false;
+  }
+
+  // Compare the connections
+  for (const auto& parent_in : umrf_in.parents_)
+  {
+    if (std::find(parents_.begin(), parents_.end(), parent_in) == parents_.end())
     {
       return false;
     }
+  }
 
-    /*
-     * Compare graph connections
-     */
-    // Compare parent & children connection sizes
-    if ((children_.size() != umrf_in.children_.size()) ||
-        (parents_.size() != umrf_in.parents_.size()))
+  for (const auto& child_in : umrf_in.children_)
+  {
+    if (std::find(children_.begin(), children_.end(), child_in) == children_.end())
     {
       return false;
     }
+  }
 
-    // Compare the connections
-    for (const auto& parent_in : umrf_in.parents_)
+  /*
+   * Compare the parameters
+   */
+  const ActionParameters& input_parameters_in = umrf_in.getInputParameters();
+  const ActionParameters& output_parameters_in = umrf_in.getOutputParameters();
+
+  if ((input_parameters_.getParameterCount() != input_parameters_in.getParameterCount()) ||
+      (output_parameters_.getParameterCount() != output_parameters_in.getParameterCount()))
+  {
+    return false;
+  }
+
+  // Check each input parameter individually
+  for (const auto& input_param : input_parameters_)
+  {
+    if (input_parameters_in.hasParameter(input_param.getName()))
     {
-      if (std::find(parents_.begin(), parents_.end(), parent_in) == parents_.end())
+      // Check if updatability has to be controlled
+      if (check_updatable)
       {
-        return false;
-      }
-    }
-
-    for (const auto& child_in : umrf_in.children_)
-    {
-      if (std::find(children_.begin(), children_.end(), child_in) == children_.end())
-      {
-        return false;
-      }
-    }
-
-    /*
-     * Compare the parameters
-     */
-    const ActionParameters& input_parameters_in = umrf_in.getInputParameters();
-    const ActionParameters& output_parameters_in = umrf_in.getOutputParameters();
-
-    if ((input_parameters_.getParameterCount() != input_parameters_in.getParameterCount()) ||
-        (output_parameters_.getParameterCount() != output_parameters_in.getParameterCount()))
-    {
-      return false;
-    }
-
-    // Check each input parameter individually
-    for (const auto& input_param : input_parameters_)
-    {
-      if (input_parameters_in.hasParameter(input_param.getName()))
-      {
-        // Check if updatability has to be controlled
-        if (check_updatable)
-        {
-          if (!input_param.isEqualNoData(input_parameters_in.getParameter(input_param.getName())))
-          {
-            // Params not equal
-            return false;
-          }
-        }
-        else
-        {
-          if (!input_param.isEqualNoDataNoUpdate(input_parameters_in.getParameter(input_param.getName())))
-          {
-            // Params not equal
-            return false;
-          }
-        }
-      }
-      else
-      {
-        // Does not have the parameter
-        return false;
-      }
-    }
-
-    // Check each output parameter individually
-    for (const auto& output_param : output_parameters_)
-    {
-      if (output_parameters_in.hasParameter(output_param.getName()))
-      {
-        if (!output_param.isEqualNoData(output_parameters_in.getParameter(output_param.getName())))
+        if (!input_param.isEqualNoData(input_parameters_in.getParameter(input_param.getName())))
         {
           // Params not equal
           return false;
@@ -564,14 +537,67 @@ bool Umrf::isEqual(const Umrf& umrf_in, bool check_updatable) const
       }
       else
       {
-        // Does not have the parameter
+        if (!input_param.isEqualNoDataNoUpdate(input_parameters_in.getParameter(input_param.getName())))
+        {
+          // Params not equal
+          return false;
+        }
+      }
+    }
+    else
+    {
+      // Does not have the parameter
+      return false;
+    }
+  }
+
+  // Check each output parameter individually
+  for (const auto& output_param : output_parameters_)
+  {
+    if (output_parameters_in.hasParameter(output_param.getName()))
+    {
+      if (!output_param.isEqualNoData(output_parameters_in.getParameter(output_param.getName())))
+      {
+        // Params not equal
         return false;
       }
     }
-    return true;
+    else
+    {
+      // Does not have the parameter
+      return false;
+    }
   }
+  return true;
+}
 
-  Umrf::Relation Umrf::asRelation() const
+Umrf::Relation Umrf::asRelation() const
+{
+  return Umrf::Relation(getName(), getSuffix());
+}
+
+bool Umrf::requiredParentsFinished() const
+{
+  for (const auto& parent : parents_)
   {
-    return Umrf::Relation(getName(), getSuffix());
+    if (parent.getRequired() && !parent.getReceived())
+    {
+      return false;
+    }
   }
+  return true;
+}
+
+void Umrf::setParentReceived(const Umrf::Relation& parent)
+{
+  auto parent_it = std::find(parents_.begin(), parents_.end(), parent);
+
+  if (parent_it != parents_.end())
+  {
+    parent_it->received_ = true;
+  }
+  else
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("The parent does not exist");
+  }
+}
