@@ -63,6 +63,8 @@ public:
     {
       name_ = r_in.getName();
       suffix_ = r_in.getSuffix();
+      required_ = r_in.getRequired();
+      received_ = r_in.getReceived();
     }
 
     bool operator==(const Relation& r_in) const

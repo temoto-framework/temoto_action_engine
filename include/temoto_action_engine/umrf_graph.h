@@ -89,7 +89,7 @@ public:
 
   bool setNodeError(const unsigned int& node_id);
 
-  std::vector<Umrf> getUmrfs() const;
+  const std::vector<Umrf>& getUmrfs() const;
 
   bool partOfGraph(const unsigned int& node_id) const;
 
@@ -144,7 +144,12 @@ private:
 
   std::string graph_name_;
   std::string graph_description_;
-  const std::vector<Umrf> umrfs_vec_;
+
+  // This variable is part of a hacky bugfix, where umrfs (getUmrfs) returned by value got corrupted (currently returned 
+  // via const&) (visible only in generated json strings, where umrf child/parent relation names were overwritten by 
+  // random characters). The actual source of the problem is prolly related to rapidjson's memory allocation
+  // but the bug is just too mysterious and I am a mortal human with deadlines 
+  mutable std::vector<Umrf> umrfs_vec_;
 
   mutable unsigned int nr_of_uninitialized_nodes_ = 0;
   mutable unsigned int nr_of_initialized_nodes_ = 0;

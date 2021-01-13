@@ -285,23 +285,19 @@ Umrf& UmrfGraph::getUmrfOfNonconst(const unsigned int& node_id)
   return graph_nodes_map_.at(node_id).umrf_;
 }
 
-std::vector<Umrf> UmrfGraph::getUmrfs() const
+const std::vector<Umrf>& UmrfGraph::getUmrfs() const
 {
   LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);
 
-  if (graph_nodes_map_.empty())
+  if (!graph_nodes_map_.empty())
   {
-    return umrfs_vec_;
-  }
-  else
-  {
-    std::vector<Umrf> umrfs;
+    umrfs_vec_.clear();
     for (const auto& graph_node_it : graph_nodes_map_)
     {
-      umrfs.push_back(graph_node_it.second.umrf_);
+      umrfs_vec_.push_back(graph_node_it.second.umrf_);
     }
-    return umrfs;
   }
+  return umrfs_vec_;
 }
 
 const unsigned int& UmrfGraph::getNodeId(const std::string& node_name) const
