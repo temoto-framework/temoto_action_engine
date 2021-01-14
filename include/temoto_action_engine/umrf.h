@@ -45,7 +45,7 @@ public:
     Relation()
     {}
 
-    Relation(const std::string& name, const unsigned int& suffix, bool required = false)
+    Relation(const std::string& name, const unsigned int& suffix, bool required = true)
     : name_(name)
     , suffix_(suffix)
     , required_(required)
