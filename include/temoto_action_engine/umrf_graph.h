@@ -20,18 +20,24 @@
 #include "temoto_action_engine/umrf_graph_base.h"
 #include "temoto_action_engine/umrf_graph_node.h"
 
-class UmrfGraph : public UmrfGraphBase
+/**
+ * @brief Lightweight class for maintaining a UMRF graph
+ * 
+ */
+class UmrfGraph : public UmrfGraphBase<UmrfGraphNode>
 {
 public:
- 
+  UmrfGraph(const UmrfGraph& ug);
+
+  UmrfGraph(const UmrfGraphBase& ugb);
+
+  UmrfGraph(const std::string& graph_name);
+
+  UmrfGraph(const std::string& graph_name, const std::vector<Umrf>& umrfs_vec);
+
+  virtual ~UmrfGraph();
 
 private:
 
-  virtual bool createMaps(const std::vector<Umrf>& umrfs_vec);
-
-  /// Helps to resolve UMRF name to a GraphNode
-  typedef std::map<std::string, UmrfGraphNode> UmrfGraphNodeMap;
-  mutable MUTEX_TYPE_R graph_node_map_rw_mutex_;
-  GUARDED_VARIABLE(UmrfGraphNodeMap graph_node_map_, graph_node_map_rw_mutex_);
 };
 #endif

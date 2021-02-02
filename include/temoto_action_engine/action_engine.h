@@ -17,11 +17,12 @@
 #ifndef TEMOTO_ACTION_ENGINE__ACTION_ENGINE_H
 #define TEMOTO_ACTION_ENGINE__ACTION_ENGINE_H
 
-#include "temoto_action_engine/action_executor.h"
 #include "temoto_action_engine/action_indexer.h"
 #include "temoto_action_engine/action_match_finder.h"
 #include "temoto_action_engine/temoto_error.h"
+#include "temoto_action_engine/umrf_graph.h"
 #include "temoto_action_engine/umrf_graph_diff.h"
+#include "temoto_action_engine/umrf_graph_exec.h"
 
 /**
  * @brief Handles loading and execution of TeMoto Actions
@@ -44,8 +45,11 @@ public:
 
   ~ActionEngine();
 private:
-  ActionExecutor ae_;
   ActionIndexer ai_;
   ActionMatchFinder amf_;
+
+  typedef std::map<std::string, UmrfGraphExec> UmrfGraphExecMap;
+  mutable MUTEX_TYPE_R umrf_graph_map_rw_mutex_;
+  GUARDED_VARIABLE(UmrfGraphNodeMap umrf_graph_exec_map_, umrf_graph_map_rw_mutex_);
 };
 #endif

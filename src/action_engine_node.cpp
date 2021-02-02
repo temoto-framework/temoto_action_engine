@@ -54,19 +54,6 @@ public:
     // Start the action engine
     ae_.start();
 
-    // Execute the default action
-    // if (!default_umrf_.getName().empty())
-    // {
-    //   try
-    //   {
-    //     ae_.executeUmrfGraph("default graph", std::vector<Umrf> {default_umrf_});
-    //   }
-    //   catch(const std::exception& e)
-    //   {
-    //     TEMOTO_PRINT(std::string(e.what()));
-    //     return false;
-    //   }
-    // }
     return true;
   }
 
@@ -87,8 +74,7 @@ public:
       ("w", po::value<std::string>(), "Optional. Additional wake words. Indicates to which wake words the action engine will respond to.")
       ("mw", po::value<std::string>(), "Required. Main wake word.")
       ("a", po::value<std::string>(), "Optional. Path to action packages path file.")
-      ("sa", po::value<std::string>(), "Optional. Path to a single action.")
-      ("d", po::value<std::string>(), "Optional. Path to default UMRF that will be executed when the action engine starts up.");
+      ("sa", po::value<std::string>(), "Optional. Path to a single action.");
 
     /* 
      * Process the arguments
@@ -178,26 +164,6 @@ public:
         return 1;
       }
 
-      /*
-       * Get the default umrf
-       */ 
-      if (vm.count("d"))
-      {
-        std::string default_umrf_path = vm["d"].as<std::string>();
-
-        // Put the contents of umrf json file to a string 
-        std::ifstream ifs(default_umrf_path);
-        std::string umrf_json_str;
-        umrf_json_str.assign(std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>());
-
-        if (!umrf_json_str.empty())
-        {
-          // Convert the json string to UMRF data structure
-          default_umrf_ = umrf_json_converter::fromUmrfJsonStr(umrf_json_str);
-          TEMOTO_PRINT("Parsed default UMRF '" + default_umrf_.getFullName() + "'.");
-          std::cout << default_umrf_;
-        }
-      }
       return 0;
     }
     catch (const std::exception& e)
@@ -343,7 +309,6 @@ private:
   ros::Subscriber stop_umrf_graph_sub_;
 
   // Action Engine setup parameters
-  Umrf default_umrf_;
   std::vector<std::string> action_paths_;
   std::vector<std::string> wake_words_; 
 };
@@ -353,11 +318,6 @@ int main(int argc, char** argv)
   /*
    * Initialize ROS
    */
-  std::cout << std::endl;
-  std::cout << "* * * * * * * * * * * * * * * * * * * * " << std::endl;
-  std::cout << "*        - ACTION ENGINE NODE -         " << std::endl;
-  std::cout << "* * * * * * * * * * * * * * * * * * * * " << std::endl;
-
   ros::init(argc, argv, "temoto_action_engine_node");
 
   // Instantiate the Action Engine node object

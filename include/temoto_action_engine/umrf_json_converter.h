@@ -27,14 +27,22 @@
 
 namespace umrf_json_converter
 {
+
+static const struct UmrfGraphFields
+{
+  const char* name = "graph_name";
+  const char* description = "graph_description";
+  const char* state = "graph_state";
+  const char* umrf_actions = "umrf_actions";
+}UMRF_GRAPH_FIELDS;
+
 static const struct UmrfFields
 {
-  const char* umrf_actions = "umrf_actions";
   const char* parents = "parents";
   const char* children = "children";
   const char* library_path = "library_path";
+  const char* state = "state";
   const char* name = "name";
-  const char* graph_name = "graph_name";
   const char* package_name = "package_name";
   const char* description = "description";
   const char* suffix = "id";
@@ -58,6 +66,7 @@ static const struct RelationFields
 {
   const char* name = "name";
   const char* suffix = "id";
+  const char* required = "required";
 }RELATION_FIELDS;
 
 Umrf fromUmrfJsonStr(const std::string& umrf_json_str, bool as_descriptor = false);
@@ -65,6 +74,8 @@ Umrf fromUmrfJsonStr(const std::string& umrf_json_str, bool as_descriptor = fals
 Umrf fromUmrfJsonValue(const rapidjson::Value& json_doc, bool as_descriptor = false);
 
 UmrfGraph fromUmrfGraphJsonStr(const std::string& umrf_graph_json_str);
+
+std::string toUmrfGraphJsonStr(const UmrfGraph& umrf_graph);
 
 // std::vector<Umrf> fromUmrfListStr(const rapidjson::Value& json_doc);
 
@@ -75,13 +86,13 @@ void toUmrfJsonValue(rapidjson::Value& from_scratch
 , const Umrf& umrf
 , bool as_descriptor = false);
 
-std::string toUmrfGraphJsonStr(const UmrfGraph& umrf_graph);
-
 const rapidjson::Value& getRootJsonElement(const char* element_name, const rapidjson::Value& json_doc);
 
 const rapidjson::Value& getJsonElement(const char* element_name, const rapidjson::Value& value_in);
 
 std::string getStringFromValue(const rapidjson::Value& value);
+
+bool getBoolFromValue(const rapidjson::Value& value);
 
 float getNumberFromValue(const rapidjson::Value& value);
 

@@ -28,38 +28,66 @@ namespace umrf_json_converter
 
 UmrfGraph fromUmrfGraphJsonStr(const std::string& umrf_graph_json_str)
 {
+  rapidjson::Document json_doc;
+  json_doc.Parse(umrf_graph_json_str.c_str());
+
+  if (json_doc.HasParseError())
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("The provided JSON string contains syntax errors.");
+  }
+
+  /*
+   * Parse the required fields
+   */
+  std::string graph_name;
+  std::vector<Umrf> umrf_actions;
+
   try
   {
-    rapidjson::Document json_doc;
-    json_doc.Parse(umrf_graph_json_str.c_str());
-
-    if (json_doc.HasParseError())
-    {
-      throw CREATE_TEMOTO_ERROR_STACK("The provided JSON string contains syntax errors.");
-    }
-
-    std::string graph_name = getStringFromValue(getRootJsonElement(UMRF_FIELDS.graph_name, json_doc));
-
-    //Parse the UMRF actions
-    const rapidjson::Value& umrf_actions_json_value = getRootJsonElement(UMRF_FIELDS.umrf_actions, json_doc);
+    graph_name = getStringFromValue(getRootJsonElement(UMRF_GRAPH_FIELDS.name, json_doc));
+    const rapidjson::Value& umrf_actions_json_value = getRootJsonElement(UMRF_GRAPH_FIELDS.umrf_actions, json_doc);
     if (!umrf_actions_json_value.IsArray())
     {
       throw CREATE_TEMOTO_ERROR_STACK("The umrf_actions field must be an array");
     }
 
-    std::vector<Umrf> umrf_actions;
     for (rapidjson::SizeType i=0; i<umrf_actions_json_value.Size(); i++)
     {
       umrf_actions.push_back(fromUmrfJsonValue(umrf_actions_json_value[i]));
     }
-
-    // Parse the umrf json string to umrf datastructure
-    return UmrfGraph(graph_name, umrf_actions, false);
   }
   catch(TemotoErrorStack e)
   {
     throw FORWARD_TEMOTO_ERROR_STACK(e);
   }
+
+  // Pass the required fields to a new graph
+  UmrfGraph ug(graph_name, umrf_actions);
+
+  /*
+   * Parse the optional fields
+   */
+  try
+  {
+    std::string graph_description = getStringFromValue(getRootJsonElement(UMRF_GRAPH_FIELDS.description, json_doc));
+    ug.setDescription(graph_description);
+  }
+  catch(TemotoErrorStack e)
+  {
+    /* OPTIONAL FIELD, DO NOTHING */
+  }
+
+  try
+  {
+    unsigned int graph_state = getNumberFromValue(getRootJsonElement(UMRF_GRAPH_FIELDS.state, json_doc));
+    ug.setState(graph_state);
+  }
+  catch(TemotoErrorStack e)
+  {
+    /* OPTIONAL FIELD, DO NOTHING */
+  }
+
+  return ug;
 }
 
 Umrf fromUmrfJsonStr(const std::string& umrf_json_str, bool as_descriptor)
@@ -246,14 +274,21 @@ std::string toUmrfGraphJsonStr(const UmrfGraph& umrf_graph)
    */ 
   rapidjson::Value graph_name_value(rapidjson::kStringType);
   graph_name_value.SetString(umrf_graph.getName().c_str(), umrf_graph.getName().size(), allocator);
-  from_scratch.AddMember("graph_name", graph_name_value, allocator);
+  from_scratch.AddMember(rapidjson::StringRef(UMRF_GRAPH_FIELDS.name), graph_name_value, allocator);
 
   /*
    * Set the description of the UMRF Graph
    */ 
   rapidjson::Value graph_description_value(rapidjson::kStringType);
   graph_description_value.SetString(umrf_graph.getDescription().c_str(), umrf_graph.getDescription().size(), allocator);
-  from_scratch.AddMember("graph_description", graph_description_value, allocator);
+  from_scratch.AddMember(rapidjson::StringRef(UMRF_GRAPH_FIELDS.description), graph_description_value, allocator);
+
+  /*
+   * Set the state of the UMRF Graph
+   */
+  rapidjson::Value state_value(rapidjson::kNumberType);
+  state_value.SetInt(umrf_graph.getState());
+  from_scratch.AddMember(rapidjson::StringRef(UMRF_GRAPH_FIELDS.state), state_value, allocator);
 
   /*
    * Parse the UMRF Actions
@@ -405,12 +440,17 @@ void toUmrfJsonValue(rapidjson::Value& from_scratch
     for (const auto& parent : umrf.getParents())
     {
       rapidjson::Value parent_object(rapidjson::kObjectType);
-      //rapidjson::Value parent_name_value = rapidjson::StringRef(parent.getName().c_str());
+      
+      // Add name
       parent_object.AddMember(rapidjson::StringRef(RELATION_FIELDS.name), rapidjson::StringRef(parent.getName().c_str()), allocator);
 
+      // Add suffix
       rapidjson::Value parent_suffix_value(rapidjson::kNumberType);
       parent_suffix_value.SetInt(parent.getSuffix());
       parent_object.AddMember(rapidjson::StringRef(RELATION_FIELDS.suffix), parent_suffix_value, allocator);
+
+      // Add required
+      parent_object.AddMember(rapidjson::StringRef(RELATION_FIELDS.required), parent.getRequired(), allocator);
 
       parents_object.PushBack(parent_object, allocator);
     }
@@ -445,6 +485,15 @@ std::string getStringFromValue(const rapidjson::Value& value)
   return value.GetString();
 }
 
+bool getBoolFromValue(const rapidjson::Value& value)
+{
+  if (!value.IsBool())
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("This JSON value is not a boolean");
+  }
+  return value.GetBool();
+}
+
 float getNumberFromValue(const rapidjson::Value& value)
 {
   if (!value.IsNumber())
@@ -464,16 +513,30 @@ std::vector<Umrf::Relation> parseRelations(const rapidjson::Value& value_in)
   std::vector<Umrf::Relation> umrf_relations;
   for (rapidjson::SizeType i=0; i<value_in.Size(); i++)
   {
+    Umrf::Relation relation;
+
+    // Parse the required fields
     try
     {
-      std::string name = getStringFromValue(getJsonElement(RELATION_FIELDS.name, value_in[i]));
-      unsigned int suffix = getNumberFromValue(getJsonElement(RELATION_FIELDS.suffix, value_in[i]));
-      umrf_relations.emplace_back(name, suffix);
+      relation.name_ = getStringFromValue(getJsonElement(RELATION_FIELDS.name, value_in[i]));
+      relation.suffix_ = getNumberFromValue(getJsonElement(RELATION_FIELDS.suffix, value_in[i]));
     }
     catch(TemotoErrorStack e)
     {
       throw FORWARD_TEMOTO_ERROR_STACK(e);
     }
+
+    // Parse the not required fields
+    try
+    {
+      relation.required_ = getBoolFromValue(getJsonElement(RELATION_FIELDS.required, value_in[i]));
+    }
+    catch(TemotoErrorStack e)
+    {
+      // Do nothing
+    }
+
+    umrf_relations.push_back(relation);
   }
 
   return umrf_relations;

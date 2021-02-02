@@ -42,20 +42,29 @@ public:
    */
   struct Relation
   {
-    Relation(const std::string& name, const unsigned int& suffix)
+    Relation()
+    {}
+
+    Relation(const std::string& name, const unsigned int& suffix, bool required = true)
     : name_(name)
     , suffix_(suffix)
+    , required_(required)
+    , received_(false)
     {}
 
     Relation(const Relation& r_in)
     : name_(r_in.getName())
     , suffix_(r_in.getSuffix())
+    , required_(r_in.getRequired())
+    , received_(r_in.getReceived())
     {}
 
     void operator=(const Relation& r_in)
     {
       name_ = r_in.getName();
       suffix_ = r_in.getSuffix();
+      required_ = r_in.getRequired();
+      received_ = r_in.getReceived();
     }
 
     bool operator==(const Relation& r_in) const
@@ -73,6 +82,16 @@ public:
       return suffix_;
     }
 
+    bool getRequired() const
+    {
+      return required_;
+    }
+
+    bool getReceived() const
+    {
+      return received_;
+    }
+
     std::string getFullName() const
     {
       return name_ + "_" + std::to_string(suffix_);
@@ -85,6 +104,8 @@ public:
 
     std::string name_;
     unsigned int suffix_;
+    bool required_; // Indicates whether the child can only execute once the parent has finished the execution  
+    bool received_; // Indicates whether the parent has finished execution. Applies only to parent-type relations
   };
 
   Umrf();
@@ -168,6 +189,10 @@ public:
   bool updateInputParams(const Umrf& umrf_in);
 
   Relation asRelation() const;
+
+  bool requiredParentsFinished() const;
+
+  void setParentReceived(const Umrf::Relation& parent);
   
   ~Umrf()
   {
@@ -177,9 +202,6 @@ public:
   
 private:
   std::string name_;
-  std::string package_name_;
-  std::string description_;
-  unsigned int suffix_ = 0;
   std::string notation_;
   std::string effect_;
   std::vector<Relation> parents_;
@@ -193,7 +215,10 @@ private:
 
   /*
    * Internal management variables
-   */ 
+   */
+  std::string package_name_;
+  std::string description_;
+  unsigned int suffix_ = 0;
   unsigned int id_;
   std::string full_name_;
   std::string library_path_;

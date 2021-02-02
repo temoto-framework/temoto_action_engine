@@ -53,6 +53,7 @@ void ActionExecutor::notifyFinished(const unsigned int& parent_action_id, const 
       {
         Umrf& child_umrf = umrf_graph_pair.second.getUmrfOfNonconst(child_id);
         child_umrf.copyInputParameters(parent_action_parameters);
+        child_umrf.setParentReceived(umrf_graph_pair.second.getUmrfOf(parent_action_id).asRelation());
       }
       executeById(umrf_graph_pair.second.getChildrenOf(parent_action_id), umrf_graph_pair.second);
     }

@@ -50,9 +50,15 @@ public:
 
   UmrfGraphNode(const Umrf& umrf);
 
-private:
-  std::shared_ptr<Umrf> umrf_;
-  State state_;
+  UmrfGraphNode(const UmrfGraphNode& ugn);
+
+  virtual ~UmrfGraphNode();
+
+  mutable MUTEX_TYPE state_rw_mutex_;
+  GUARDED_VARIABLE(State state_, state_rw_mutex_);
+
+  mutable MUTEX_TYPE_R umrf_rw_mutex_;
+  GUARDED_VARIABLE(std::shared_ptr<Umrf> umrf_, umrf_rw_mutex_);
 
 };
 

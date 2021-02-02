@@ -68,7 +68,7 @@ ActionHandle::ActionHandle(Umrf umrf, ActionExecutor* action_executor_ptr)
       setState(ActionHandle::State::ERROR);
       return;
     }
-    if (umrf_->inputParametersReceived())
+    if (umrf_->inputParametersReceived() && umrf_->requiredParentsFinished())
     {
       setState(ActionHandle::State::INITIALIZED);
     }

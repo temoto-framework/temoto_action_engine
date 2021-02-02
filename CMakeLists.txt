@@ -66,12 +66,13 @@ include_directories(
 
 # Library that combines core components of the action engine
 add_library(temoto_ae_components 
-  src/action_handle.cpp
-  src/umrf_graph.cpp
   src/umrf.cpp
+  src/umrf_graph.cpp
+  src/umrf_graph_exec.cpp
+  src/umrf_graph_node.cpp
+  src/umrf_graph_node_exec.cpp
   src/action_indexer.cpp
   src/action_match_finder.cpp
-  src/action_executor.cpp
   src/action_engine.cpp
 )
 add_dependencies(temoto_ae_components 
