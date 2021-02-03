@@ -26,15 +26,8 @@ Umrf::Umrf()
 Umrf::Umrf(const Umrf& uj)
 : name_(uj.name_)
 , description_(uj.description_)
-, package_name_(uj.package_name_)
-, suffix_(uj.suffix_)
 , notation_(uj.notation_)
 , effect_(uj.effect_)
-, library_path_(uj.library_path_)
-, parents_(uj.parents_)
-, children_(uj.children_)
-, id_(uj.id_)
-, full_name_(uj.full_name_)
 , input_parameters_(uj.input_parameters_)
 , output_parameters_(uj.output_parameters_)
 {}
@@ -54,18 +47,12 @@ bool Umrf::setName(const std::string& name)
   if (!name.empty())
   {
     name_ = name;
-    full_name_ = name_ + "_" + std::to_string(suffix_);
     return true;  
   }
   else
   {
     return false;
   }
-}
-
-const std::string& Umrf::getPackageName() const
-{
-  return package_name_;
 }
 
 const std::string& Umrf::getDescription() const
@@ -76,144 +63,6 @@ const std::string& Umrf::getDescription() const
 bool Umrf::setDescription(const std::string& description)
 {
   description_ = description;
-}
-
-bool Umrf::setPackageName(const std::string& package_name)
-{
-  if (!package_name.empty())
-  {
-    package_name_ = package_name;
-    return true;  
-  }
-  else
-  {
-    return false;
-  }
-}
-
-const std::string& Umrf::getFullName() const
-{
-  return full_name_;
-}
-
-const std::string& Umrf::getLibraryPath() const
-{
-  return library_path_;
-}
-
-bool Umrf::setLibraryPath(const std::string& library_path)
-{
-  if (!library_path.empty())
-  {
-    library_path_ = library_path;
-    return true;  
-  }
-  else
-  {
-    return false;
-  }
-}
-
-const std::vector<Umrf::Relation>& Umrf::getParents() const
-{
-  return parents_;
-}
-
-bool Umrf::setParents(const std::vector<Umrf::Relation>& parents)
-{
-  if (!parents.empty())
-  {
-    parents_ = parents;
-    return true;  
-  }
-  else
-  {
-    return false;
-  }
-}
-
-void Umrf::clearParents()
-{
-  parents_.clear();
-}
-
-bool Umrf::addParent(const Umrf::Relation& parent)
-{
-  if (!parent.empty())
-  {
-    parents_.push_back(parent);
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
-bool Umrf::removeParent(const Umrf::Relation& parent)
-{
-  auto parent_it = std::find(parents_.begin(), parents_.end(), parent);
-
-  if (parent_it != parents_.end())
-  {
-    parents_.erase(parent_it);
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
-const std::vector<Umrf::Relation>& Umrf::getChildren() const
-{
-  return children_;
-}
-
-bool Umrf::setChildren(const std::vector<Umrf::Relation>& children)
-{
-  if (!children.empty())
-  {
-    children_ = children;
-    return true;  
-  }
-  else
-  {
-    return false;
-  }
-}
-
-void Umrf::clearChildren()
-{
-  children_.clear();
-}
-
-bool Umrf::addChild(const Umrf::Relation& child)
-{
-  if (!child.empty())
-  {
-    children_.push_back(child);
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
-bool Umrf::removeChild(const Umrf::Relation& child)
-{
-  auto child_it = std::find(children_.begin(), children_.end(), child);
-
-  if (child_it != children_.end())
-  {
-    children_.erase(child_it);
-    return true;
-  }
-  else
-  {
-    return false;
-  }
 }
 
 const std::string& Umrf::getEffect() const
@@ -239,18 +88,6 @@ bool Umrf::setEffect(const std::string& effect)
   }
 }
 
-const unsigned int& Umrf::getSuffix() const
-{
-  return suffix_;
-}
-bool Umrf::setSuffix(const unsigned int& suffix)
-{
-
-  suffix_ = suffix;
-  full_name_ = name_ + "_" + std::to_string(suffix_);
-  return true;  
-}
-
 const std::string& Umrf::getNotation() const
 {
   return notation_;
@@ -267,16 +104,6 @@ bool Umrf::setNotation(const std::string& notation)
   {
     return false;
   }
-}
-
-const unsigned int& Umrf::getId() const
-{
-  return id_;
-}
-bool Umrf::setId(const unsigned int& id)
-{
-  id_ = id;
-  return true;
 }
 
 const ActionParameters& Umrf::getInputParameters() const
@@ -337,13 +164,6 @@ bool Umrf::setOutputParameters(const ActionParameters& params)
   }
 }
 
-bool Umrf::isUmrfCorrect() const
-{
-  return (!getName().empty()
-    && !getLibraryPath().empty()
-  );
-}
-
 bool Umrf::copyInputParameters(const ActionParameters& action_parameters)
 {
   LOCK_GUARD_TYPE_R guard_input_params(input_params_rw_mutex_);
@@ -373,27 +193,7 @@ bool Umrf::inputParametersReceived() const
 std::ostream& operator<<( std::ostream& stream, const Umrf& umrf)
 {
   stream << "  name: " << umrf.getName() << std::endl;
-  stream << "  suffix: " << umrf.getSuffix() << std::endl;
-  stream << "  full_name: " << umrf.getFullName() << std::endl;
   stream << "  effect: " << umrf.getEffect() << std::endl;
-  stream << "  lib path: " << umrf.getLibraryPath() << std::endl;
-  if (!umrf.getParents().empty())
-  {
-    stream << "  parents:" << std::endl;
-    for (const auto& parent : umrf.getParents())
-    {
-      stream << "   - " << parent.getFullName() << std::endl;
-    }
-  }
-
-  if (!umrf.getChildren().empty())
-  {
-    stream << "  children:" << std::endl;
-    for (const auto& child : umrf.getChildren())
-    {
-      stream << "   - " << child.getFullName() << std::endl;
-    }
-  }
 
   if (!umrf.getInputParameters().empty())
   {
@@ -475,38 +275,10 @@ bool Umrf::isEqual(const Umrf& umrf_in, bool check_updatable) const
    * Compare the general parameters
    */
   if ((name_ != umrf_in.name_) ||
-      (suffix_ != umrf_in.suffix_) ||
       (notation_ != umrf_in.notation_) ||
       (effect_ != umrf_in.effect_))
   {
     return false;
-  }
-
-  /*
-   * Compare graph connections
-   */
-  // Compare parent & children connection sizes
-  if ((children_.size() != umrf_in.children_.size()) ||
-      (parents_.size() != umrf_in.parents_.size()))
-  {
-    return false;
-  }
-
-  // Compare the connections
-  for (const auto& parent_in : umrf_in.parents_)
-  {
-    if (std::find(parents_.begin(), parents_.end(), parent_in) == parents_.end())
-    {
-      return false;
-    }
-  }
-
-  for (const auto& child_in : umrf_in.children_)
-  {
-    if (std::find(children_.begin(), children_.end(), child_in) == children_.end())
-    {
-      return false;
-    }
   }
 
   /*
@@ -569,35 +341,4 @@ bool Umrf::isEqual(const Umrf& umrf_in, bool check_updatable) const
     }
   }
   return true;
-}
-
-Umrf::Relation Umrf::asRelation() const
-{
-  return Umrf::Relation(getName(), getSuffix());
-}
-
-bool Umrf::requiredParentsFinished() const
-{
-  for (const auto& parent : parents_)
-  {
-    if (parent.getRequired() && !parent.getReceived())
-    {
-      return false;
-    }
-  }
-  return true;
-}
-
-void Umrf::setParentReceived(const Umrf::Relation& parent)
-{
-  auto parent_it = std::find(parents_.begin(), parents_.end(), parent);
-
-  if (parent_it != parents_.end())
-  {
-    parent_it->received_ = true;
-  }
-  else
-  {
-    throw CREATE_TEMOTO_ERROR_STACK("The parent does not exist");
-  }
 }

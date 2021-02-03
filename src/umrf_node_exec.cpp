@@ -14,17 +14,20 @@
  * limitations under the License.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#include "temoto_action_engine/umrf_graph_node.h"
+#include "temoto_action_engine/umrf_node_exec.h"
 
-UmrfGraphNode::UmrfGraphNode(const Umrf& umrf)
-: umrf_(std::make_shared<Umrf>(umrf))
-, state_(State::UNINITIALIZED)
+UmrfNodeExec::UmrfNodeExec(const UmrfNode& umrf_node)
+: UmrfNode(umrf_node)
 {}
 
-UmrfGraphNode::UmrfGraphNode(const UmrfGraphNode& ugn)
-: umrf_(std::make_shared<Umrf>(*(ugn.umrf_)))
-, state_(ugn.state_)
+UmrfNode UmrfNodeExec::asUmrfNode() const
+{
+  return UmrfNode(*this);
+}
+
+UmrfNodeExec::UmrfNodeExec(const UmrfNodeExec& ugnx)
+: UmrfNode(ugnx)
 {}
 
-UmrfGraphNode::~UmrfGraphNode()
+UmrfNode::~UmrfNode()
 {}

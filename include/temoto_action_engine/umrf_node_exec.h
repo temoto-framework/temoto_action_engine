@@ -24,16 +24,18 @@
 #include <boost/shared_ptr.hpp>
 #include "temoto_action_engine/compiler_macros.h"
 #include "temoto_action_engine/temoto_error.h"
-#include "temoto_action_engine/umrf_graph_node.h"
+#include "temoto_action_engine/umrf_node.h"
 
-class UmrfGraphNodeExec : public UmrfGraphNode
+class UmrfNodeExec : public UmrfNode
 {
 public:
-  UmrfGraphNodeExec(const Umrf& umrf);
+  UmrfNodeExec(const UmrfNode& umrf_node);
 
-  UmrfGraphNodeExec(const UmrfGraphNodeExec& ugnx);
+  UmrfNodeExec(const UmrfNodeExec& ugnx);
 
-  virtual ~UmrfGraphNodeExec()
+  virtual UmrfNode asUmrfNode() const;
+
+  virtual ~UmrfNodeExec()
   {
     // TODO: Make sure that all action related things are uninitialized
   }
