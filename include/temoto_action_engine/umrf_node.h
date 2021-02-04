@@ -14,8 +14,8 @@
  * limitations under the License.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef TEMOTO_ACTION_ENGINE__UMRF_GRAPH_NODE_H
-#define TEMOTO_ACTION_ENGINE__UMRF_GRAPH_NODE_H
+#ifndef TEMOTO_ACTION_ENGINE__UMRF_NODE_H
+#define TEMOTO_ACTION_ENGINE__UMRF_NODE_H
 
 #include <memory>
 #include "temoto_action_engine/umrf.h"
@@ -124,6 +124,8 @@ public:
 
   UmrfNode(const UmrfNode& un);
 
+  virtual ~UmrfNode();
+
   virtual UmrfNode asUmrfNode() const;
 
   void operator=(const UmrfNode& un)
@@ -133,7 +135,6 @@ public:
     library_path_ = un.library_path_;
     parents_ = un.parents_;
     children_ = un.children_;
-    id_ = un.id_;
     full_name_ = un.full_name_;
   }
 
@@ -148,6 +149,9 @@ public:
   const std::string& getLibraryPath() const;
   bool setLibraryPath(const std::string& library_path);
 
+  State getState() const;
+  void setState(UmrfNode::State state);
+
   const std::vector<Relation>& getParents() const;
   bool setParents(const std::vector<Relation>& parents);
   void clearParents();
@@ -160,26 +164,31 @@ public:
   bool addChild(const Relation& child);
   bool removeChild(const Relation& child);
 
-  const unsigned int& getId() const;
-  bool setId(const unsigned int& id);
-
   Relation asRelation() const;
 
   bool requiredParentsFinished() const;
 
   void setParentReceived(const UmrfNode::Relation& parent);
 
-  virtual ~UmrfNode();
+protected:
 
-private:
+  mutable MUTEX_TYPE parents_rw_mutex_;
+  GUARDED_VARIABLE(std::vector<Relation> parents_, parents_rw_mutex_);
 
-  std::vector<Relation> parents_;
-  std::vector<Relation> children_;
-  std::string package_name_;
-  unsigned int suffix_ = 0;
-  unsigned int id_;
-  std::string full_name_;
-  std::string library_path_;
+  mutable MUTEX_TYPE children_rw_mutex_;
+  GUARDED_VARIABLE(std::vector<Relation> children_, children_rw_mutex_);
+
+  mutable MUTEX_TYPE package_name_rw_mutex_;
+  GUARDED_VARIABLE(std::string package_name_, package_name_rw_mutex_);
+
+  mutable MUTEX_TYPE suffix_rw_mutex_;
+  GUARDED_VARIABLE(unsigned int suffix_, suffix_rw_mutex_);
+
+  mutable MUTEX_TYPE full_name_rw_mutex_;
+  GUARDED_VARIABLE(mutable std::string full_name_, full_name_rw_mutex_);
+
+  mutable MUTEX_TYPE library_path_rw_mutex_;
+  GUARDED_VARIABLE(std::string library_path_, library_path_rw_mutex_);
 
   mutable MUTEX_TYPE state_rw_mutex_;
   GUARDED_VARIABLE(State state_, state_rw_mutex_);

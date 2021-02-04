@@ -18,6 +18,7 @@
 
 UmrfNode::UmrfNode()
 : state_(State::UNINITIALIZED)
+, suffix_(0)
 {}
 
 UmrfNode::UmrfNode(const UmrfNode& un)
@@ -28,7 +29,6 @@ UmrfNode::UmrfNode(const UmrfNode& un)
 , library_path_(un.library_path_)
 , parents_(un.parents_)
 , children_(un.children_)
-, id_(un.id_)
 , full_name_(un.full_name_)
 {}
 
@@ -42,11 +42,13 @@ UmrfNode::~UmrfNode()
 
 const std::string& UmrfNode::getPackageName() const
 {
+  LOCK_GUARD_TYPE guard_package_name(package_name_rw_mutex_);
   return package_name_;
 }
 
 bool UmrfNode::setPackageName(const std::string& package_name)
 {
+  LOCK_GUARD_TYPE guard_package_name(package_name_rw_mutex_);
   if (!package_name.empty())
   {
     package_name_ = package_name;
@@ -60,17 +62,32 @@ bool UmrfNode::setPackageName(const std::string& package_name)
 
 const std::string& UmrfNode::getFullName() const
 {
+  LOCK_GUARD_TYPE guard_full_name(full_name_rw_mutex_);
   full_name_ = name_ + "_" + std::to_string(suffix_);
   return full_name_;
 }
 
+UmrfNode::State UmrfNode::getState() const
+{
+  LOCK_GUARD_TYPE guard_state(state_rw_mutex_);
+  return state_;
+}
+
+void UmrfNode::setState(UmrfNode::State state)
+{
+  LOCK_GUARD_TYPE guard_state(state_rw_mutex_);
+  state_ = state;
+}
+
 const std::string& UmrfNode::getLibraryPath() const
 {
+  LOCK_GUARD_TYPE guard_library_path(library_path_rw_mutex_);
   return library_path_;
 }
 
 bool UmrfNode::setLibraryPath(const std::string& library_path)
 {
+  LOCK_GUARD_TYPE guard_library_path(library_path_rw_mutex_);
   if (!library_path.empty())
   {
     library_path_ = library_path;
@@ -84,33 +101,27 @@ bool UmrfNode::setLibraryPath(const std::string& library_path)
 
 const unsigned int& UmrfNode::getSuffix() const
 {
+  LOCK_GUARD_TYPE guard_suffix(suffix_rw_mutex_);
   return suffix_;
 }
 
 bool UmrfNode::setSuffix(const unsigned int& suffix)
 {
-
+  LOCK_GUARD_TYPE guard_suffix(suffix_rw_mutex_);
   suffix_ = suffix;
+  full_name_ = name_ + "_" + std::to_string(suffix_);
   return true;  
-}
-
-const unsigned int& UmrfNode::getId() const
-{
-  return id_;
-}
-bool UmrfNode::setId(const unsigned int& id)
-{
-  id_ = id;
-  return true;
 }
 
 const std::vector<UmrfNode::Relation>& UmrfNode::getParents() const
 {
+  LOCK_GUARD_TYPE guard_parents(parents_rw_mutex_);
   return parents_;
 }
 
 bool UmrfNode::setParents(const std::vector<UmrfNode::Relation>& parents)
 {
+  LOCK_GUARD_TYPE guard_parents(parents_rw_mutex_);
   if (!parents.empty())
   {
     parents_ = parents;
@@ -124,11 +135,13 @@ bool UmrfNode::setParents(const std::vector<UmrfNode::Relation>& parents)
 
 void UmrfNode::clearParents()
 {
+  LOCK_GUARD_TYPE guard_parents(parents_rw_mutex_);
   parents_.clear();
 }
 
 bool UmrfNode::addParent(const UmrfNode::Relation& parent)
 {
+  LOCK_GUARD_TYPE guard_parents(parents_rw_mutex_);
   if (!parent.empty())
   {
     parents_.push_back(parent);
@@ -142,6 +155,7 @@ bool UmrfNode::addParent(const UmrfNode::Relation& parent)
 
 bool UmrfNode::removeParent(const UmrfNode::Relation& parent)
 {
+  LOCK_GUARD_TYPE guard_parents(parents_rw_mutex_);
   auto parent_it = std::find(parents_.begin(), parents_.end(), parent);
 
   if (parent_it != parents_.end())
@@ -157,11 +171,13 @@ bool UmrfNode::removeParent(const UmrfNode::Relation& parent)
 
 const std::vector<UmrfNode::Relation>& UmrfNode::getChildren() const
 {
+  LOCK_GUARD_TYPE guard_children(children_rw_mutex_);
   return children_;
 }
 
 bool UmrfNode::setChildren(const std::vector<UmrfNode::Relation>& children)
 {
+  LOCK_GUARD_TYPE guard_children(children_rw_mutex_);
   if (!children.empty())
   {
     children_ = children;
@@ -175,11 +191,13 @@ bool UmrfNode::setChildren(const std::vector<UmrfNode::Relation>& children)
 
 void UmrfNode::clearChildren()
 {
+  LOCK_GUARD_TYPE guard_children(children_rw_mutex_);
   children_.clear();
 }
 
 bool UmrfNode::addChild(const UmrfNode::Relation& child)
 {
+  LOCK_GUARD_TYPE guard_children(children_rw_mutex_);
   if (!child.empty())
   {
     children_.push_back(child);
@@ -193,6 +211,7 @@ bool UmrfNode::addChild(const UmrfNode::Relation& child)
 
 bool UmrfNode::removeChild(const UmrfNode::Relation& child)
 {
+  LOCK_GUARD_TYPE guard_children(children_rw_mutex_);
   auto child_it = std::find(children_.begin(), children_.end(), child);
 
   if (child_it != children_.end())
@@ -213,6 +232,7 @@ UmrfNode::Relation UmrfNode::asRelation() const
 
 bool UmrfNode::requiredParentsFinished() const
 {
+  LOCK_GUARD_TYPE guard_parents(parents_rw_mutex_);
   for (const auto& parent : parents_)
   {
     if (parent.getRequired() && !parent.getReceived())
@@ -225,6 +245,7 @@ bool UmrfNode::requiredParentsFinished() const
 
 void UmrfNode::setParentReceived(const UmrfNode::Relation& parent)
 {
+  LOCK_GUARD_TYPE guard_parents(parents_rw_mutex_);
   auto parent_it = std::find(parents_.begin(), parents_.end(), parent);
 
   if (parent_it != parents_.end())

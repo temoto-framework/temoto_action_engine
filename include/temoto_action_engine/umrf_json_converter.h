@@ -21,7 +21,7 @@
 
 #include <string>
 #include <vector>
-#include "temoto_action_engine/umrf.h"
+#include "temoto_action_engine/umrf_node.h"
 #include "temoto_action_engine/umrf_graph.h"
 #include "rapidjson/document.h"
 
@@ -69,21 +69,21 @@ static const struct RelationFields
   const char* required = "required";
 }RELATION_FIELDS;
 
-Umrf fromUmrfJsonStr(const std::string& umrf_json_str, bool as_descriptor = false);
+UmrfNode fromUmrfJsonStr(const std::string& umrf_json_str, bool as_descriptor = false);
 
-Umrf fromUmrfJsonValue(const rapidjson::Value& json_doc, bool as_descriptor = false);
+UmrfNode fromUmrfJsonValue(const rapidjson::Value& json_doc, bool as_descriptor = false);
 
 UmrfGraph fromUmrfGraphJsonStr(const std::string& umrf_graph_json_str);
 
 std::string toUmrfGraphJsonStr(const UmrfGraph& umrf_graph);
 
-// std::vector<Umrf> fromUmrfListStr(const rapidjson::Value& json_doc);
+// std::vector<UmrfNode> fromUmrfListStr(const rapidjson::Value& json_doc);
 
-std::string toUmrfJsonStr(const Umrf& umrf, bool as_descriptor = false);
+std::string toUmrfJsonStr(const UmrfNode& umrf_node, bool as_descriptor = false);
 
 void toUmrfJsonValue(rapidjson::Value& from_scratch
 , rapidjson::Document::AllocatorType& allocator
-, const Umrf& umrf
+, const UmrfNode& umrf_node
 , bool as_descriptor = false);
 
 const rapidjson::Value& getRootJsonElement(const char* element_name, const rapidjson::Value& json_doc);
@@ -96,7 +96,7 @@ bool getBoolFromValue(const rapidjson::Value& value);
 
 float getNumberFromValue(const rapidjson::Value& value);
 
-std::vector<Umrf::Relation> parseRelations(const rapidjson::Value& value_in);
+std::vector<UmrfNode::Relation> parseRelations(const rapidjson::Value& value_in);
 
 ActionParameters::Parameters parseParameters(const rapidjson::Value& value_in, std::string parent_member_name);
 

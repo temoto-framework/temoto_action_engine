@@ -21,7 +21,7 @@
 
 #include <memory>
 #include <iostream>
-#include "temoto_action_engine/umrf.h"
+#include "temoto_action_engine/umrf_node.h"
 #include "temoto_action_engine/temoto_error.h"
 #include "temoto_action_engine/messaging.h"
 
@@ -40,7 +40,7 @@ public:
   {
     if (!isInitialized())
     {
-      throw CREATE_TEMOTO_ERROR_STACK("Failed to execute the action because UMRF pointer is uninitialised");
+      throw CREATE_TEMOTO_ERROR_STACK("Failed to execute the action because the UMRF is uninitialised");
     }
     
     try
@@ -81,11 +81,12 @@ public:
   }
 
   /**
-   * @brief Set the Umrf object
+   * @brief Set the UmrfNode object
    */
-  void setUmrf(const std::shared_ptr<Umrf>& umrf)
+  void setUmrf(UmrfNode umrf)
   {
-    umrf_ = umrf;
+    umrf_node_ = umrf;
+    umrf_set_ = true;
   }
 
   virtual ~ActionBase(){};
@@ -110,31 +111,20 @@ protected:
     return !STOP_REQUESTED_;
   }
 
-  /**
-   * @brief Get the Umrf Ptr object
-   * 
-   * @return std::shared_ptr<Umrf> 
-   */
-  std::shared_ptr<Umrf> getUmrfPtr()
+  UmrfNode& getUmrfNode()
   {
-    return umrf_;
+    return umrf_node_;
   }
 
 private:
   /// Checks if the pointer to a UMRF has been set or not
   bool isInitialized()
   {
-    if(umrf_)
-    {
-      return true;
-    }
-    else
-    {
-      return false;
-    }
+    return umrf_set_;
   }
 
   bool STOP_REQUESTED_ = false;
-  std::shared_ptr<Umrf> umrf_;
+  UmrfNode umrf_node_;
+  bool umrf_set_ = false;
 };
 #endif

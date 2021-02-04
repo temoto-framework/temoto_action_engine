@@ -19,7 +19,7 @@
 #ifndef TEMOTO_ACTION_ENGINE__ACTION_MATCH_FINDER_H
 #define TEMOTO_ACTION_ENGINE__ACTION_MATCH_FINDER_H
 
-#include "temoto_action_engine/umrf.h"
+#include "temoto_action_engine/umrf_node.h"
 
 /**
  * @brief A helper class that tries to find a suitable action from a list of known actions based on given UMRF.
@@ -28,7 +28,7 @@
 class ActionMatchFinder
 {
 public:
-  bool findMatchingAction(Umrf& umrf_in, const std::vector<Umrf>& known_umrfs, bool name_match = false) const;
+  bool findMatchingAction(UmrfNode& umrf_node_in, const std::vector<UmrfNode>& known_umrfs, bool name_match = false) const;
 };
 
 #endif

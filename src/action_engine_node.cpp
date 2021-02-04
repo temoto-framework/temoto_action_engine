@@ -239,7 +239,7 @@ private:
         UmrfGraphDiffs umrf_graph_diffs;
         for(const auto& umrf_graph_diff_msg : msg.umrf_graph_diffs)
         {
-          Umrf umrf_diff = umrf_json_converter::fromUmrfJsonStr(umrf_graph_diff_msg.umrf_json);
+          UmrfNode umrf_diff = umrf_json_converter::fromUmrfJsonStr(umrf_graph_diff_msg.umrf_json);
           umrf_graph_diffs.emplace_back(umrf_graph_diff_msg.operation, umrf_diff);
         }
 

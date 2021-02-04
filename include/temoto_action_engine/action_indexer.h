@@ -23,7 +23,7 @@
 #include <mutex>
 #include <utility>
 #include "boost/filesystem.hpp"
-#include "temoto_action_engine/umrf.h"
+#include "temoto_action_engine/umrf_node.h"
 
 /**
  * @brief Responsible for finding action packages from the filesystem.
@@ -57,9 +57,9 @@ public:
   /**
    * @brief Returns all UMRFs that were found during last indexing
    * 
-   * @return const std::vector<Umrf>& 
+   * @return const std::vector<UmrfNode>& 
    */
-  const std::vector<Umrf>& getUmrfs() const;
+  const std::vector<UmrfNode>& getUmrfs() const;
 
 private:
 
@@ -75,7 +75,7 @@ private:
                         , int search_depth);
 
   /// Vector of timestamped semantic frames
-  std::vector<Umrf> indexed_umrfs_;
+  std::vector<UmrfNode> indexed_umrfs_;
 
   /// Vector of action paths
   std::vector<std::string> action_paths_;

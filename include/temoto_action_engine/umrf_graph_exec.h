@@ -18,30 +18,55 @@
 #define TEMOTO_ACTION_ENGINE__UMRF_GRAPH_EXEC_H
 
 #include "temoto_action_engine/umrf_graph_base.h"
-#include "temoto_action_engine/umrf_graph_node_exec.h"
+#include "temoto_action_engine/umrf_node_exec.h"
+#include <thread>
+#include <memory>
 
 /**
  * @brief Implements the functions needed for executing a UMRF graph
  * 
  */
-class UmrfGraphExec : public UmrfGraphBase<UmrfGraphNodeExec>
+class UmrfGraphExec : public UmrfGraphBase<UmrfNodeExec>
 {
 public:
-  UmrfGraphExec(const UmrfGraphExec& ug);
-
-  UmrfGraphExec(const UmrfGraphBase& ugb);
+  UmrfGraphExec(const UmrfGraphExec& ug) = delete;
 
   UmrfGraphExec(const std::string& graph_name);
 
-  UmrfGraphExec(const std::string& graph_name, const std::vector<Umrf>& umrfs_vec);
+  UmrfGraphExec(const UmrfGraphCommon& ugc);
+
+  UmrfGraphExec(const std::string& graph_name, const std::vector<UmrfNode>& umrf_nodes_vec);
 
   virtual ~UmrfGraphExec();
 
-  UmrfGraphBase toUmrfGraphBase();
-  
+  void startGraph();
+
+    /**
+   * @brief Executes actions in a graph specified its' unique name.
+   * 
+   * @param umrf_node_names the actions to be executed
+   * @param initialized_requrired If true then none of the actions are executed if some action is still in
+   * uninitialized state (required input parameters not received). This is a required state when root nodes
+   * of the action graph are executed.
+   */
+  void startNodes(const std::vector<std::string> umrf_node_names, bool initialized_requrired);
+
+  void stopGraph();
+
+  void clearGraph();
+
+  void stopNode(const std::string& umrf_name);
+
+  void clearNode(const std::string& umrf_name);
+
 private:
 
+  void monitoringLoop();
 
+  std::thread monitoring_thread_;
+
+  bool stop_requested_ = false;
+  
 };
 
 #endif

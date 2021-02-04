@@ -89,10 +89,18 @@ public:
   friend std::ostream& operator<<( std::ostream& stream, const Umrf& umrf);
   
 protected:
-  std::string name_;
-  std::string notation_;
-  std::string effect_;
-  std::string description_;
+
+  mutable MUTEX_TYPE_R name_rw_mutex_;
+  GUARDED_VARIABLE(std::string name_, name_rw_mutex_);
+
+  mutable MUTEX_TYPE_R notation_rw_mutex_;
+  GUARDED_VARIABLE(std::string notation_, notation_rw_mutex_);
+
+  mutable MUTEX_TYPE_R effect_rw_mutex_;
+  GUARDED_VARIABLE(std::string effect_, effect_rw_mutex_);
+
+  mutable MUTEX_TYPE_R description_rw_mutex_;
+  GUARDED_VARIABLE(std::string description_, description_rw_mutex_);
   
   mutable MUTEX_TYPE_R input_params_rw_mutex_;
   GUARDED_VARIABLE(ActionParameters input_parameters_, input_params_rw_mutex_);

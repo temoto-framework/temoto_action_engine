@@ -20,15 +20,15 @@ UmrfGraph::UmrfGraph(const UmrfGraph& ug)
 : UmrfGraphBase(ug)
 {}
 
-UmrfGraph::UmrfGraph(const UmrfGraphBase& ugb)
-: UmrfGraphBase(ugb)
+UmrfGraph::UmrfGraph(const UmrfGraphCommon& ugc)
+: UmrfGraphBase(ugc)
 {}
 
 UmrfGraph::UmrfGraph(const std::string& graph_name)
 : UmrfGraphBase(graph_name)
 {}
 
-UmrfGraph::UmrfGraph(const std::string& graph_name, const std::vector<Umrf>& umrfs_vec)
+UmrfGraph::UmrfGraph(const std::string& graph_name, const std::vector<UmrfNode>& umrfs_vec)
 : UmrfGraphBase(graph_name, umrfs_vec)
 {}
 

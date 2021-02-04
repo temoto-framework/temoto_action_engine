@@ -19,7 +19,7 @@
 
 #include <string>
 #include <vector>
-#include "temoto_action_engine/umrf.h"
+#include "temoto_action_engine/umrf_node.h"
 
 struct UmrfGraphDiff
 {
@@ -31,14 +31,14 @@ struct UmrfGraphDiff
     static constexpr const char* remove_child = "remove child";
   }OP;
 
-  UmrfGraphDiff(const std::string& operation_in, const Umrf& umrf_in)
+  UmrfGraphDiff(const std::string& operation_in, const UmrfNode& umrf_in)
   : operation(operation_in)
-  , umrf(umrf_in)
+  , umrf_node(umrf_in)
   {  
   }
 
   std::string operation;
-  Umrf umrf;
+  UmrfNode umrf_node;
 };
 
 typedef std::vector<UmrfGraphDiff> UmrfGraphDiffs;

@@ -44,6 +44,7 @@ std::string& Umrf::getNameNc()
 
 bool Umrf::setName(const std::string& name)
 {
+  LOCK_GUARD_TYPE_R guard_name(name_rw_mutex_);
   if (!name.empty())
   {
     name_ = name;
@@ -62,6 +63,7 @@ const std::string& Umrf::getDescription() const
 
 bool Umrf::setDescription(const std::string& description)
 {
+  LOCK_GUARD_TYPE_R guard_description(description_rw_mutex_);
   description_ = description;
 }
 
@@ -77,6 +79,7 @@ std::string& Umrf::getEffectNc()
 
 bool Umrf::setEffect(const std::string& effect)
 {
+  LOCK_GUARD_TYPE_R guard_effect(effect_rw_mutex_);
   if (!effect.empty())
   {
     effect_ = effect;
@@ -95,6 +98,7 @@ const std::string& Umrf::getNotation() const
 
 bool Umrf::setNotation(const std::string& notation)
 {
+  LOCK_GUARD_TYPE_R guard_notation(notation_rw_mutex_);
   if (!notation.empty())
   {
     notation_ = notation;

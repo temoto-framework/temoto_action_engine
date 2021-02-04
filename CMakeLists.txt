@@ -67,10 +67,10 @@ include_directories(
 # Library that combines core components of the action engine
 add_library(temoto_ae_components 
   src/umrf.cpp
+  src/umrf_node.cpp
+  src/umrf_node_exec.cpp
   src/umrf_graph.cpp
   src/umrf_graph_exec.cpp
-  src/umrf_graph_node.cpp
-  src/umrf_graph_node_exec.cpp
   src/action_indexer.cpp
   src/action_match_finder.cpp
   src/action_engine.cpp
@@ -109,23 +109,6 @@ install(TARGETS temoto_ae_umrf_json
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
-
-# Action engine test
-add_executable(temoto_ae_test
-  src/temoto_ae_base.cpp
-  src/umrf_json_converter.cpp
-)
-
-add_dependencies(temoto_ae_test
-  ${catkin_EXPORTED_TARGETS}
-  ${${PROJECT_NAME}_EXPORTED_TARGETS}
-  yaml-cpp062
-)
-target_link_libraries(temoto_ae_test
-  ${catkin_LIBRARIES}
-  temoto_ae_components 
-  ${libraries}
-) 
 
 # Action engine node
 add_executable(action_engine_node

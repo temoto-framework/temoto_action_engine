@@ -101,7 +101,7 @@ void ActionIndexer::findActionFilesys( std::string action_to_find
           std::ifstream ifs(umrf_full_path);
           std::string umrf_json_str;
           umrf_json_str.assign(std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>());
-          Umrf umrf = umrf_json_converter::fromUmrfJsonStr(umrf_json_str, true);
+          UmrfNode umrf = umrf_json_converter::fromUmrfJsonStr(umrf_json_str, true);
           
           // Set the library path
           boost::filesystem::path hackdir = *itr;
@@ -134,7 +134,7 @@ void ActionIndexer::findActionFilesys( std::string action_to_find
   }
 }
 
-const std::vector<Umrf>& ActionIndexer::getUmrfs() const
+const std::vector<UmrfNode>& ActionIndexer::getUmrfs() const
 {
   // Lock the mutex
   std::lock_guard<std::mutex> guard(action_sfs_mutex_);

@@ -21,8 +21,8 @@
 #include "temoto_action_engine/action_match_finder.h"
 #include "temoto_action_engine/temoto_error.h"
 #include "temoto_action_engine/umrf_graph.h"
-#include "temoto_action_engine/umrf_graph_diff.h"
 #include "temoto_action_engine/umrf_graph_exec.h"
+#include "temoto_action_engine/umrf_graph_diff.h"
 
 /**
  * @brief Handles loading and execution of TeMoto Actions
@@ -33,10 +33,17 @@ class ActionEngine
 public:
   ActionEngine();
 
+  // TODO: this method is prolly deprecated and should be removed
   void start();
 
   void executeUmrfGraph(UmrfGraph umrf_graph, bool name_match_required = false);
 
+  /**
+   * @brief Modifies a UMRF graph according to the graph_diffs
+   * 
+   * @param graph_name 
+   * @param graph_diffs 
+   */
   void modifyGraph(const std::string& graph_name, const UmrfGraphDiffs& graph_diffs);
 
   void stopUmrfGraph(const std::string& umrf_graph_name);
@@ -44,12 +51,31 @@ public:
   void addActionsPath(const std::string& action_packages_path);
 
   ~ActionEngine();
+
+  /**
+   * @brief Stops all graphs
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool stop();
+
 private:
+  bool graphExists(const std::string& graph_name) const;
+
+  // void addUmrfGraph(const UmrfGraph& umrf_graph);
+
+  void addUmrfGraph(const std::string& graph_name, const std::vector<UmrfNode>& umrf_nodes);
+
+  void executeUmrfGraph(const std::string& graph_name);
+
+  // void updateUmrfGraph(const std::string& graph_name, std::vector<UmrfNode> umrfs_vec);
+
   ActionIndexer ai_;
   ActionMatchFinder amf_;
 
-  typedef std::map<std::string, UmrfGraphExec> UmrfGraphExecMap;
+  typedef std::map<std::string, std::shared_ptr<UmrfGraphExec>> UmrfGraphExecMap;
   mutable MUTEX_TYPE_R umrf_graph_map_rw_mutex_;
-  GUARDED_VARIABLE(UmrfGraphNodeMap umrf_graph_exec_map_, umrf_graph_map_rw_mutex_);
+  GUARDED_VARIABLE(UmrfGraphExecMap umrf_graph_exec_map_, umrf_graph_map_rw_mutex_);
 };
 #endif
