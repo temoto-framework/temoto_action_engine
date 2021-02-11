@@ -89,6 +89,11 @@ public:
     umrf_set_ = true;
   }
 
+  const UmrfNode& getUmrfNodeConst()
+  {
+    return umrf_node_;
+  }
+
   virtual ~ActionBase(){};
 
 protected:

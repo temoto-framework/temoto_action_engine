@@ -74,39 +74,6 @@ UmrfNode UmrfNodeExec::asUmrfNode() const
   return UmrfNode(*this);
 }
 
-bool UmrfNodeExec::futureReceived() const
-{
-  LOCK_GUARD_TYPE_R guard_action_future(action_future_rw_mutex_);
-  if (action_future_.valid())
-  {
-    return action_future_.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
-  }
-  else
-  {
-    return true;
-  }
-}
-
-TemotoErrorStack UmrfNodeExec::getFutureValue()
-{
-  LOCK_GUARD_TYPE_R guard_action_future(action_future_rw_mutex_);
-  if (!futureReceived())
-  {
-    throw CREATE_TEMOTO_ERROR_STACK("Tried to retrieve future value before it's ready.");
-  }
-  if (future_retreived_)
-  {
-    throw CREATE_TEMOTO_ERROR_STACK("Future value is already retreived.");
-  }
-  future_retreived_ = true;
-  return action_future_.get();
-}
-
-bool UmrfNodeExec::futureRetreived() const
-{
-  return future_retreived_;
-}
-
 bool UmrfNodeExec::stopNode(float timeout)
 {
   LOCK_GUARD_TYPE guard_action_instance(action_instance_rw_mutex_);
@@ -117,7 +84,7 @@ bool UmrfNodeExec::stopNode(float timeout)
 
     // Wait until the action is finished
     Timer timeout_timer;
-    while(!futureReceived())
+    while(getState() == State::RUNNING)
     {
       if (timeout_timer.elapsed() >= timeout)
       {
@@ -128,15 +95,20 @@ bool UmrfNodeExec::stopNode(float timeout)
     }
     setState(State::FINISHED);
   }
+  return true;
 }
 
-bool UmrfNodeExec::clearNode()
+const TemotoErrorStack& UmrfNodeExec::getErrorMessages() const
+{
+  return error_messages_;
+}
+
+void UmrfNodeExec::clearNode()
 {
   try
   {
     stopNode(10);
     LOCK_GUARD_TYPE guard_action_instance(action_instance_rw_mutex_);
-    LOCK_GUARD_TYPE_R guard_action_future(action_future_rw_mutex_);
     action_instance_.reset();
     setState(State::INITIALIZED);
   }
@@ -154,7 +126,9 @@ bool UmrfNodeExec::clearNode()
   }
 }
 
-void UmrfNodeExec::instantiate()
+void UmrfNodeExec::instantiate(std::shared_ptr<std::condition_variable> notify_cv
+, std::shared_ptr<std::mutex> notify_cv_mutex
+, NotifyGraphCallback notify_graph_cb)
 { 
   LOCK_GUARD_TYPE guard_action_instance(action_instance_rw_mutex_);
   LOCK_GUARD_TYPE guard_class_loader(class_loader_rw_mutex_);
@@ -168,6 +142,11 @@ void UmrfNodeExec::instantiate()
   {
     action_instance_ = class_loader_->createInstance<ActionBase>(getName());
     action_instance_->setUmrf(UmrfNode(*this));
+
+    notify_cv_ = notify_cv;
+    notify_cv_mutex_ = notify_cv_mutex;
+    notify_graph_callback_ = notify_graph_cb;
+
     setState(State::READY);
   }
   catch(const std::exception& e)
@@ -191,17 +170,16 @@ TemotoErrorStack UmrfNodeExec::startNode()
   try
   {
     setState(State::RUNNING);
-    future_retreived_ = false;
     action_instance_->executeActionWrapped(); // Blocking call, returns when finished
 
     if ((getState() == State::RUNNING))
     {
-      // TODO: notify the parent graph via invoking the notification callback function
+      notify_graph_callback_(getFullName(), action_instance_->getUmrfNodeConst().getOutputParameters());
     }
     setState(State::FINISHED);
 
     // Since this method is meant to be executed asynchonously, then any potential errors are passed
-    // via an ErrorStack as a future value. But if there are no errors, then return an empty error stack.
+    // via an ErrorStack. But if there are no errors, then return an empty error stack.
     return TemotoErrorStack();
   }
   catch(TemotoErrorStack e)
@@ -223,18 +201,32 @@ TemotoErrorStack UmrfNodeExec::startNode()
 
 void UmrfNodeExec::startNodeThread()
 {
-  LOCK_GUARD_TYPE_R guard_action_future(action_future_rw_mutex_);
+  umrf_node_exec_thread_ = std::thread(&UmrfNodeExec::umrfNodeExecThread, this);
+}
+
+void UmrfNodeExec::umrfNodeExecThread()
+{
   if (getState() != State::READY)
   {
     throw CREATE_TEMOTO_ERROR_STACK("Cannot execute the action because it's not in READY state");
   }
   try
   {
-    action_future_ = std::async( std::launch::async, &UmrfNodeExec::startNode, this);
+    error_messages_ = startNode();
   }
   catch(const std::exception& e)
   {
     setState(State::ERROR);
     throw CREATE_TEMOTO_ERROR_STACK("Cannot start the action thread: " + std::string(e.what()));
   }
+
+  // Notify the graph that this node has finished executing
+  notify_cv_mutex_->lock();
+  notify_cv_->notify_all();
+  notify_cv_mutex_->unlock();
+}
+
+void UmrfNodeExec::joinUmrfNodeExecThread()
+{
+  umrf_node_exec_thread_.join();
 }

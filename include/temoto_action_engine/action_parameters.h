@@ -55,6 +55,7 @@ public:
     // {
     //   parameters_.insert(p);
     // }
+    return *this;
   }
 
   /**
@@ -120,7 +121,7 @@ public:
   {
     ParameterContainer pc(param_name, param_type);
     pc.setData(pl);
-    setParameter(pc);
+    return setParameter(pc);
   }
 
   template <class T> void setParameterData(const std::string& param_name, const T& data)

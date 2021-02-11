@@ -65,6 +65,7 @@ bool Umrf::setDescription(const std::string& description)
 {
   LOCK_GUARD_TYPE_R guard_description(description_rw_mutex_);
   description_ = description;
+  return true;
 }
 
 const std::string& Umrf::getEffect() const

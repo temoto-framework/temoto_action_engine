@@ -21,6 +21,8 @@
 #include "temoto_action_engine/umrf_node_exec.h"
 #include <thread>
 #include <memory>
+#include <mutex>
+#include <condition_variable>
 
 /**
  * @brief Implements the functions needed for executing a UMRF graph
@@ -29,6 +31,8 @@
 class UmrfGraphExec : public UmrfGraphBase<UmrfNodeExec>
 {
 public:
+
+
   UmrfGraphExec(const UmrfGraphExec& ug) = delete;
 
   UmrfGraphExec(const std::string& graph_name);
@@ -59,13 +63,21 @@ public:
 
   void clearNode(const std::string& umrf_name);
 
+  void notifyFinished(const std::string& parent_node_name, const ActionParameters& parent_action_parameters);
+
 private:
 
   void monitoringLoop();
 
   std::thread monitoring_thread_;
 
+  std::shared_ptr<std::condition_variable> notify_cv_;
+
+  std::shared_ptr<std::mutex> notify_cv_mutex_; 
+
   bool stop_requested_ = false;
+
+  std::vector<std::string> finished_nodes_;
   
 };
 

@@ -23,6 +23,8 @@
 
 UmrfGraphExec::UmrfGraphExec(const std::string& graph_name)
 : UmrfGraphBase(graph_name)
+, notify_cv_(std::make_shared<std::condition_variable>())
+, notify_cv_mutex_(std::make_shared<std::mutex>())
 {}
 
 UmrfGraphExec::UmrfGraphExec(const UmrfGraphCommon& ugc)
@@ -85,36 +87,46 @@ void UmrfGraphExec::monitoringLoop()
 {
   while(!stop_requested_)
   {
-    {
+    // Wait until a thread is finished
+    std::unique_lock<std::mutex> notify_cv_lock(*notify_cv_mutex_);
+    notify_cv_->wait(notify_cv_lock, [&]{return !finished_nodes_.empty();});
+
     LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
-    if (!graph_nodes_map_.empty())
+    for (const auto& finished_node : finished_nodes_)
     {
-      for (auto& graph_node : graph_nodes_map_)
+      try
       {
-        try
+        auto graph_node = graph_nodes_map_.at(finished_node);
+        graph_node->joinUmrfNodeExecThread();
+
+        // Print the error messages if any
+        std::string error_messages = graph_node->getErrorMessages().getMessage();
+        if (!error_messages.empty())
         {
-          if (graph_node.second->futureReceived() && !graph_node.second->futureRetreived())
-          {
-            std::string error_message = graph_node.second->getFutureValue().getMessage();
-            if (!error_message.empty())
-            {
-              std::cout << error_message << std::endl;
-            }
-          }
-          if (graph_node.second->getState() == UmrfNode::State::FINISHED &&
-              graph_node.second->getEffect() == "synchronous")
-          {
-            graph_node.second->clearNode();
-          }
+          std::cout << graph_node->getErrorMessages().getMessage() << std::endl;
         }
-        catch(TemotoErrorStack e)
+
+        // Clear the umrf node if it's synchronous
+        if (graph_node->getEffect() == "synchronous")
         {
-          std::cout << e.what() << '\n';
+          graph_node->clearNode();
         }
       }
+      catch(TemotoErrorStack e)
+      {
+        std::cout << e.what() << '\n';
+      }
+      catch(const std::exception& e)
+      {
+        std::cerr << e.what() << '\n';
+      }
+      catch(...)
+      {
+        std::cerr << "[" << __func__ << "] caught an unhandled exception" << '\n';
+      }
     }
-    } // Lock guard scope
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+    finished_nodes_.clear();
   }
 }
 
@@ -140,7 +152,9 @@ void UmrfGraphExec::startNodes(const std::vector<std::string> umrf_node_names, b
       // Instantiate the action
       try
       {
-        graph_nodes_map_.at(umrf_node_name)->instantiate();
+        graph_nodes_map_.at(umrf_node_name)->instantiate(notify_cv_
+        , notify_cv_mutex_
+        , std::bind(&UmrfGraphExec::notifyFinished, this, std::placeholders::_1, std::placeholders::_2));
         action_rollback_list.insert(umrf_node_name);
       }
       catch(TemotoErrorStack e)
@@ -184,4 +198,14 @@ void UmrfGraphExec::startNodes(const std::vector<std::string> umrf_node_names, b
     }
     throw FORWARD_TEMOTO_ERROR_STACK(e);
   }
+}
+
+void UmrfGraphExec::notifyFinished(const std::string& parent_node_name, const ActionParameters& parent_action_parameters)
+{
+  // TODO
+  std::unique_lock<std::mutex> notify_cv_lock(*notify_cv_mutex_);
+  finished_nodes_.push_back(parent_node_name);
+  notify_cv_lock.unlock();
+
+  return;
 }

@@ -19,17 +19,22 @@
 
 #include <memory>
 #include <string>
-#include <future>
+#include <thread>
 #include <class_loader/class_loader.hpp>
 #include <boost/shared_ptr.hpp>
+#include <functional>
+#include <condition_variable>
 #include "temoto_action_engine/compiler_macros.h"
 #include "temoto_action_engine/temoto_error.h"
 #include "temoto_action_engine/umrf_node.h"
 #include "temoto_action_engine/action_base.h"
 
+typedef std::function<void(const std::string&, const ActionParameters&)> NotifyGraphCallback;
+
 class UmrfNodeExec : public UmrfNode
 {
 public:
+
   UmrfNodeExec(const UmrfNode& umrf_node);
 
   UmrfNodeExec(const UmrfNodeExec& unx) = delete;
@@ -38,9 +43,9 @@ public:
 
   virtual UmrfNode asUmrfNode() const;
 
-  bool futureReceived() const;
+  // bool futureReceived() const;
 
-  bool futureRetreived() const;
+  // bool futureRetreived() const;
 
   /**
    * @brief Executes the action
@@ -55,10 +60,19 @@ public:
   void startNodeThread();
 
   /**
+   * @brief Wraps the UmrfNodeExec::startNode() and notifies the graph via condition variable
+   * when finished 
+   * 
+   */
+  void umrfNodeExecThread();
+
+  /**
    * @brief Creates an instance of the underlying action
    * 
    */
-  void instantiate();
+  void instantiate(std::shared_ptr<std::condition_variable> notify_cv
+  , std::shared_ptr<std::mutex> notify_cv_mutex
+  , NotifyGraphCallback notify_graph_cb);
 
   /**
    * @brief Sets the stop request flag via BaseAction::stopRequested and waits for the specified timeout period for
@@ -72,24 +86,31 @@ public:
    * @brief Stops the action (UmrfNodeExec::stopNode) and destroys the action instance object.
    * 
    */
-  bool clearNode();
+  void clearNode();
 
-  TemotoErrorStack getFutureValue();
+  void joinUmrfNodeExecThread();
+
+  const TemotoErrorStack& getErrorMessages() const;
 
 private:
-
-  bool future_retreived_ = false;
-
-  float default_stopping_timeout_ = 5;
-
-  mutable MUTEX_TYPE_R action_future_rw_mutex_;
-  GUARDED_VARIABLE(std::future<TemotoErrorStack> action_future_, action_future_rw_mutex_);
 
   mutable MUTEX_TYPE class_loader_rw_mutex_;
   GUARDED_VARIABLE(std::shared_ptr<class_loader::ClassLoader> class_loader_, class_loader_rw_mutex_);
 
   mutable MUTEX_TYPE action_instance_rw_mutex_;
   GUARDED_VARIABLE(boost::shared_ptr<ActionBase> action_instance_, action_instance_rw_mutex_);
+
+  std::thread umrf_node_exec_thread_;
+
+  float default_stopping_timeout_ = 5;
+
+  TemotoErrorStack error_messages_;
+
+  std::shared_ptr<std::condition_variable> notify_cv_;
+
+  std::shared_ptr<std::mutex> notify_cv_mutex_;
+
+  NotifyGraphCallback notify_graph_callback_ = NULL;
 
 };
 
