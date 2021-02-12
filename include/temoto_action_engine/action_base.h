@@ -65,10 +65,7 @@ public:
    * @brief Custom parameter notification routine;
    * 
    */
-  virtual void onParameterUpdate()
-  {
-    TEMOTO_PRINT("parameter update");
-  }
+  virtual void updateParameters(const ActionParameters& parameters_in) = 0;
 
   /**
    * @brief Sets the STOP_REQUESTED_ member variable to "true" which is used by actionOk()
@@ -89,7 +86,7 @@ public:
     umrf_set_ = true;
   }
 
-  const UmrfNode& getUmrfNodeConst()
+  const UmrfNode& getUmrfNodeConst() const
   {
     return umrf_node_;
   }

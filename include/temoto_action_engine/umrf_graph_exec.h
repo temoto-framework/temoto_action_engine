@@ -49,11 +49,11 @@ public:
    * @brief Executes actions in a graph specified its' unique name.
    * 
    * @param umrf_node_names the actions to be executed
-   * @param initialized_requrired If true then none of the actions are executed if some action is still in
+   * @param all_ready_requrired If true then none of the actions are executed if some action is still in
    * uninitialized state (required input parameters not received). This is a required state when root nodes
    * of the action graph are executed.
    */
-  void startNodes(const std::vector<std::string> umrf_node_names, bool initialized_requrired);
+  void startNodes(const std::vector<std::string> umrf_node_names, bool all_ready_requrired);
 
   void stopGraph();
 

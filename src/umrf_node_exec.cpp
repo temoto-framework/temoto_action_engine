@@ -44,13 +44,10 @@ UmrfNodeExec::UmrfNodeExec(const UmrfNode& umrf_node)
       setState(State::ERROR);
       return;
     }
-    if (inputParametersReceived() && requiredParentsFinished())
-    {
-      setState(State::INITIALIZED);
-    }
   }
   catch(const std::exception& e)
   {
+    setState(State::ERROR);
     std::cerr << "Failed to initialize the Action Handle because: " << e.what() << '\n';
   }
 }
@@ -110,7 +107,7 @@ void UmrfNodeExec::clearNode()
     stopNode(10);
     LOCK_GUARD_TYPE guard_action_instance(action_instance_rw_mutex_);
     action_instance_.reset();
-    setState(State::INITIALIZED);
+    setState(State::UNINITIALIZED);
   }
   catch(TemotoErrorStack e)
   {
@@ -133,9 +130,13 @@ void UmrfNodeExec::instantiate(std::shared_ptr<std::condition_variable> notify_c
   LOCK_GUARD_TYPE guard_action_instance(action_instance_rw_mutex_);
   LOCK_GUARD_TYPE guard_class_loader(class_loader_rw_mutex_);
 
-  if (getState() != State::INITIALIZED)
+  if (getState() == State::ERROR)
   {
-    throw CREATE_TEMOTO_ERROR_STACK("Cannot instantiate the action because it's not initialized");
+    throw CREATE_TEMOTO_ERROR_STACK("Cannot instantiate the action because it's in error state");
+  }
+  else if (getState() == State::INSTANTIATED)
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("The action is already instantiated");
   }
 
   try
@@ -147,7 +148,14 @@ void UmrfNodeExec::instantiate(std::shared_ptr<std::condition_variable> notify_c
     notify_cv_mutex_ = notify_cv_mutex;
     notify_graph_callback_ = notify_graph_cb;
 
-    setState(State::READY);
+    if (inputParametersReceived() && requiredParentsFinished())
+    {
+      setState(State::READY);
+    }
+    else
+    {
+      setState(State::INSTANTIATED);
+    }
   }
   catch(const std::exception& e)
   {
@@ -195,7 +203,7 @@ TemotoErrorStack UmrfNodeExec::startNode()
   catch(...)
   {
     setState(State::ERROR);
-    return CREATE_TEMOTO_ERROR_STACK("Caught an unhandled error.");
+    return CREATE_TEMOTO_ERROR_STACK("Caught an unhandled exception.");
   }
 }
 
@@ -229,4 +237,48 @@ void UmrfNodeExec::umrfNodeExecThread()
 void UmrfNodeExec::joinUmrfNodeExecThread()
 {
   umrf_node_exec_thread_.join();
+}
+
+void UmrfNodeExec::updateInstanceParams(const ActionParameters& ap_in)
+{
+  LOCK_GUARD_TYPE guard_action_instance(action_instance_rw_mutex_);
+  try
+  {
+    if (getState() != State::INSTANTIATED || 
+        getState() != State::READY || 
+        getState() != State::RUNNING)
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Cannot update action's parameters because it's not in INSTANTIATED, READY or RUNNING state");
+    }
+    action_instance_->updateParameters(ap_in);
+
+    if (action_instance_->getUmrfNodeConst().inputParametersReceived() && 
+        requiredParentsFinished() &&
+        getState() == State::INSTANTIATED)
+    {
+      setState(State::READY);
+    }
+  }
+  catch(TemotoErrorStack e)
+  {
+    throw FORWARD_TEMOTO_ERROR_STACK(e);
+  }
+  catch(const std::exception& e)
+  {
+    throw CREATE_TEMOTO_ERROR_STACK(std::string(e.what()));
+  }
+  catch(...)
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("Caught an unhandled exception.");
+  }
+}
+
+bool UmrfNodeExec::getInctanceInputParametersReceived() const
+{
+  LOCK_GUARD_TYPE guard_action_instance(action_instance_rw_mutex_);
+  if (getState() != State::INSTANTIATED)
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("The action is not instantiated");
+  }
+  return action_instance_->getUmrfNodeConst().inputParametersReceived();
 }

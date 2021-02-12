@@ -14,8 +14,6 @@
  * limitations under the License.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* Author: Robert Valner */
-
 #include "temoto_action_engine/umrf.h"
 #include "temoto_action_engine/temoto_error.h"
 #include <iostream>
@@ -169,12 +167,12 @@ bool Umrf::setOutputParameters(const ActionParameters& params)
   }
 }
 
-bool Umrf::copyInputParameters(const ActionParameters& action_parameters)
-{
-  LOCK_GUARD_TYPE_R guard_input_params(input_params_rw_mutex_);
-  input_parameters_.copyParameters(action_parameters);
-  return inputParametersReceived();
-}
+// bool Umrf::copyInputParameters(const ActionParameters& action_parameters)
+// {
+//   LOCK_GUARD_TYPE_R guard_input_params(input_params_rw_mutex_);
+//   input_parameters_.copyParameters(action_parameters);
+//   return inputParametersReceived();
+// }
 
 bool Umrf::inputParametersReceived() const
 {

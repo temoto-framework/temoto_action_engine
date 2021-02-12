@@ -173,38 +173,34 @@ public:
     return false;
   }
 
-  bool copyParameters(const ActionParameters& params_in)
+  std::set<std::string> getTransferableParams(const ActionParameters& params_in) const
   {
     try
     {
-      std::set<std::string> param_names = getParamNames();
-      while(!param_names.empty())
+      std::set<std::string> local_param_names = getParamNames();
+      std::set<std::string> transferable_params;
+
+      while(!local_param_names.empty())
       {
-        std::set<std::string> params_in_group = checkParamSourceGroup(*parameters_.find(*param_names.begin()));
+        std::set<std::string> local_params_in_group = checkParamSourceGroup(*parameters_.find(*local_param_names.begin()));
 
         // First make sure that the parameters are of same type
-        bool all_params_correct = true;
-        for (const auto& param_in : params_in.getParameterGroup(params_in_group))
+        bool group_intact = true;
+        for (const auto& param_in : params_in.getParameterGroup(local_params_in_group))
         {
           if (!hasParameter(param_in))
           {
-            all_params_correct = false;
+            group_intact = false;
             break;
           }
         }
-        if (all_params_correct)
+        if (group_intact)
         {
-          for (const auto& param_in : params_in.getParameterGroup(params_in_group))
-          {
-            setParameter(param_in);
-          }
+          transferable_params.insert(local_params_in_group.begin(), local_params_in_group.end());
         }
-        for (const auto param_in_group : params_in_group)
-        {
-          param_names.erase(param_in_group);
-        }
+        local_param_names.erase(local_params_in_group.begin(), local_params_in_group.end());
       }
-      return true;
+      return transferable_params;
     }
     catch(TemotoErrorStack e)
     {

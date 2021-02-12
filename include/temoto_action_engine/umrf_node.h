@@ -28,8 +28,8 @@ public:
   enum class State
   {
     UNINITIALIZED,      // Action library is not loaded or input parameters not received
-    INITIALIZED,        // Action library is loaded and input parameters received
-    READY,              // Action instance is loaded
+    INSTANTIATED,
+    READY,              // Action instance is loaded and input parameters received
     RUNNING,            // Action instance is running
     STOP_REQUESTED,     // A request to stop has been registered
     FINISHED,           // Action instance has finished execution
@@ -40,7 +40,7 @@ public:
   std::map<State, std::string> state_to_str_map_ = 
   {
     {State::UNINITIALIZED, "UNINITIALIZED"},
-    {State::INITIALIZED, "INITIALIZED"},
+    {State::INSTANTIATED, "INSTANTIATED"},
     {State::READY, "READY"},
     {State::RUNNING, "RUNNING"},
     {State::STOP_REQUESTED, "STOP_REQUESTED"},

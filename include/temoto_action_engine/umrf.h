@@ -72,7 +72,7 @@ public:
   bool setInputParameters(const ActionParameters& params);
   bool setInputParameter(const ActionParameters::ParameterContainer& param_in);
 
-  bool copyInputParameters(const ActionParameters& action_parameters);
+  //bool copyInputParameters(const ActionParameters& action_parameters);
   
   bool inputParametersReceived() const;
 
