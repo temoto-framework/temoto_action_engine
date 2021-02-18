@@ -26,6 +26,7 @@
 #include "temoto_action_engine/action_parameter.h"
 #include "temoto_action_engine/temoto_error.h"
 #include "boost/any.hpp"
+#include <iostream> // TODO remove
 
 /*
  * Action Parameters
@@ -210,10 +211,13 @@ public:
 
   const ParameterContainer& getParameter(const std::string& name) const
   {
+    std::cout << "DX_3_2_0_0" << std::endl; // TODO remove
     if (!hasParameter(name))
     {
-      throw CREATE_TEMOTO_ERROR("Could not find parameter '" + name + "'.");
+      std::cout << "DX_3_2_0_e1" << std::endl; // TODO remove
+      throw CREATE_TEMOTO_ERROR_STACK("Could not find parameter '" + name + "'.");
     }
+    std::cout << "DX_3_2_0_v2" << std::endl; // TODO remove
     return *parameters_.find(name);
   }
 
@@ -221,7 +225,9 @@ public:
   {
     try
     {
+      std::cout << "DX_3_2_0" << std::endl; // TODO remove
       const ParameterContainer& pc = getParameter(name);
+      std::cout << "DX_3_2_1" << std::endl; // TODO remove
       if (pc.getDataSize() > 0)
       {
         return boost::any_cast<T>(pc.getData());
@@ -233,10 +239,12 @@ public:
     }
     catch(TemotoErrorStack e)
     {
+      std::cout << "DX_3_2_e1" << std::endl; // TODO remove
       throw FORWARD_TEMOTO_ERROR_STACK(e);
     }
     catch(std::exception e)
     {
+      std::cout << "DX_3_2_e2" << std::endl; // TODO remove
       throw CREATE_TEMOTO_ERROR_STACK(e.what());
     }
   }
@@ -283,7 +291,11 @@ public:
 
   bool hasParameter(const std::string& parameter_name) const
   {
-    return (parameters_.find(parameter_name) != parameters_.end());
+    std::cout << "DX_3_2_0_0_0" << std::endl; // TODO remove
+    bool todo_remove = parameters_.find(parameter_name) != parameters_.end();
+    std::cout << "DX_3_2_0_0_1" << std::endl; // TODO remove
+    return todo_remove;
+    //return (parameters_.find(parameter_name) != parameters_.end());
   }
 
   bool hasParameter(const ParameterContainer& param_in) const

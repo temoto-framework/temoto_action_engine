@@ -178,7 +178,9 @@ TemotoErrorStack UmrfNodeExec::startNode()
   try
   {
     setState(State::RUNNING);
+    std::cout << "DX_1" << std::endl; // TODO remove
     action_instance_->executeActionWrapped(); // Blocking call, returns when finished
+    TEMOTO_PRINT(getFullName() + ": i am done."); // TODO remove
 
     if ((getState() == State::RUNNING))
     {
@@ -193,6 +195,7 @@ TemotoErrorStack UmrfNodeExec::startNode()
   catch(TemotoErrorStack e)
   {
     setState(State::ERROR);
+    std::cout << "D_e6 opsti" << std::endl; // TODO remove
     return FORWARD_TEMOTO_ERROR_STACK(e);
   }
   catch(const std::exception& e)
@@ -220,7 +223,9 @@ void UmrfNodeExec::umrfNodeExecThread()
   }
   try
   {
+    std::cout << "DX_0" << std::endl; // TODO remove
     error_messages_ = startNode();
+    std::cout << "DX_0 lopp" << std::endl; // TODO remove
   }
   catch(const std::exception& e)
   {
@@ -228,10 +233,14 @@ void UmrfNodeExec::umrfNodeExecThread()
     throw CREATE_TEMOTO_ERROR_STACK("Cannot start the action thread: " + std::string(e.what()));
   }
 
+  std::cout << "DX_ lock" << std::endl; // TODO remove
   // Notify the graph that this node has finished executing
   notify_cv_mutex_->lock();
+  std::cout << "DX_ got a lock" << std::endl; // TODO remove
   notify_cv_->notify_all();
+  std::cout << "DX_ notified" << std::endl; // TODO remove
   notify_cv_mutex_->unlock();
+  std::cout << "DX_ unlock" << std::endl; // TODO remove
 }
 
 void UmrfNodeExec::joinUmrfNodeExecThread()

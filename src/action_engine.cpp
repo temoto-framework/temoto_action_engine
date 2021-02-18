@@ -239,7 +239,7 @@ bool ActionEngine::stop()
     umrf_graph.second->clearGraph();
   }
 
-  TEMOTO_PRINT("Action Executor is stopped.");
+  TEMOTO_PRINT("Action Engine is stopped.");
   return true;
 }
 

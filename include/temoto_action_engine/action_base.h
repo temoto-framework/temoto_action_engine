@@ -49,6 +49,7 @@ public:
     }
     catch(TemotoErrorStack e)
     {
+      std::cout << "D_e5" << std::endl; // TODO remove
       throw FORWARD_TEMOTO_ERROR_STACK(e);
     }
     catch(const std::exception& e)
@@ -62,7 +63,7 @@ public:
   }
 
   /**
-   * @brief Custom parameter notification routine;
+   * @brief Parameter updating routine
    * 
    */
   virtual void updateParameters(const ActionParameters& parameters_in) = 0;
