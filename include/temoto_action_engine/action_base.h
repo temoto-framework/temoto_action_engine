@@ -49,7 +49,6 @@ public:
     }
     catch(TemotoErrorStack e)
     {
-      std::cout << "D_e5" << std::endl; // TODO remove
       throw FORWARD_TEMOTO_ERROR_STACK(e);
     }
     catch(const std::exception& e)

@@ -13,7 +13,7 @@ int main(int argc, char** argv)
 {
   if (!(argc == 3 || argc == 5))
   {
-    std::cout << "Missing argument for json base path\n";
+    std::cout << "Missing umrf graph path argument \n";
     return 1;
   }
 

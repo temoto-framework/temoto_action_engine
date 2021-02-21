@@ -111,9 +111,7 @@ bool Umrf::setNotation(const std::string& notation)
 
 const ActionParameters& Umrf::getInputParameters() const
 {
-  std::cout << "DX_3_2" << std::endl; // TODO remove
   LOCK_GUARD_TYPE_R guard_input_params(input_params_rw_mutex_);
-  std::cout << "DX_3_3" << std::endl; // TODO remove
   return input_parameters_;
 }
 

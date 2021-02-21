@@ -29,7 +29,8 @@
 #include "temoto_action_engine/umrf_node.h"
 #include "temoto_action_engine/action_base.h"
 
-typedef std::function<void(const std::string&, const ActionParameters&)> NotifyGraphCallback;
+typedef std::function<void(const std::string&, const ActionParameters&)> StartChildNodesCb;
+typedef std::function<void(const std::string&)> NotifyFinishedCb;
 
 class UmrfNodeExec : public UmrfNode
 {
@@ -47,7 +48,7 @@ public:
    * @brief Executes the action
    * 
    */
-  TemotoErrorStack startNode();
+  void startNode();
 
   /**
    * @brief Executes the action in a new thread
@@ -66,9 +67,8 @@ public:
    * @brief Creates an instance of the underlying action
    * 
    */
-  void instantiate(std::shared_ptr<std::condition_variable> notify_cv
-  , std::shared_ptr<std::mutex> notify_cv_mutex
-  , NotifyGraphCallback notify_graph_cb);
+  void instantiate(NotifyFinishedCb notify_finished_cb
+  , StartChildNodesCb start_child_nodes_cb);
 
   /**
    * @brief Sets the stop request flag via BaseAction::stopRequested and waits for the specified timeout period for
@@ -106,11 +106,9 @@ private:
 
   TemotoErrorStack error_messages_;
 
-  std::shared_ptr<std::condition_variable> notify_cv_;
+  NotifyFinishedCb notify_finished_cb_ = NULL;
 
-  std::shared_ptr<std::mutex> notify_cv_mutex_;
-
-  NotifyGraphCallback notify_graph_callback_ = NULL;
+  StartChildNodesCb start_child_nodes_cb_ = NULL;
 
 };
 

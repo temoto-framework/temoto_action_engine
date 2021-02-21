@@ -108,6 +108,7 @@ void ActionEngine::executeUmrfGraph(const std::string& graph_name)
   }
   catch(TemotoErrorStack e)
   {
+    stopUmrfGraph(graph_name);
     throw FORWARD_TEMOTO_ERROR_STACK(e);
   }
 }
@@ -239,7 +240,7 @@ bool ActionEngine::stop()
     umrf_graph.second->clearGraph();
   }
 
-  TEMOTO_PRINT("Action Engine is stopped.");
+  TEMOTO_PRINT("Action Engine is stopped");
   return true;
 }
 

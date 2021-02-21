@@ -45,7 +45,15 @@ public:
 
   void startGraph();
 
-    /**
+  void stopGraph();
+
+  void clearGraph();
+
+  void stopNode(const std::string& umrf_name);
+
+  void clearNode(const std::string& umrf_name);
+
+  /**
    * @brief Executes actions in a graph specified its' unique name.
    * 
    * @param umrf_node_names the actions to be executed
@@ -55,15 +63,9 @@ public:
    */
   void startNodes(const std::vector<std::string> umrf_node_names, bool all_ready_requrired);
 
-  void stopGraph();
+  void startChildNodes(const std::string& parent_node_name, const ActionParameters& parent_action_parameters);
 
-  void clearGraph();
-
-  void stopNode(const std::string& umrf_name);
-
-  void clearNode(const std::string& umrf_name);
-
-  void notifyFinished(const std::string& parent_node_name, const ActionParameters& parent_action_parameters);
+  void notifyFinished(const std::string& node_name);
 
 private:
 

@@ -96,6 +96,11 @@ public:
     return *this;
   }
 
+  void appendError(const TemotoErrorStack& tes)
+  {
+    error_stack_.insert(error_stack_.end(), tes.getErrorStack().begin(), tes.getErrorStack().end());
+  }
+
   const std::string& getMessage() const
   {
     messages_.clear();

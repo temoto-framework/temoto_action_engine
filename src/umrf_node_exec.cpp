@@ -123,9 +123,8 @@ void UmrfNodeExec::clearNode()
   }
 }
 
-void UmrfNodeExec::instantiate(std::shared_ptr<std::condition_variable> notify_cv
-, std::shared_ptr<std::mutex> notify_cv_mutex
-, NotifyGraphCallback notify_graph_cb)
+void UmrfNodeExec::instantiate(NotifyFinishedCb notify_finished_cb
+, StartChildNodesCb start_child_nodes_cb)
 { 
   LOCK_GUARD_TYPE guard_action_instance(action_instance_rw_mutex_);
   LOCK_GUARD_TYPE guard_class_loader(class_loader_rw_mutex_);
@@ -144,9 +143,8 @@ void UmrfNodeExec::instantiate(std::shared_ptr<std::condition_variable> notify_c
     action_instance_ = class_loader_->createInstance<ActionBase>(getName());
     action_instance_->setUmrf(UmrfNode(*this));
 
-    notify_cv_ = notify_cv;
-    notify_cv_mutex_ = notify_cv_mutex;
-    notify_graph_callback_ = notify_graph_cb;
+    notify_finished_cb_ = notify_finished_cb;
+    start_child_nodes_cb_ = start_child_nodes_cb;
 
     if (inputParametersReceived() && requiredParentsFinished())
     {
@@ -164,49 +162,29 @@ void UmrfNodeExec::instantiate(std::shared_ptr<std::condition_variable> notify_c
   }
 }
 
-TemotoErrorStack UmrfNodeExec::startNode()
+void UmrfNodeExec::startNode()
 {
   // TODO: If the action is running (blocking), and the action instance is guarded
   // with a mutex at the same time, then the action cannot be stopped because the mutex is locked
   // while the action is running
   //LOCK_GUARD_TYPE guard_action_instance(action_instance_rw_mutex_);
-  
+
   if (getState() != State::READY)
   {
-    return CREATE_TEMOTO_ERROR_STACK("Cannot execute the action because it's not in READY state");
+    error_messages_ = CREATE_TEMOTO_ERROR_STACK("Cannot execute the action because it's not in READY state");
+    return;
   }
   try
   {
     setState(State::RUNNING);
-    std::cout << "DX_1" << std::endl; // TODO remove
     action_instance_->executeActionWrapped(); // Blocking call, returns when finished
-    TEMOTO_PRINT(getFullName() + ": i am done."); // TODO remove
-
-    if ((getState() == State::RUNNING))
-    {
-      notify_graph_callback_(getFullName(), action_instance_->getUmrfNodeConst().getOutputParameters());
-    }
+    start_child_nodes_cb_(getFullName(), action_instance_->getUmrfNodeConst().getOutputParameters());
     setState(State::FINISHED);
-
-    // Since this method is meant to be executed asynchonously, then any potential errors are passed
-    // via an ErrorStack. But if there are no errors, then return an empty error stack.
-    return TemotoErrorStack();
   }
   catch(TemotoErrorStack e)
   {
     setState(State::ERROR);
-    std::cout << "D_e6 opsti" << std::endl; // TODO remove
-    return FORWARD_TEMOTO_ERROR_STACK(e);
-  }
-  catch(const std::exception& e)
-  {
-    setState(State::ERROR);
-    return CREATE_TEMOTO_ERROR_STACK(std::string(e.what()));
-  }
-  catch(...)
-  {
-    setState(State::ERROR);
-    return CREATE_TEMOTO_ERROR_STACK("Caught an unhandled exception.");
+    error_messages_ = FORWARD_TEMOTO_ERROR_STACK(e);
   }
 }
 
@@ -223,24 +201,26 @@ void UmrfNodeExec::umrfNodeExecThread()
   }
   try
   {
-    std::cout << "DX_0" << std::endl; // TODO remove
-    error_messages_ = startNode();
-    std::cout << "DX_0 lopp" << std::endl; // TODO remove
+    startNode();
+  }
+  catch(TemotoErrorStack e)
+  {
+    error_messages_.appendError(FORWARD_TEMOTO_ERROR_STACK(e));
   }
   catch(const std::exception& e)
   {
-    setState(State::ERROR);
-    throw CREATE_TEMOTO_ERROR_STACK("Cannot start the action thread: " + std::string(e.what()));
+    error_messages_ = CREATE_TEMOTO_ERROR_STACK(std::string(e.what()));
+  }
+  catch(...)
+  {  
+    error_messages_ = CREATE_TEMOTO_ERROR_STACK("Caught an unhandled error.");
   }
 
-  std::cout << "DX_ lock" << std::endl; // TODO remove
-  // Notify the graph that this node has finished executing
-  notify_cv_mutex_->lock();
-  std::cout << "DX_ got a lock" << std::endl; // TODO remove
-  notify_cv_->notify_all();
-  std::cout << "DX_ notified" << std::endl; // TODO remove
-  notify_cv_mutex_->unlock();
-  std::cout << "DX_ unlock" << std::endl; // TODO remove
+  /*
+   * Notify the graph that the action has finished, regardless whether the action finished
+   * with an error or not
+   */
+  notify_finished_cb_(getFullName());
 }
 
 void UmrfNodeExec::joinUmrfNodeExecThread()

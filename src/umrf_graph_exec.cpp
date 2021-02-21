@@ -72,6 +72,12 @@ void UmrfGraphExec::clearGraph()
 
   // Stop the monitoring thread
   stop_requested_ = true;
+  notify_cv_->notify_all();
+  
+  while(!monitoring_thread_.joinable())
+  {
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
   monitoring_thread_.join();
 
   // Clear the nodes
@@ -93,9 +99,12 @@ void UmrfGraphExec::monitoringLoop()
   {
     // Wait until a thread is finished
     std::unique_lock<std::mutex> notify_cv_lock(*notify_cv_mutex_);
-    std::cout << __func__ << "waiting for notification" << std::endl; // TODO remove
-    notify_cv_->wait(notify_cv_lock, [&]{return !finished_nodes_.empty();});
-    std::cout << __func__ << "got a notification" << std::endl; // TODO remove
+    notify_cv_->wait(notify_cv_lock, [&]{return !finished_nodes_.empty() || stop_requested_;});
+
+    if (stop_requested_)
+    {
+      break;
+    }
 
     LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
     for (const auto& finished_node : finished_nodes_)
@@ -145,7 +154,6 @@ void UmrfGraphExec::startNodes(const std::vector<std::string> umrf_node_names, b
   std::set<std::string> umrf_node_names_exec(umrf_node_names.begin(), umrf_node_names.end());
   try
   {
-    std::cout << "D0" << std::endl; // TODO remove
     /*
      * Check if the actions have received all required parameters and parent signals
      */
@@ -168,8 +176,6 @@ void UmrfGraphExec::startNodes(const std::vector<std::string> umrf_node_names, b
       }
     }
 
-    std::cout << "D1" << std::endl; // TODO remove
-
     if (all_ready_requrired && umrf_node_names_exec.size() != umrf_node_names.size())
     {
       throw CREATE_TEMOTO_ERROR_STACK("Cannot execute the actions because all actions were not fully initialized.");
@@ -181,17 +187,15 @@ void UmrfGraphExec::startNodes(const std::vector<std::string> umrf_node_names, b
      */
     for (const auto& umrf_node_name : umrf_node_names_exec)
     {
-      std::cout << "D2" << std::endl; // TODO remove
       // Instantiate the action
       try
       {
         if (graph_nodes_map_.at(umrf_node_name)->getState() == UmrfNode::State::UNINITIALIZED)
         {
-          std::cout << "D3" << std::endl; // TODO remove
-          graph_nodes_map_.at(umrf_node_name)->instantiate(notify_cv_
-          , notify_cv_mutex_
-          , std::bind(&UmrfGraphExec::notifyFinished, this, std::placeholders::_1, std::placeholders::_2));
           action_rollback_list.insert(umrf_node_name);
+          graph_nodes_map_.at(umrf_node_name)->instantiate(
+            std::bind(&UmrfGraphExec::notifyFinished, this, std::placeholders::_1)
+          , std::bind(&UmrfGraphExec::startChildNodes, this, std::placeholders::_1, std::placeholders::_2));
         }
       }
       catch(TemotoErrorStack e)
@@ -204,7 +208,6 @@ void UmrfGraphExec::startNodes(const std::vector<std::string> umrf_node_names, b
       }
     }
 
-    std::cout << "D4" << std::endl; // TODO remove
     /*
      * Execute the actions. If there are any problems with executing
      * the graph, then the whole graph is rolled back
@@ -214,9 +217,8 @@ void UmrfGraphExec::startNodes(const std::vector<std::string> umrf_node_names, b
       // Execute the action
       try
       {
-        std::cout << "D5" << std::endl; // TODO remove
-        graph_nodes_map_.at(umrf_node_name)->startNodeThread();
         action_rollback_list.insert(umrf_node_name);
+        graph_nodes_map_.at(umrf_node_name)->startNodeThread();
       }
       catch(TemotoErrorStack e)
       {
@@ -237,16 +239,10 @@ void UmrfGraphExec::startNodes(const std::vector<std::string> umrf_node_names, b
     }
     throw FORWARD_TEMOTO_ERROR_STACK(e);
   }
-  std::cout << "D6" << std::endl; // TODO remove
 }
 
-void UmrfGraphExec::notifyFinished(const std::string& parent_node_name, const ActionParameters& parent_action_parameters)
+void UmrfGraphExec::startChildNodes(const std::string& parent_node_name, const ActionParameters& parent_action_parameters)
 {
-  // TODO
-  std::unique_lock<std::mutex> notify_cv_lock(*notify_cv_mutex_);
-  finished_nodes_.push_back(parent_node_name);
-  notify_cv_lock.unlock();
-
   /*
    * Pass the output parameters of the parent action to child actions
    */
@@ -294,9 +290,9 @@ void UmrfGraphExec::notifyFinished(const std::string& parent_node_name, const Ac
          */
         if (child_node->getState() == UmrfNode::State::UNINITIALIZED)
         {
-          child_node->instantiate(notify_cv_
-          , notify_cv_mutex_
-          , std::bind(&UmrfGraphExec::notifyFinished, this, std::placeholders::_1, std::placeholders::_2));
+          child_node->instantiate(
+            std::bind(&UmrfGraphExec::notifyFinished, this, std::placeholders::_1)
+          , std::bind(&UmrfGraphExec::startChildNodes, this, std::placeholders::_1, std::placeholders::_2));
         }
 
         ActionParameters transferable_params;
@@ -322,6 +318,18 @@ void UmrfGraphExec::notifyFinished(const std::string& parent_node_name, const Ac
   {
     throw CREATE_TEMOTO_ERROR_STACK(std::string(e.what()));
   }
-  
+  catch(...)
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("Caught an unhandled exception");
+  }
   return;
+}
+
+void UmrfGraphExec::notifyFinished(const std::string& node_name)
+{
+  {
+    std::lock_guard<std::mutex> notify_cv_lock(*notify_cv_mutex_);
+    finished_nodes_.push_back(node_name);
+  }
+  notify_cv_->notify_all();
 }

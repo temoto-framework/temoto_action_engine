@@ -130,6 +130,7 @@ public:
 
   void operator=(const UmrfNode& un)
   {
+    this->Umrf::operator=(un);
     package_name_ = un.package_name_;
     suffix_ = un.suffix_;
     library_path_ = un.library_path_;
