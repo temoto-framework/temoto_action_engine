@@ -183,7 +183,7 @@ public:
       while(!local_param_names.empty())
       {
         std::set<std::string> local_params_in_group = checkParamSourceGroup(*parameters_.find(*local_param_names.begin()));
-
+        
         // First make sure that the parameters are of same type
         bool group_intact = true;
         for (const auto& param_in : params_in.getParameterGroup(local_params_in_group))
@@ -198,7 +198,11 @@ public:
         {
           transferable_params.insert(local_params_in_group.begin(), local_params_in_group.end());
         }
-        local_param_names.erase(local_params_in_group.begin(), local_params_in_group.end());
+
+        for (const auto& p : local_params_in_group)
+        {
+          local_param_names.erase(p);
+        }
       }
       return transferable_params;
     }

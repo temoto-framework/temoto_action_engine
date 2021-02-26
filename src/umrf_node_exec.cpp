@@ -233,8 +233,8 @@ void UmrfNodeExec::updateInstanceParams(const ActionParameters& ap_in)
   LOCK_GUARD_TYPE guard_action_instance(action_instance_rw_mutex_);
   try
   {
-    if (getState() != State::INSTANTIATED || 
-        getState() != State::READY || 
+    if (getState() != State::INSTANTIATED && 
+        getState() != State::READY && 
         getState() != State::RUNNING)
     {
       throw CREATE_TEMOTO_ERROR_STACK("Cannot update action's parameters because it's not in INSTANTIATED, READY or RUNNING state");
