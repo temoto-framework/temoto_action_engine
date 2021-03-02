@@ -112,9 +112,7 @@ void UmrfGraphExec::monitoringLoop()
       try
       {
         auto graph_node = graph_nodes_map_.at(finished_node);
-        TEMOTO_PRINT(graph_node->getFullName() + " finished"); // TODO: remove
         graph_node->joinUmrfNodeExecThread();
-        TEMOTO_PRINT(graph_node->getFullName() + " thread joined"); // TODO: remove
 
         // Print the error messages if any
         std::string error_messages = graph_node->getErrorMessages().getMessage();
