@@ -7,6 +7,7 @@
 #include "temoto_action_engine/messaging.h"
 #include "temoto_action_engine/UmrfGraph.h"
 #include "temoto_action_engine/StopUmrfGraph.h"
+#include "temoto_action_engine/GetUmrfGraphs.h"
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
 #include "yaml-cpp/yaml.h"
@@ -29,6 +30,10 @@ public:
     // Set up the UMRF graph subscriber to a globally namespaced topic
     umrf_graph_sub_ = nh_.subscribe("/umrf_graph_topic", 1, &TemotoActionEngineNode::umrfGraphCallback, this);
     stop_umrf_graph_sub_ = nh_.subscribe("/stop_umrf_graph_topic", 1, &TemotoActionEngineNode::stopUmrfGraphCallback, this);
+
+    get_umrf_graphs_server_ = nh_.advertiseService("get_umrf_graphs"
+    , &TemotoActionEngineNode::GetUmrfGraphsCb
+    , this);
 
     // Set the default action paths
     int successful_paths = 0;
@@ -303,10 +308,18 @@ private:
     }
   }
 
+  bool GetUmrfGraphsCb(temoto_action_engine::GetUmrfGraphs::Request& req
+  , temoto_action_engine::GetUmrfGraphs::Response& res)
+  {
+    res.umrf_graph_jsons = ae_.getGraphJsons();
+    return true;
+  }
+
   ActionEngine ae_;
   ros::NodeHandle nh_;
   ros::Subscriber umrf_graph_sub_;
   ros::Subscriber stop_umrf_graph_sub_;
+  ros::ServiceServer get_umrf_graphs_server_;
 
   // Action Engine setup parameters
   std::vector<std::string> action_paths_;

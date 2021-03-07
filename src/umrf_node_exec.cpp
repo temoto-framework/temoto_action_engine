@@ -104,10 +104,13 @@ void UmrfNodeExec::clearNode()
 {
   try
   {
-    stopNode(10);
-    LOCK_GUARD_TYPE guard_action_instance(action_instance_rw_mutex_);
-    action_instance_.reset();
-    setState(State::UNINITIALIZED);
+    if (getState() != State::UNINITIALIZED)
+    {
+      stopNode(10);
+      LOCK_GUARD_TYPE guard_action_instance(action_instance_rw_mutex_);
+      action_instance_.reset();
+      setState(State::UNINITIALIZED);
+    }
   }
   catch(TemotoErrorStack e)
   {
@@ -201,6 +204,7 @@ void UmrfNodeExec::umrfNodeExecThread()
   }
   try
   {
+    umrf_node_exec_thread_running_ = true;
     startNode();
   }
   catch(TemotoErrorStack e)
@@ -221,6 +225,17 @@ void UmrfNodeExec::umrfNodeExecThread()
    * with an error or not
    */
   notify_finished_cb_(getFullName());
+  umrf_node_exec_thread_running_ = false;
+}
+
+bool UmrfNodeExec::threadRunning() const
+{
+  return umrf_node_exec_thread_running_;
+}
+
+bool UmrfNodeExec::threadJoinable() const
+{
+  return umrf_node_exec_thread_.joinable();
 }
 
 void UmrfNodeExec::joinUmrfNodeExecThread()

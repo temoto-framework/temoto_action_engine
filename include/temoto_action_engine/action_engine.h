@@ -50,6 +50,8 @@ public:
   
   void addActionsPath(const std::string& action_packages_path);
 
+  std::vector<std::string> getGraphJsons() const;
+
   ~ActionEngine();
 
   /**

@@ -84,6 +84,10 @@ public:
    */
   void clearNode();
 
+  bool threadRunning() const;
+
+  bool threadJoinable() const;
+
   void joinUmrfNodeExecThread();
 
   void updateInstanceParams(const ActionParameters& ap_in);
@@ -101,6 +105,8 @@ private:
   GUARDED_VARIABLE(boost::shared_ptr<ActionBase> action_instance_, action_instance_rw_mutex_);
 
   std::thread umrf_node_exec_thread_;
+
+  bool umrf_node_exec_thread_running_ = false; 
 
   float default_stopping_timeout_ = 5;
 

@@ -59,6 +59,8 @@ void UmrfGraphExec::startGraph()
 void UmrfGraphExec::stopGraph()
 {
   LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
+
+  setState(State::STOP_REQUESTED);
   for (auto& graph_node : graph_nodes_map_)
   {
     graph_node.second->stopNode(10);
@@ -67,7 +69,7 @@ void UmrfGraphExec::stopGraph()
 
 void UmrfGraphExec::clearGraph()
 {
-  LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
+  //LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
   stopGraph();
 
   // Stop the monitoring thread
@@ -101,8 +103,31 @@ void UmrfGraphExec::monitoringLoop()
     std::unique_lock<std::mutex> notify_cv_lock(*notify_cv_mutex_);
     notify_cv_->wait(notify_cv_lock, [&]{return !finished_nodes_.empty() || stop_requested_;});
 
+    // If the graph is requested to stop then go throug all actions and join all running threads
     if (stop_requested_)
     {
+      notify_cv_lock.unlock();
+      bool all_threads_finished = true;
+      do
+      {
+        {
+          LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
+          all_threads_finished = true;
+          for (auto& graph_node : graph_nodes_map_)
+          {
+            if (graph_node.second->threadRunning())
+            {
+              all_threads_finished = false;
+            }
+            else if (graph_node.second->threadJoinable())
+            {
+              graph_node.second->joinUmrfNodeExecThread();
+            }
+          }
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+      }
+      while (!all_threads_finished);
       break;
     }
 
@@ -148,6 +173,12 @@ void UmrfGraphExec::monitoringLoop()
 void UmrfGraphExec::startNodes(const std::vector<std::string> umrf_node_names, bool all_ready_requrired)
 {
   LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
+
+  if (getState() == State::STOP_REQUESTED)
+  {
+    return;
+  }
+
   std::set<std::string> action_rollback_list;
   std::set<std::string> umrf_node_names_exec(umrf_node_names.begin(), umrf_node_names.end());
   try
@@ -246,6 +277,11 @@ void UmrfGraphExec::startChildNodes(const std::string& parent_node_name, const A
    */
   try
   {
+    if (getState() == State::STOP_REQUESTED)
+    {
+      return;
+    }
+
     LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
     std::shared_ptr<UmrfNodeExec> parent_node = graph_nodes_map_.at(parent_node_name);
     std::vector<std::string> child_node_names;

@@ -23,6 +23,10 @@ add_message_files(FILES
   StopUmrfGraph.msg
 )
 
+add_service_files(FILES
+  GetUmrfGraphs.srv
+)
+
 generate_messages(
   DEPENDENCIES
   std_msgs

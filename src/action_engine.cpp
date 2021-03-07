@@ -18,6 +18,7 @@
 
 #include "temoto_action_engine/action_engine.h"
 #include "temoto_action_engine/messaging.h"
+#include "temoto_action_engine/umrf_json_converter.h"
 
 ActionEngine::ActionEngine()
 {}
@@ -242,6 +243,26 @@ bool ActionEngine::stop()
 
   TEMOTO_PRINT("Action Engine is stopped");
   return true;
+}
+
+std::vector<std::string> ActionEngine::getGraphJsons() const
+{
+  LOCK_GUARD_TYPE_R guard_graph_nodes_map_(umrf_graph_map_rw_mutex_);
+
+  std::vector<std::string> umrf_graph_jsons;
+  try
+  {
+    for (const auto& umrf_graph_exec : umrf_graph_exec_map_)
+    {
+      std::string umrf_graph_json = umrf_json_converter::toUmrfGraphJsonStr(umrf_graph_exec.second->toUmrgGraphCommon()); 
+      umrf_graph_jsons.push_back(umrf_graph_json);     
+    }
+  }
+  catch(TemotoErrorStack e)
+  {
+    throw FORWARD_TEMOTO_ERROR_STACK(e);
+  }
+  return umrf_graph_jsons;
 }
 
 ActionEngine::~ActionEngine()
