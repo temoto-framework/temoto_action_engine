@@ -14,8 +14,6 @@
  * limitations under the License.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* Author: Robert Valner */
-
 #ifndef TEMOTO_ACTION_ENGINE__ACTION_INDEXER_H
 #define TEMOTO_ACTION_ENGINE__ACTION_INDEXER_H
 

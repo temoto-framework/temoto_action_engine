@@ -1,5 +1,0 @@
-<?xml version="1.0"?>
-<launch>
-  <arg name="umrf_path" default="$(find temoto_action_engine)/test/"/>
-  <node name="temoto_ae_test" pkg="temoto_action_engine" type="temoto_ae_test" args="$(arg umrf_path)" output="screen"/>
-</launch>

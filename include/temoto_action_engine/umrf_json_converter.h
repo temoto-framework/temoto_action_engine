@@ -14,8 +14,6 @@
  * limitations under the License.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* Author: Robert Valner */
-
 #ifndef TEMOTO_ACTION_ENGINE__UMRF_JSON_CONVERTER_H
 #define TEMOTO_ACTION_ENGINE__UMRF_JSON_CONVERTER_H
 

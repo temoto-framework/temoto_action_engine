@@ -14,8 +14,6 @@
  * limitations under the License.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* Author: Robert Valner */
-
 #include "temoto_action_engine/action_indexer.h"
 #include "temoto_action_engine/messaging.h"
 #include "temoto_action_engine/temoto_error.h"

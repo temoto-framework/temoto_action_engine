@@ -14,8 +14,6 @@
  * limitations under the License.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* Author: Robert Valner */
-
 #include "temoto_action_engine/action_match_finder.h"
 
 bool ActionMatchFinder::findMatchingAction(UmrfNode& umrf_node_in, const std::vector<UmrfNode>& known_umrfs, bool name_match) const

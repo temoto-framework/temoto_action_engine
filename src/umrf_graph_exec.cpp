@@ -16,11 +16,6 @@
 
 #include "temoto_action_engine/umrf_graph_exec.h"
 
-// UmrfGraphExec::UmrfGraphExec(const UmrfGraphExec& ug)
-// : UmrfGraphBase(ug)
-// , monitoring_thread_(ug.monitoring_thread_)
-// {}
-
 UmrfGraphExec::UmrfGraphExec(const std::string& graph_name)
 : UmrfGraphBase(graph_name)
 , notify_cv_(std::make_shared<std::condition_variable>())
