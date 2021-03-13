@@ -64,24 +64,29 @@ void UmrfGraphExec::stopGraph()
 
 void UmrfGraphExec::clearGraph()
 {
-  //LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
   stopGraph();
 
   // Stop the monitoring thread
   stop_requested_ = true;
   notify_cv_->notify_all();
   
-  while(!monitoring_thread_.joinable())
+  if (monitoring_thread_running_)
   {
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    while(!monitoring_thread_.joinable())
+    {
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+    monitoring_thread_.join();
   }
-  monitoring_thread_.join();
 
   // Clear the nodes
   for (auto& graph_node : graph_nodes_map_)
   {
     graph_node.second->clearNode();
   }
+
+  LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
+  graph_nodes_map_.clear();
 }
 
 void UmrfGraphExec::stopNode(const std::string& umrf_name)
@@ -92,6 +97,7 @@ void UmrfGraphExec::stopNode(const std::string& umrf_name)
 
 void UmrfGraphExec::monitoringLoop()
 {
+  monitoring_thread_running_ = true;
   while(!stop_requested_)
   {
     // Wait until a thread is finished
@@ -163,6 +169,7 @@ void UmrfGraphExec::monitoringLoop()
 
     finished_nodes_.clear();
   }
+  monitoring_thread_running_ = false;
 }
 
 void UmrfGraphExec::startNodes(const std::vector<std::string> umrf_node_names, bool all_ready_requrired)

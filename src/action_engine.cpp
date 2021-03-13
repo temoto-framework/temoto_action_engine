@@ -239,6 +239,9 @@ bool ActionEngine::stop()
     umrf_graph.second->clearGraph();
   }
 
+  TEMOTO_PRINT("Removing all umrf graphs");
+  umrf_graph_exec_map_.clear();
+
   TEMOTO_PRINT("Action Engine is stopped");
   return true;
 }

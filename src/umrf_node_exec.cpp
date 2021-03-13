@@ -81,7 +81,7 @@ bool UmrfNodeExec::stopNode(float timeout)
 
     // Wait until the action is finished
     Timer timeout_timer;
-    while(getState() == State::RUNNING)
+    while(getState() == State::STOP_REQUESTED)
     {
       if (timeout_timer.elapsed() >= timeout)
       {

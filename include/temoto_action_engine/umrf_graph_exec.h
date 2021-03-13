@@ -73,6 +73,8 @@ private:
 
   std::thread monitoring_thread_;
 
+  bool monitoring_thread_running_ = false;
+
   std::shared_ptr<std::condition_variable> notify_cv_;
 
   std::shared_ptr<std::mutex> notify_cv_mutex_; 
