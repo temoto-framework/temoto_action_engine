@@ -1,4 +1,0 @@
-# If left empty then all graphs are returned
-string[] requested_graphs
----
-string[] umrf_graph_jsons
