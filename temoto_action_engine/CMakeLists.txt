@@ -12,12 +12,16 @@ endif()
 find_package(Boost REQUIRED COMPONENTS filesystem)
 find_package(class_loader REQUIRED)
 
-# Get the full paths to boost libraries
 set(boost_libraries)
-foreach(lib_target ${Boost_LIBRARIES})
-  get_target_property(lib_location ${lib_target} LOCATION)
-  list(APPEND boost_libraries ${lib_location})
-endforeach()
+if(${Boost_VERSION_MINOR} GREATER_EQUAL 70)
+  # Get the full paths to boost libraries
+  foreach(lib_target ${Boost_LIBRARIES})
+    get_target_property(lib_location ${lib_target} LOCATION)
+    list(APPEND boost_libraries ${lib_location})
+  endforeach()  
+else()
+  set(boost_libraries ${Boost_LIBRARIES})
+endif()
 
 set(headers
   include
