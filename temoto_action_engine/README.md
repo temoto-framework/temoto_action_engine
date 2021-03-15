@@ -25,3 +25,10 @@ Set the ```LD_LIBRARY_PATH``` so that your application can find the temoto_actio
 ```bash
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 ```
+
+## Run the demos
+There are couple of UMRF graphs in the ```examples/umrf_graphs``` folder which use the ```ta_example_1``` action.
+```bash
+cd build
+./tae_example example_1.umrfg.json
+```

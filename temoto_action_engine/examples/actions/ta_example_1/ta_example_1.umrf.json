@@ -1,0 +1,25 @@
+{
+    "name": "TaExample1",
+    "package_name": "ta_example_1",
+    "effect": "synchronous",
+    "input_parameters": {
+        "distance": {
+            "amount": {
+                "pvf_type": "number"
+            },
+            "unit": {
+                "pvf_type": "string"
+            }
+        }
+    },
+    "output_parameters": {
+        "distance": {
+            "amount": {
+                "pvf_type": "number"
+            },
+            "unit": {
+                "pvf_type": "string"
+            }
+        }
+    }
+}

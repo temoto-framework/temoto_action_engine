@@ -1,0 +1,127 @@
+{
+    "graph_name": "test5",
+    "graph_description": "",
+    "graph_state": 1,
+    "umrf_actions": [
+        {
+            "name": "TaExample1",
+            "package_name": "ta_example_1",
+            "description": "test5",
+            "id": 0,
+            "effect": "synchronous",
+            "input_parameters": {
+                "distance": {
+                    "amount": {
+                        "pvf_type": "number",
+                        "pvf_value": 0
+                    },
+                    "unit": {
+                        "pvf_type": "string",
+                        "pvf_value": "meters"
+                    }
+                }
+            },
+            "output_parameters": {
+                "distance": {
+                    "amount": {
+                        "pvf_type": "number"
+                    },
+                    "unit": {
+                        "pvf_type": "string"
+                    }
+                }
+            },
+            "children": [
+                {
+                    "name": "TaExample1",
+                    "id": 1
+                }
+            ]
+        },
+        {
+            "name": "TaExample1",
+            "package_name": "ta_example_1",
+            "description": "test5",
+            "id": 1,
+            "effect": "synchronous",
+            "input_parameters": {
+                "distance": {
+                    "amount": {
+                        "pvf_type": "number"
+                    },
+                    "unit": {
+                        "pvf_type": "string"
+                    }
+                }
+            },
+            "output_parameters": {
+                "distance": {
+                    "amount": {
+                        "pvf_type": "number"
+                    },
+                    "unit": {
+                        "pvf_type": "string"
+                    }
+                }
+            },
+            "children": [
+                {
+                    "name": "TaExample1",
+                    "id": 2
+                }
+            ],
+            "parents": [
+                {
+                    "name": "TaExample1",
+                    "id": 0,
+                    "required": false
+                },
+                {
+                    "name": "TaExample1",
+                    "id": 2,
+                    "required": false
+                }
+            ]
+        },
+        {
+            "name": "TaExample1",
+            "package_name": "ta_example_1",
+            "description": "test5",
+            "id": 2,
+            "effect": "synchronous",
+            "input_parameters": {
+                "distance": {
+                    "amount": {
+                        "pvf_type": "number"
+                    },
+                    "unit": {
+                        "pvf_type": "string"
+                    }
+                }
+            },
+            "output_parameters": {
+                "distance": {
+                    "amount": {
+                        "pvf_type": "number"
+                    },
+                    "unit": {
+                        "pvf_type": "string"
+                    }
+                }
+            },
+            "children": [
+                {
+                    "name": "TaExample1",
+                    "id": 1
+                }
+            ],
+            "parents": [
+                {
+                    "name": "TaExample1",
+                    "id": 1,
+                    "required": true
+                }
+            ]
+        }
+    ]
+}
