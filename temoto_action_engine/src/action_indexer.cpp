@@ -59,7 +59,6 @@ void ActionIndexer::indexActions()
     for (const std::string action_path : action_paths_)
     {
       boost::filesystem::directory_entry full_path_b = boost::filesystem::directory_entry(action_path);
-      // TEMOTO_PRINT("Indexing actions at " + full_path_b.path().string());
       findActionFilesys("", full_path_b, 2);
     }
     //TEMOTO_PRINT("Found " + std::to_string(indexed_umrfs_.size()) + " actions");
@@ -89,13 +88,11 @@ void ActionIndexer::findActionFilesys( std::string action_to_find
 
       // if its a file and matches the desc file name, process the file
       else if ( boost::filesystem::is_regular_file(*itr) &&
-                (itr->path().filename() == umrf_file_name_) )
+                (itr->path().filename().string().find(umrf_file_extension_) != std::string::npos) )
       {
         try
         {
           std::string umrf_full_path = itr->path().string();
-          //std::cout << "Potential umrf at: " << umrf_full_path << std::endl;
-          //TEMOTO_PRINT("Potential umrf at: " + umrf_full_path);
           std::ifstream ifs(umrf_full_path);
           std::string umrf_json_str;
           umrf_json_str.assign(std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>());
@@ -106,6 +103,7 @@ void ActionIndexer::findActionFilesys( std::string action_to_find
 
           // TODO: check if the library actually exists
           std::string action_lib_path = hackdir.parent_path().string() + "/lib/lib" + umrf.getPackageName() + ".so";
+          std::cout << "EOO: " << action_lib_path << std::endl;
           umrf.setLibraryPath(action_lib_path);
           //std::cout << umrf << std::endl;
           indexed_umrfs_.push_back(umrf);

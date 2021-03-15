@@ -84,7 +84,7 @@ private:
   /// Mutex for protecting action paths from data races
   mutable std::mutex action_paths_mutex_;
 
-  const std::string umrf_file_name_ = "umrf.json";
+  const std::string umrf_file_extension_ = "umrf.json";
 };
 
 #endif
