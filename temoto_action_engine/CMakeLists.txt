@@ -9,7 +9,7 @@ if( "$ENV{TEMOTO_COMPILER}" STREQUAL "clang")
   add_compile_options(-Wthread-safety)
 endif()
 
-find_package(Boost REQUIRED COMPONENTS filesystem)
+find_package(Boost COMPONENTS filesystem program_options REQUIRED)
 find_package(class_loader REQUIRED)
 
 set(boost_libraries)
