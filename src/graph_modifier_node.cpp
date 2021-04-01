@@ -1,6 +1,6 @@
 #include "ros/ros.h"
 #include "temoto_action_engine/umrf_json_converter.h"
-#include "temoto_action_engine/UmrfGraph.h"
+#include "temoto_action_engine/UmrfGraphRos1.h"
 #include "temoto_action_engine/UmrfGraphDiff.h"
 #include <sstream>
 #include <fstream>
@@ -15,7 +15,7 @@ int main(int argc, char** argv)
 
   ros::init(argc, argv, "temoto_graph_modifier_node");
   ros::NodeHandle nh;
-  ros::Publisher umrf_graph_pub = nh.advertise<temoto_action_engine::UmrfGraph>("umrf_graph_topic", 1);
+  ros::Publisher umrf_graph_pub = nh.advertise<temoto_action_engine::UmrfGraphRos1>("umrf_graph_topic", 1);
   ros::AsyncSpinner spinner(0);
   spinner.start();
 
@@ -43,7 +43,7 @@ int main(int argc, char** argv)
   ugd.operation = operation;
   ugd.umrf_json = umrf_json_str;
 
-  temoto_action_engine::UmrfGraph ujg_msg;
+  temoto_action_engine::UmrfGraphRos1 ujg_msg;
   ujg_msg.graph_name = umrf_graph_name;
   ujg_msg.targets.push_back(target);
   ujg_msg.umrf_graph_diffs.push_back(ugd);

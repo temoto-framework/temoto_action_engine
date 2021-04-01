@@ -10,7 +10,6 @@
 
   <buildtool_depend>catkin</buildtool_depend>
   <depend>roscpp</depend>
-  <depend>roslib</depend>
   <depend>std_msgs</depend>
   <depend>class_loader</depend>
   <depend>message_generation</depend>

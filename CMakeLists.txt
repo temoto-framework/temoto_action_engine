@@ -1,18 +1,19 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(temoto_action_engine)
 
-add_compile_options(-std=c++11)
+add_compile_options(-std=c++11 -Wno-dev)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
-  roslib
   std_msgs
   class_loader
   message_generation
 )
 
+find_package(Boost COMPONENTS program_options REQUIRED)
+
 add_message_files(FILES
-  UmrfGraph.msg
+  UmrfGraphRos1.msg
   UmrfGraphDiff.msg
   StopUmrfGraph.msg
 )
@@ -38,6 +39,7 @@ ExternalProject_Add(temoto_action_engine_000
 )
 
 set(headers
+  include
   ${catkin_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}/temoto_action_engine/include
   ${CMAKE_CURRENT_SOURCE_DIR}/temoto_action_engine/rapidjson/include
@@ -61,6 +63,7 @@ include_directories(
 # Action engine node
 add_executable(action_engine_node
   src/action_engine_node.cpp
+  src/action_engine_ros1.cpp
 )
 
 add_dependencies(action_engine_node
@@ -72,6 +75,7 @@ add_dependencies(action_engine_node
 target_link_libraries(action_engine_node
   ${catkin_LIBRARIES}
   ${libraries}
+  ${Boost_LIBRARIES}
 )
 
 install(TARGETS action_engine_node
