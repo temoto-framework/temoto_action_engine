@@ -74,7 +74,10 @@ try
   ActionEngine action_engine;
 
   // Tell the Action Engine where to look for the actions (in temoto_action_engine/build/actions)
-  action_engine.addActionsPath(actions_path);
+  if (!action_engine.addActionsPath(actions_path))
+  {
+    throw CREATE_TEMOTO_ERROR(actions_path + " does not contain any TeMoto actions");
+  }
 
   // Get the UMRF graph json
   std::ifstream umrf_graph_json_fs(umrf_graph_path);

@@ -48,7 +48,7 @@ public:
 
   void stopUmrfGraph(const std::string& umrf_graph_name);
   
-  void addActionsPath(const std::string& action_packages_path);
+  bool addActionsPath(const std::string& action_packages_path);
 
   std::vector<std::string> getGraphJsons() const;
 

@@ -45,89 +45,92 @@ void ActionIndexer::addActionPath(const std::vector<std::string>& paths)
   }
 }
 
-void ActionIndexer::indexActions()
+unsigned int ActionIndexer::indexActions()
+try
 {
   // Lock the mutex
   std::lock_guard<std::mutex> guard_sfs(action_sfs_mutex_);
   std::lock_guard<std::mutex> guard_paths(action_paths_mutex_);
 
-  try
+  // Clear the old indexed umrfs frames
+  indexed_umrfs_.clear();
+  for (const std::string action_path : action_paths_)
   {
-    // Clear the old indexed umrfs frames
-    indexed_umrfs_.clear();
-
-    for (const std::string action_path : action_paths_)
-    {
-      boost::filesystem::directory_entry full_path_b = boost::filesystem::directory_entry(action_path);
-      findActionFilesys("", full_path_b, 2);
-    }
-    //TEMOTO_PRINT("Found " + std::to_string(indexed_umrfs_.size()) + " actions");
+    boost::filesystem::directory_entry full_path_b = boost::filesystem::directory_entry(action_path);
+    std::vector<UmrfNode> indexed_umrfs_local = findActionFilesys("", full_path_b, 2);
+    indexed_umrfs_.insert(indexed_umrfs_.end(), indexed_umrfs_local.begin(), indexed_umrfs_local.end());
   }
-  catch(TemotoErrorStack e)
-  {
-    throw FORWARD_TEMOTO_ERROR_STACK(e);
-  }
+  return indexed_umrfs_.size();
+}
+catch(TemotoErrorStack e)
+{
+  throw FORWARD_TEMOTO_ERROR_STACK(e);
 }
 
-void ActionIndexer::findActionFilesys( std::string action_to_find
-                                     , boost::filesystem::directory_entry base_path
-                                     , int search_depth)
+unsigned int ActionIndexer::containsActions(const std::string& actions_path) const
+{
+  boost::filesystem::directory_entry full_path_b = boost::filesystem::directory_entry(actions_path);
+  return findActionFilesys("", full_path_b, 2).size();
+}
+
+std::vector<UmrfNode> ActionIndexer::findActionFilesys( std::string action_to_find
+, boost::filesystem::directory_entry base_path
+, int search_depth) const
+try
 {
   boost::filesystem::path current_dir (base_path);
   boost::filesystem::directory_iterator end_itr;
-  try
+  std::vector<UmrfNode> indexed_umrfs;
+
+  // Start looking the files inside current directory
+  for ( boost::filesystem::directory_iterator itr( current_dir ); itr != end_itr; ++itr )
   {
-    // Start looking the files inside current directory
-    for ( boost::filesystem::directory_iterator itr( current_dir ); itr != end_itr; ++itr )
+    // if its a directory and depth limit is not there yet, go inside it
+    if ( boost::filesystem::is_directory(*itr) && (search_depth > 0) )
     {
-      // if its a directory and depth limit is not there yet, go inside it
-      if ( boost::filesystem::is_directory(*itr) && (search_depth > 0) )
+      std::vector<UmrfNode> indexed_umrfs_recursive = findActionFilesys( action_to_find, *itr, (search_depth - 1) );
+      indexed_umrfs.insert(indexed_umrfs.end(), indexed_umrfs_recursive.begin(), indexed_umrfs_recursive.end());
+    }
+
+    // if its a file and matches the desc file name, process the file
+    else if ( boost::filesystem::is_regular_file(*itr) &&
+              (itr->path().filename().string().find(umrf_file_extension_) != std::string::npos) )
+    {
+      try
       {
-        findActionFilesys( action_to_find, *itr, (search_depth - 1) );
+        std::string umrf_full_path = itr->path().string();
+        std::ifstream ifs(umrf_full_path);
+        std::string umrf_json_str;
+        umrf_json_str.assign(std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>());
+        UmrfNode umrf = umrf_json_converter::fromUmrfJsonStr(umrf_json_str, true);
+        
+        // Set the library path
+        boost::filesystem::path hackdir = *itr;
+
+        // TODO: check if the library actually exists
+        std::string action_lib_path = hackdir.parent_path().string() + "/lib/lib" + umrf.getPackageName() + ".so";
+        umrf.setLibraryPath(action_lib_path);
+        indexed_umrfs.push_back(umrf);
       }
 
-      // if its a file and matches the desc file name, process the file
-      else if ( boost::filesystem::is_regular_file(*itr) &&
-                (itr->path().filename().string().find(umrf_file_extension_) != std::string::npos) )
+      catch(TemotoErrorStack e)
       {
-        try
-        {
-          std::string umrf_full_path = itr->path().string();
-          std::ifstream ifs(umrf_full_path);
-          std::string umrf_json_str;
-          umrf_json_str.assign(std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>());
-          UmrfNode umrf = umrf_json_converter::fromUmrfJsonStr(umrf_json_str, true);
-          
-          // Set the library path
-          boost::filesystem::path hackdir = *itr;
-
-          // TODO: check if the library actually exists
-          std::string action_lib_path = hackdir.parent_path().string() + "/lib/lib" + umrf.getPackageName() + ".so";
-          std::cout << "EOO: " << action_lib_path << std::endl;
-          umrf.setLibraryPath(action_lib_path);
-          //std::cout << umrf << std::endl;
-          indexed_umrfs_.push_back(umrf);
-        }
-
-        catch(TemotoErrorStack e)
-        {
-          TEMOTO_PRINT(e.what());
-          //throw FORWARD_TEMOTO_ERROR_STACK(e);
-        }
+        TEMOTO_PRINT(e.what());
+        //throw FORWARD_TEMOTO_ERROR_STACK(e);
       }
     }
   }
-  catch (std::exception& e)
-  {
-    // throw CREATE_TEMOTO_ERROR_STACK(e.what());
-    TEMOTO_PRINT(e.what());
-  }
-
-  catch(...)
-  {
-    // Rethrow the exception
-    throw CREATE_TEMOTO_ERROR_STACK("Received an unhandled exception");
-  }
+  return indexed_umrfs;
+}
+catch (std::exception& e)
+{
+  // throw CREATE_TEMOTO_ERROR_STACK(e.what());
+  TEMOTO_PRINT(e.what());
+}
+catch(...)
+{
+  // Rethrow the exception
+  throw CREATE_TEMOTO_ERROR_STACK("Received an unhandled exception");
 }
 
 const std::vector<UmrfNode>& ActionIndexer::getUmrfs() const

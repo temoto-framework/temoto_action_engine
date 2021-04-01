@@ -208,18 +208,25 @@ void ActionEngine::stopUmrfGraph(const std::string& umrf_graph_name)
   umrf_graph_exec_map_.erase(umrf_graph_name);
 }
 
-void ActionEngine::addActionsPath(const std::string& action_packages_path)
+bool ActionEngine::addActionsPath(const std::string& action_packages_path)
+try
 {
-  try
+  if (ai_.containsActions(action_packages_path))
   {
     ai_.addActionPath(action_packages_path);
     ai_.indexActions();
+    return true;
   }
-  catch(TemotoErrorStack e)
+  else
   {
-    throw FORWARD_TEMOTO_ERROR_STACK(e);
+    return false;
   }
 }
+catch(TemotoErrorStack e)
+{
+  throw FORWARD_TEMOTO_ERROR_STACK(e);
+}
+
 
 bool ActionEngine::stop()
 {

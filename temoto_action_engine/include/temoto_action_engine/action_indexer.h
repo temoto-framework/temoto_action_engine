@@ -45,12 +45,15 @@ public:
    */
   void addActionPath(const std::vector<std::string>& paths);
 
+  unsigned int containsActions(const std::string& actions_path) const;
+
   /**
    * @brief Goes through all ActionIndexer::action_paths_ and looks for actions recursively (see ActionIndexer::indexActions).
-   * Clears all previously found actions before indexing.
+   * Clears all previously found actions before indexing
    * 
+   * @return unsigned int Number of found actions
    */
-  void indexActions();
+  unsigned int indexActions();
 
   /**
    * @brief Returns all UMRFs that were found during last indexing
@@ -68,9 +71,9 @@ private:
    * @param base_path Base path where the search is started.
    * @param search_depth Specifies the folder level depth for the search.
    */
-  void findActionFilesys( std::string action_to_find
-                        , boost::filesystem::directory_entry base_path
-                        , int search_depth);
+  std::vector<UmrfNode> findActionFilesys( std::string action_to_find
+  , boost::filesystem::directory_entry base_path
+  , int search_depth) const;
 
   /// Vector of timestamped semantic frames
   std::vector<UmrfNode> indexed_umrfs_;
