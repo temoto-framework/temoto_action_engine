@@ -46,8 +46,10 @@ void ActionEngineRos1::initialize()
   {
     try
     {
-      ae_.addActionsPath(ap);
-      successful_paths++;
+      if (ae_.addActionsPath(ap))
+      {
+        successful_paths++;
+      }
     }
     catch(const std::exception& e)
     {
