@@ -30,5 +30,5 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 There are couple of UMRF graphs in the ```examples/umrf_graphs``` folder which use the ```ta_example_1``` action.
 ```bash
 cd build
-./tae_example example_1.umrfg.json
+./tae_example --actions-path actions --umrf-graph ../examples/umrf_graphs/example_1.umrfg.json
 ```
