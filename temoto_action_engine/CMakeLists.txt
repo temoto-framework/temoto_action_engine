@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.1)
 project(temoto_action_engine)
 
 add_compile_options(-std=c++11)
@@ -13,7 +13,7 @@ find_package(Boost COMPONENTS filesystem program_options REQUIRED)
 find_package(class_loader REQUIRED)
 
 set(boost_libraries)
-if(${Boost_VERSION_MINOR} GREATER_EQUAL 70)
+if(${Boost_MINOR_VERSION} GREATER_EQUAL 70)
   # Get the full paths to boost libraries
   foreach(lib_target ${Boost_LIBRARIES})
     get_target_property(lib_location ${lib_target} LOCATION)
