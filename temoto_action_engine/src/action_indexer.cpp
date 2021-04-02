@@ -124,13 +124,13 @@ try
 }
 catch (std::exception& e)
 {
-  // throw CREATE_TEMOTO_ERROR_STACK(e.what());
-  TEMOTO_PRINT(e.what());
+  throw CREATE_TEMOTO_ERROR_STACK(e.what());
 }
 catch(...)
 {
   // Rethrow the exception
   throw CREATE_TEMOTO_ERROR_STACK("Received an unhandled exception");
+  return std::vector<UmrfNode>{}; // TODO: suppressing the -Wreturn-type warning. Temoto error should be thrown via [[noreturn]] function 
 }
 
 const std::vector<UmrfNode>& ActionIndexer::getUmrfs() const
