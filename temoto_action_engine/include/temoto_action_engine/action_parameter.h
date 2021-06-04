@@ -214,7 +214,7 @@ public:
     return example_;
   }
 
-  void setExample(const std::string& example)
+  void setExample(const std::string& example) const
   {
     example_ = example;
   }
@@ -295,15 +295,15 @@ public:
 
 private:
   std::string name_;
-  std::string type_;
-  std::string example_;
-  int64_t source_id_;
-  int64_t timestamp_;
-  bool required_;
-  bool updatable_;
-  bool quaranteed_;
-  std::vector<T> data_;
-  std::vector<T> allowed_data_;
+  mutable std::string type_;
+  mutable std::string example_;
+  mutable int64_t source_id_;
+  mutable int64_t timestamp_;
+  mutable bool required_;
+  mutable bool updatable_;
+  mutable bool quaranteed_;
+  mutable std::vector<T> data_;
+  mutable std::vector<T> allowed_data_;
 };
 
 #endif

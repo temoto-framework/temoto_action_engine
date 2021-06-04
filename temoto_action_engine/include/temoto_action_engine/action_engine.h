@@ -23,6 +23,8 @@
 #include "temoto_action_engine/umrf_graph.h"
 #include "temoto_action_engine/umrf_graph_exec.h"
 #include "temoto_action_engine/umrf_graph_diff.h"
+#include <condition_variable>
+#include <thread>
 
 /**
  * @brief Handles loading and execution of TeMoto Actions
@@ -65,11 +67,13 @@ public:
 private:
   bool graphExists(const std::string& graph_name) const;
 
-  // void addUmrfGraph(const UmrfGraph& umrf_graph);
-
   void addUmrfGraph(const std::string& graph_name, const std::vector<UmrfNode>& umrf_nodes);
 
   void executeUmrfGraph(const std::string& graph_name);
+
+  void monitoringLoop();
+
+  void notifyGraphFinished(const std::string& graph_name);
 
   // void updateUmrfGraph(const std::string& graph_name, std::vector<UmrfNode> umrfs_vec);
 
@@ -79,5 +83,14 @@ private:
   typedef std::map<std::string, std::shared_ptr<UmrfGraphExec>> UmrfGraphExecMap;
   mutable MUTEX_TYPE_R umrf_graph_map_rw_mutex_;
   GUARDED_VARIABLE(UmrfGraphExecMap umrf_graph_exec_map_, umrf_graph_map_rw_mutex_);
+
+  mutable MUTEX_TYPE notify_cv_mutex_;
+  GUARDED_VARIABLE(std::condition_variable notify_cv_, notify_cv_mutex_);
+
+  std::vector<std::string> finished_graphs_;
+
+  std::thread monitoring_thread_;
+
+  bool stop_monitoring_thread_;
 };
 #endif

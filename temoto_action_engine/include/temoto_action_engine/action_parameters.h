@@ -172,42 +172,31 @@ public:
   }
 
   std::set<std::string> getTransferableParams(const ActionParameters& params_in) const
+  try
   {
-    try
-    {
-      std::set<std::string> local_param_names = getParamNames();
-      std::set<std::string> transferable_params;
+    std::set<std::string> local_param_names = getParamNames();
+    std::set<std::string> transferable_params;
 
-      while(!local_param_names.empty())
+    while(!local_param_names.empty())
+    {
+      std::set<std::string> local_params_in_group = checkParamSourceGroup(*parameters_.find(*local_param_names.begin()));
+      
+      // First make sure that the parameters are of same type
+      for (const auto& param_in : params_in.getParameterGroup(local_params_in_group))
       {
-        std::set<std::string> local_params_in_group = checkParamSourceGroup(*parameters_.find(*local_param_names.begin()));
-        
-        // First make sure that the parameters are of same type
-        bool group_intact = true;
-        for (const auto& param_in : params_in.getParameterGroup(local_params_in_group))
-        {
-          if (!hasParameter(param_in))
-          {
-            group_intact = false;
-            break;
-          }
-        }
-        if (group_intact)
-        {
-          transferable_params.insert(local_params_in_group.begin(), local_params_in_group.end());
-        }
-
-        for (const auto& p : local_params_in_group)
-        {
-          local_param_names.erase(p);
-        }
+        transferable_params.insert(local_params_in_group.begin(), local_params_in_group.end());
       }
-      return transferable_params;
+
+      for (const auto& p : local_params_in_group)
+      {
+        local_param_names.erase(p);
+      }
     }
-    catch(TemotoErrorStack e)
-    {
-      throw FORWARD_TEMOTO_ERROR_STACK(e);
-    }
+    return transferable_params;
+  }
+  catch(TemotoErrorStack e)
+  {
+    throw FORWARD_TEMOTO_ERROR_STACK(e);
   }
 
   const ParameterContainer& getParameter(const std::string& name) const
@@ -220,27 +209,25 @@ public:
   }
 
   template <class T> T getParameterData(const std::string& name) const
+  try
   {
-    try
+    const ParameterContainer& pc = getParameter(name);
+    if (pc.getDataSize() > 0)
     {
-      const ParameterContainer& pc = getParameter(name);
-      if (pc.getDataSize() > 0)
-      {
-        return boost::any_cast<T>(pc.getData());
-      }
-      else
-      {
-        return T();
-      }
+      return boost::any_cast<T>(pc.getData());
     }
-    catch(TemotoErrorStack e)
+    else
     {
-      throw FORWARD_TEMOTO_ERROR_STACK(e);
+      return T();
     }
-    catch(std::exception e)
-    {
-      throw CREATE_TEMOTO_ERROR_STACK(e.what());
-    }
+  }
+  catch(TemotoErrorStack e)
+  {
+    throw FORWARD_TEMOTO_ERROR_STACK(e);
+  }
+  catch(std::exception e)
+  {
+    throw CREATE_TEMOTO_ERROR_STACK(e.what());
   }
 
   // ParameterContainer& getParameterNc(const std::string& name)
@@ -253,6 +240,11 @@ public:
   // }
 
   const Parameters& getParameters() const
+  {
+    return parameters_;
+  }
+
+  Parameters& getParametersNc()
   {
     return parameters_;
   }
