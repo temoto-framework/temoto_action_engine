@@ -19,10 +19,48 @@
 #include "temoto_action_engine/umrf_json_converter.h"
 
 ActionEngine::ActionEngine()
+: stop_monitoring_thread_(false)
 {}
 
 void ActionEngine::start()
 {
+  monitoring_thread_ = std::thread(&ActionEngine::monitoringLoop, this);
+}
+
+void ActionEngine::monitoringLoop()
+{
+  while (!stop_monitoring_thread_)
+  {
+    // Wait until a thread is finished
+    std::unique_lock<std::mutex> notify_cv_lock(notify_cv_mutex_);
+    notify_cv_.wait(notify_cv_lock, [&]{return !finished_graphs_.empty() || stop_monitoring_thread_;});
+
+    if (stop_monitoring_thread_)
+    {
+      break;
+    }
+
+    LOCK_GUARD_TYPE_R guard_graph_nodes_map_(umrf_graph_map_rw_mutex_);
+    for (const auto& finished_graph : finished_graphs_)
+    try
+    {
+      TEMOTO_PRINT("Clearing umrf graph '" + finished_graph + "'");
+      umrf_graph_exec_map_.erase(finished_graph);
+    }
+    catch(TemotoErrorStack e)
+    {
+      std::cout << e.what() << '\n';
+    }
+    catch(const std::exception& e)
+    {
+      std::cerr << e.what() << '\n';
+    }
+    catch(...)
+    {
+      std::cerr << "[" << __func__ << "] caught an unhandled exception" << '\n';
+    }
+    finished_graphs_.clear();
+  }
 }
 
 bool ActionEngine::graphExists(const std::string& graph_name) const
@@ -102,7 +140,8 @@ void ActionEngine::executeUmrfGraph(const std::string& graph_name)
     }
     else
     {
-      umrf_graph_exec_map_.at(graph_name)->startGraph();
+      umrf_graph_exec_map_.at(graph_name)->startGraph(
+        std::bind(&ActionEngine::notifyGraphFinished, this, std::placeholders::_1));
     }
   }
   catch(TemotoErrorStack e)
@@ -249,6 +288,11 @@ bool ActionEngine::stop()
   TEMOTO_PRINT("Removing all umrf graphs");
   umrf_graph_exec_map_.clear();
 
+  // Stop the monitoring thread
+  stop_monitoring_thread_ = true;
+  notify_cv_.notify_all();
+  monitoring_thread_.join();
+
   TEMOTO_PRINT("Action Engine is stopped");
   return true;
 }
@@ -271,6 +315,15 @@ std::vector<std::string> ActionEngine::getGraphJsons() const
     throw FORWARD_TEMOTO_ERROR_STACK(e);
   }
   return umrf_graph_jsons;
+}
+
+void ActionEngine::notifyGraphFinished(const std::string& graph_name)
+{
+  {
+    LOCK_GUARD_TYPE notify_cv_lock(notify_cv_mutex_);
+    finished_graphs_.push_back(graph_name);
+  }
+  notify_cv_.notify_all();
 }
 
 ActionEngine::~ActionEngine()

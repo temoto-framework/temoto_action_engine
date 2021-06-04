@@ -40,9 +40,12 @@ UmrfGraphExec::~UmrfGraphExec()
   clearGraph();
 }
 
-void UmrfGraphExec::startGraph()
+void UmrfGraphExec::startGraph(NotifyFinishedCb notify_graph_finished_cb)
 {
   LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
+  notify_graph_finished_cb_ = notify_graph_finished_cb;
+
+  setState(State::ACTIVE);
 
   // First start the monitoring loop in a separate thread
   monitoring_thread_ = std::thread(&UmrfGraphExec::monitoringLoop, this);
@@ -53,9 +56,17 @@ void UmrfGraphExec::startGraph()
 
 void UmrfGraphExec::stopGraph()
 {
+  if (getState() == State::UNINITIALIZED)
+  {
+    return;
+  }
+  else
+  {
+    setState(State::STOP_REQUESTED);
+  }
+
   LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
 
-  setState(State::STOP_REQUESTED);
   for (auto& graph_node : graph_nodes_map_)
   {
     graph_node.second->stopNode(10);
@@ -64,29 +75,19 @@ void UmrfGraphExec::stopGraph()
 
 void UmrfGraphExec::clearGraph()
 {
+  if (getState() == State::UNINITIALIZED)
+  {
+    return;
+  }
   stopGraph();
 
   // Stop the monitoring thread
-  stop_requested_ = true;
   notify_cv_->notify_all();
-  
-  if (monitoring_thread_running_)
-  {
-    while(!monitoring_thread_.joinable())
-    {
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
-    monitoring_thread_.join();
-  }
-
-  // Clear the nodes
-  for (auto& graph_node : graph_nodes_map_)
-  {
-    graph_node.second->clearNode();
-  }
+  monitoring_thread_.join();
 
   LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
   graph_nodes_map_.clear();
+  setState(State::UNINITIALIZED);
 }
 
 void UmrfGraphExec::stopNode(const std::string& umrf_name)
@@ -98,14 +99,15 @@ void UmrfGraphExec::stopNode(const std::string& umrf_name)
 void UmrfGraphExec::monitoringLoop()
 {
   monitoring_thread_running_ = true;
-  while(!stop_requested_)
+  while(getState() != State::STOP_REQUESTED)
   {
     // Wait until a thread is finished
     std::unique_lock<std::mutex> notify_cv_lock(*notify_cv_mutex_);
-    notify_cv_->wait(notify_cv_lock, [&]{return !finished_nodes_.empty() || stop_requested_;});
+    notify_cv_->wait(notify_cv_lock
+    , [&]{return !finished_nodes_.empty() || getState() == State::STOP_REQUESTED;});
 
     // If the graph is requested to stop then go throug all actions and join all running threads
-    if (stop_requested_)
+    if (getState() == State::STOP_REQUESTED)
     {
       notify_cv_lock.unlock();
       bool all_threads_finished = true;
@@ -168,6 +170,24 @@ void UmrfGraphExec::monitoringLoop()
     }
 
     finished_nodes_.clear();
+
+    // If all actions in the graph are synchronous and have finished, then stop the graph
+    bool all_actions_finished = true;
+    for (const auto& graph_node : graph_nodes_map_)
+    {
+      if (graph_node.second->getEffect() != "synchronous" || 
+          graph_node.second->getState() != UmrfNode::State::UNINITIALIZED)
+      {
+        all_actions_finished = false;
+        break;
+      }
+    }
+
+    if (all_actions_finished)
+    {
+      notify_graph_finished_cb_(graph_name_);
+      break;
+    }
   }
   monitoring_thread_running_ = false;
 }
@@ -300,7 +320,7 @@ void UmrfGraphExec::startChildNodes(const std::string& parent_node_name, const A
       }
     }
     
-    // Notify the childred that the parent has finished
+    // Notify the children that the parent has finished
     for (const auto& child_node_name : child_node_names)
     {
       graph_nodes_map_.at(child_node_name)->setParentReceived(parent_node->asRelation());
