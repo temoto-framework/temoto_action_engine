@@ -48,6 +48,7 @@ static const struct UmrfFields
   const char* notation = "notation";
   const char* input_parameters = "input_parameters";
   const char* output_parameters = "output_parameters";
+  const char* execute_first = "execute_first";
 }UMRF_FIELDS;
 
 static const struct PvfFields

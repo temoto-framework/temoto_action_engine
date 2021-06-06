@@ -36,6 +36,7 @@ ExternalProject_Add(temoto_action_engine_000
     -Wno-dev
   BUILD_COMMAND $(MAKE)
   INSTALL_COMMAND cmake -E echo "Skipping install step."
+  BUILD_ALWAYS true
 )
 
 set(headers

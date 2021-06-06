@@ -345,7 +345,7 @@ protected:
       for (const auto& graph_node_pair : graph_nodes_map_)
       {
         // A node is considered root if it does not have parents
-        if (graph_node_pair.second->getParents().empty())
+        if (graph_node_pair.second->getParents().empty() || graph_node_pair.second->getExecuteFirst())
         {
           root_node_names_.push_back(graph_node_pair.first);
         }

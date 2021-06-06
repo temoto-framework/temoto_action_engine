@@ -252,6 +252,17 @@ UmrfNode fromUmrfJsonValue(const rapidjson::Value& json_doc, bool as_descriptor)
     //std::cerr << e.what() << '\n';
   }
 
+  // Execute first
+  try
+  {
+    umrf_node.setExecuteFirst(getBoolFromValue(getRootJsonElement(UMRF_FIELDS.execute_first, json_doc)));
+  }
+  catch(const std::exception& e)
+  {
+    // ... do nothing
+  }
+  
+
   return umrf_node;
 }
 
@@ -410,6 +421,12 @@ void toUmrfJsonValue(rapidjson::Value& from_scratch
       parseParameter(output_object, allocator, parameter);
     }
     from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.output_parameters), output_object, allocator);
+  }
+
+  // Set the execute first
+  if (umrf_node.getExecuteFirst())
+  {
+    from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.execute_first), umrf_node.getExecuteFirst(), allocator);
   }
 
   // Set children
