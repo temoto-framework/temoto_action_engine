@@ -1,10 +1,8 @@
 #include "ros/ros.h"
 #include "temoto_action_engine/temoto_error.h"
 #include "temoto_action_engine/umrf_json_converter.h"
-#include "temoto_action_engine/messaging.h"
+#include "temoto_action_engine/umrf_graph_fs.h"
 #include "temoto_action_engine/UmrfGraphRos1.h"
-#include <sstream>
-#include <fstream>
 
 const std::string app_name = "AE_test";
 
@@ -30,12 +28,10 @@ int main(int argc, char** argv)
 
   /*
    * Read the UMRF Graph JSON
-   */ 
-  std::ifstream umrf_graph_json_fs(umrf_graph_json_file);
-  std::string umrf_graph_json_str;
-  umrf_graph_json_str.assign(std::istreambuf_iterator<char>(umrf_graph_json_fs), std::istreambuf_iterator<char>());
-  std::cout << "GOT:\n" << umrf_graph_json_str << std::endl;
+   */
+  std::string umrf_graph_json_str = temoto_action_engine::readFromFile(umrf_graph_json_file);
   UmrfGraph umrf_graph = umrf_json_converter::fromUmrfGraphJsonStr(umrf_graph_json_str);
+  std::cout << "GOT:\n" << umrf_graph_json_str << std::endl;
 
   /*
    * Create UMRF Graph ROS message
