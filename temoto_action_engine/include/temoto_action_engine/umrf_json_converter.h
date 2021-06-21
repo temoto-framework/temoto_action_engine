@@ -21,7 +21,6 @@
 #include <vector>
 #include "temoto_action_engine/umrf_node.h"
 #include "temoto_action_engine/umrf_graph.h"
-#include "rapidjson/document.h"
 
 namespace umrf_json_converter
 {
@@ -48,6 +47,7 @@ static const struct UmrfFields
   const char* notation = "notation";
   const char* input_parameters = "input_parameters";
   const char* output_parameters = "output_parameters";
+  const char* execute_first = "execute_first";
 }UMRF_FIELDS;
 
 static const struct PvfFields
@@ -69,46 +69,13 @@ static const struct RelationFields
 
 UmrfNode fromUmrfJsonStr(const std::string& umrf_json_str, bool as_descriptor = false);
 
-UmrfNode fromUmrfJsonValue(const rapidjson::Value& json_doc, bool as_descriptor = false);
-
 UmrfGraph fromUmrfGraphJsonStr(const std::string& umrf_graph_json_str);
 
-std::string toUmrfGraphJsonStr(const UmrfGraph& umrf_graph);
-
-// std::vector<UmrfNode> fromUmrfListStr(const rapidjson::Value& json_doc);
+ActionParameters::Parameters fromUmrfParametersJsonStr(const std::string umrf_param_json_str);
 
 std::string toUmrfJsonStr(const UmrfNode& umrf_node, bool as_descriptor = false);
 
-void toUmrfJsonValue(rapidjson::Value& from_scratch
-, rapidjson::Document::AllocatorType& allocator
-, const UmrfNode& umrf_node
-, bool as_descriptor = false);
-
-const rapidjson::Value& getRootJsonElement(const char* element_name, const rapidjson::Value& json_doc);
-
-const rapidjson::Value& getJsonElement(const char* element_name, const rapidjson::Value& value_in);
-
-std::string getStringFromValue(const rapidjson::Value& value);
-
-bool getBoolFromValue(const rapidjson::Value& value);
-
-float getNumberFromValue(const rapidjson::Value& value);
-
-std::vector<UmrfNode::Relation> parseRelations(const rapidjson::Value& value_in);
-
-ActionParameters::Parameters parseParameters(const rapidjson::Value& value_in, std::string parent_member_name);
-
-void parseParameter(
-  rapidjson::Value& json_value,
-  rapidjson::Document::AllocatorType& allocator,
-  const ActionParameters::ParameterContainer& pc
-);
-
-void parsePvfFields(
-  rapidjson::Value& json_value,
-  rapidjson::Document::AllocatorType& allocator,
-  const ActionParameters::ParameterContainer& parameter
-);
+std::string toUmrfGraphJsonStr(const UmrfGraph& umrf_graph);
 
 }// umrf_json_converter namespace
 #endif

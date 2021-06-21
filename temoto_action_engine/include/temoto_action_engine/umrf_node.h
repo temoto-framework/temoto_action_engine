@@ -137,6 +137,8 @@ public:
     parents_ = un.parents_;
     children_ = un.children_;
     full_name_ = un.full_name_;
+    execute_first_ = un.execute_first_;
+    state_ = un.state_;
   }
 
   const std::string& getPackageName() const;
@@ -152,6 +154,9 @@ public:
 
   State getState() const;
   void setState(UmrfNode::State state);
+
+  bool getExecuteFirst() const;
+  void setExecuteFirst(bool execute_first);
 
   const std::vector<Relation>& getParents() const;
   bool setParents(const std::vector<Relation>& parents);
@@ -193,6 +198,9 @@ protected:
 
   mutable MUTEX_TYPE state_rw_mutex_;
   GUARDED_VARIABLE(State state_, state_rw_mutex_);
+
+  mutable MUTEX_TYPE execute_first_rw_mutex_;
+  GUARDED_VARIABLE(bool execute_first_, execute_first_rw_mutex_);
 };
 
 #endif

@@ -19,6 +19,7 @@
 UmrfNode::UmrfNode()
 : state_(State::UNINITIALIZED)
 , suffix_(0)
+, execute_first_(false)
 {}
 
 UmrfNode::UmrfNode(const UmrfNode& un)
@@ -30,6 +31,7 @@ UmrfNode::UmrfNode(const UmrfNode& un)
 , parents_(un.parents_)
 , children_(un.children_)
 , full_name_(un.full_name_)
+, execute_first_(un.execute_first_)
 {}
 
 UmrfNode UmrfNode::asUmrfNode() const
@@ -77,6 +79,18 @@ void UmrfNode::setState(UmrfNode::State state)
 {
   LOCK_GUARD_TYPE guard_state(state_rw_mutex_);
   state_ = state;
+}
+
+bool UmrfNode::getExecuteFirst() const
+{
+  LOCK_GUARD_TYPE guard_execute_first(execute_first_rw_mutex_);
+  return execute_first_;
+}
+
+void UmrfNode::setExecuteFirst(bool execute_first)
+{
+  LOCK_GUARD_TYPE guard_execute_first(execute_first_rw_mutex_);
+  execute_first_ = execute_first;
 }
 
 const std::string& UmrfNode::getLibraryPath() const
