@@ -33,8 +33,16 @@ ActionEngineRos1::ActionEngineRos1()
 void ActionEngineRos1::initialize()
 {
   // Set up the UMRF graph subscriber to a globally namespaced topic
-  umrf_graph_sub_ = nh_.subscribe("/umrf_graph_topic", 1, &ActionEngineRos1::umrfGraphCallback, this);
-  stop_umrf_graph_sub_ = nh_.subscribe("/stop_umrf_graph_topic", 1, &ActionEngineRos1::stopUmrfGraphCallback, this);
+  start_umrf_graph_sub_ = nh_.subscribe("/broadcast_start_umrf_graph", 1, &ActionEngineRos1::broadcastStartUmrfGraphCallback, this);
+  stop_umrf_graph_sub_ = nh_.subscribe("/broadcast_stop_umrf_graph", 1, &ActionEngineRos1::broadcastStopUmrfGraphCallback, this);
+
+  start_umrf_graph_srv_ = nh_.advertiseService("start_umrf_graph"
+  , &ActionEngineRos1::StartUmrfGraphSrvCallback
+  , this);
+
+  stop_umrf_graph_srv_ = nh_.advertiseService("stop_umrf_graph"
+  , &ActionEngineRos1::StopUmrfGraphSrvCallback
+  , this);
 
   get_umrf_graphs_server_ = nh_.advertiseService("get_umrf_graphs"
   , &ActionEngineRos1::GetUmrfGraphsCb
@@ -141,8 +149,9 @@ bool ActionEngineRos1::containsWakeWord(const std::vector<std::string>& wake_wor
   return false;
 }
 
-void ActionEngineRos1::umrfGraphCallback(const temoto_action_engine::UmrfGraphRos1& msg)
+void ActionEngineRos1::broadcastStartUmrfGraphCallback(const temoto_action_engine::BroadcastStartUmrfGraph& msg)
 {
+  std::lock_guard<std::mutex> lock(start_umrf_graph_mutex_);
   TEMOTO_PRINT("Received a UMRF graph message ...");
 
   // If the wake word was not found then return
@@ -184,7 +193,7 @@ void ActionEngineRos1::umrfGraphCallback(const temoto_action_engine::UmrfGraphRo
         umrf_graph_diffs.emplace_back(umrf_graph_diff_msg.operation, umrf_diff);
       }
 
-      ae_.modifyGraph(msg.graph_name, umrf_graph_diffs);
+      ae_.modifyGraph(msg.umrf_graph_name, umrf_graph_diffs);
     }
     catch(const std::exception& e)
     {
@@ -197,8 +206,9 @@ void ActionEngineRos1::umrfGraphCallback(const temoto_action_engine::UmrfGraphRo
   }
 }
 
-void ActionEngineRos1::stopUmrfGraphCallback(const temoto_action_engine::StopUmrfGraph& msg)
+void ActionEngineRos1::broadcastStopUmrfGraphCallback(const temoto_action_engine::BroadcastStopUmrfGraph& msg)
 {
+  std::lock_guard<std::mutex> lock(stop_umrf_graph_mutex_);
   TEMOTO_PRINT("Received a UMRF graph STOPPING message ...");
 
   // If the wake word was not found then return
@@ -208,15 +218,52 @@ void ActionEngineRos1::stopUmrfGraphCallback(const temoto_action_engine::StopUmr
     return;
   }
 
-  TEMOTO_PRINT("Stopping UMRF graph '" + msg.graph_name + "' ...");
+  TEMOTO_PRINT("Stopping UMRF graph '" + msg.umrf_graph_name + "' ...");
   try
   {
-    ae_.stopUmrfGraph(msg.graph_name);
+    ae_.stopUmrfGraph(msg.umrf_graph_name);
   }
   catch(const std::exception& e)
   {
     TEMOTO_PRINT(std::string(e.what()));
   }
+}
+
+bool ActionEngineRos1::StartUmrfGraphSrvCallback(temoto_action_engine::StartUmrfGraph::Request& req
+, temoto_action_engine::StartUmrfGraph::Response& res)
+try
+{
+  std::lock_guard<std::mutex> lock(start_umrf_graph_mutex_);
+
+  TEMOTO_PRINT("Starting UMRF graph '" + req.umrf_graph_name + "' ...");
+  UmrfGraph umrf_graph = umrf_json_converter::fromUmrfGraphJsonStr(req.umrf_graph_json);
+  ae_.executeUmrfGraph(umrf_graph, bool(req.name_match_required));
+
+  res.success = true;
+  return true;
+}
+catch(const std::exception& e)
+{
+  TEMOTO_PRINT(std::string(e.what()));
+  res.success = false;
+  return true;
+}
+
+bool ActionEngineRos1::StopUmrfGraphSrvCallback(temoto_action_engine::StopUmrfGraph::Request& req
+, temoto_action_engine::StopUmrfGraph::Response& res)
+try
+{
+  std::lock_guard<std::mutex> lock(stop_umrf_graph_mutex_);
+  TEMOTO_PRINT("Stopping UMRF graph '" + req.umrf_graph_name + "' ...");
+  ae_.stopUmrfGraph(req.umrf_graph_name);
+  res.success = true;
+  return true;
+}
+catch(const std::exception& e)
+{
+  TEMOTO_PRINT(std::string(e.what()));
+  res.success = false;
+  return true;
 }
 
 bool ActionEngineRos1::GetUmrfGraphsCb(temoto_action_engine::GetUmrfGraphs::Request& req

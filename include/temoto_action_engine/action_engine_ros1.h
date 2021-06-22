@@ -19,11 +19,14 @@
 
 #include "ros/ros.h"
 #include "temoto_action_engine/action_engine.h"
-#include "temoto_action_engine/UmrfGraphRos1.h"
+#include "temoto_action_engine/BroadcastStartUmrfGraph.h"
+#include "temoto_action_engine/BroadcastStopUmrfGraph.h"
+#include "temoto_action_engine/StartUmrfGraph.h"
 #include "temoto_action_engine/StopUmrfGraph.h"
 #include "temoto_action_engine/GetUmrfGraphs.h"
 #include <string>
 #include <vector>
+#include <mutex>
 
 namespace temoto_action_engine
 {
@@ -55,23 +58,34 @@ private:
    * 
    * @param msg 
    */
-  void umrfGraphCallback(const temoto_action_engine::UmrfGraphRos1& msg);
+  void broadcastStartUmrfGraphCallback(const temoto_action_engine::BroadcastStartUmrfGraph& msg);
 
   /**
    * @brief Callback for stopping UMRF graphs
    * 
    * @param msg 
    */
-  void stopUmrfGraphCallback(const temoto_action_engine::StopUmrfGraph& msg);
+  void broadcastStopUmrfGraphCallback(const temoto_action_engine::BroadcastStopUmrfGraph& msg);
+
+  bool StartUmrfGraphSrvCallback(temoto_action_engine::StartUmrfGraph::Request& req
+  , temoto_action_engine::StartUmrfGraph::Response& res);
+
+  bool StopUmrfGraphSrvCallback(temoto_action_engine::StopUmrfGraph::Request& req
+  , temoto_action_engine::StopUmrfGraph::Response& res);
 
   bool GetUmrfGraphsCb(temoto_action_engine::GetUmrfGraphs::Request& req
   , temoto_action_engine::GetUmrfGraphs::Response& res);
 
   ActionEngine ae_;
   ros::NodeHandle nh_;
-  ros::Subscriber umrf_graph_sub_;
+  ros::Subscriber start_umrf_graph_sub_;
   ros::Subscriber stop_umrf_graph_sub_;
+  ros::ServiceServer start_umrf_graph_srv_;
+  ros::ServiceServer stop_umrf_graph_srv_;
   ros::ServiceServer get_umrf_graphs_server_;
+
+  std::mutex start_umrf_graph_mutex_;
+  std::mutex stop_umrf_graph_mutex_;
 
   // Action Engine setup parameters
   std::vector<std::string> action_paths_;

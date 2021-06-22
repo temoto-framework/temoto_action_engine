@@ -13,12 +13,14 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(Boost COMPONENTS program_options REQUIRED)
 
 add_message_files(FILES
-  UmrfGraphRos1.msg
+  BroadcastStartUmrfGraph.msg
+  BroadcastStopUmrfGraph.msg
   UmrfGraphDiff.msg
-  StopUmrfGraph.msg
 )
 
 add_service_files(FILES
+  StartUmrfGraph.srv
+  StopUmrfGraph.srv
   GetUmrfGraphs.srv
 )
 

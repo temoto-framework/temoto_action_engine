@@ -1,0 +1,5 @@
+string umrf_graph_name
+string umrf_graph_json
+bool name_match_required
+---
+bool success

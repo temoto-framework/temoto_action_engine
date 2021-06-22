@@ -2,7 +2,7 @@
 #include "temoto_action_engine/temoto_error.h"
 #include "temoto_action_engine/umrf_json_converter.h"
 #include "temoto_action_engine/umrf_graph_fs.h"
-#include "temoto_action_engine/UmrfGraphRos1.h"
+#include "temoto_action_engine/BroadcastStartUmrfGraph.h"
 
 const std::string app_name = "AE_test";
 
@@ -16,7 +16,7 @@ int main(int argc, char** argv)
 
   ros::init(argc, argv, "temoto_parser_node");
   ros::NodeHandle nh;
-  ros::Publisher umrf_graph_pub = nh.advertise<temoto_action_engine::UmrfGraphRos1>("umrf_graph_topic", 1);
+  ros::Publisher umrf_graph_pub = nh.advertise<temoto_action_engine::BroadcastStartUmrfGraph>("/broadcast_start_umrf_graph", 1);
   ros::AsyncSpinner spinner(0);
   spinner.start();
 
@@ -36,8 +36,8 @@ int main(int argc, char** argv)
   /*
    * Create UMRF Graph ROS message
    */ 
-  temoto_action_engine::UmrfGraphRos1 ujg_msg;
-  ujg_msg.graph_name = umrf_graph.getName();
+  temoto_action_engine::BroadcastStartUmrfGraph ujg_msg;
+  ujg_msg.umrf_graph_name = umrf_graph.getName();
   ujg_msg.name_match_required = 1;
   ujg_msg.targets.push_back(target);
   ujg_msg.umrf_graph_json = umrf_graph_json_str;
