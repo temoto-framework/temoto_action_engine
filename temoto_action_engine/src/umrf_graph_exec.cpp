@@ -220,7 +220,7 @@ void UmrfGraphExec::startNodes(const std::vector<std::string> umrf_node_names, b
       }
       else if (umrf_node->getState() == UmrfNode::State::INSTANTIATED)
       {
-        if (!umrf_node->getInctanceInputParametersReceived() || !umrf_node->requiredParentsFinished())
+        if (!umrf_node->getInstanceInputParametersReceived() || !umrf_node->requiredParentsFinished())
         {
           umrf_node_names_exec.erase(umrf_node_name);
         }
@@ -237,26 +237,45 @@ void UmrfGraphExec::startNodes(const std::vector<std::string> umrf_node_names, b
      * the graph, then the whole graph is rolled back (uninitialized)
      */
     for (const auto& umrf_node_name : umrf_node_names_exec)
+    try
     {
-      // Instantiate the action
-      try
+      if (graph_nodes_map_.at(umrf_node_name)->getState() == UmrfNode::State::UNINITIALIZED)
       {
-        if (graph_nodes_map_.at(umrf_node_name)->getState() == UmrfNode::State::UNINITIALIZED)
-        {
-          action_rollback_list.insert(umrf_node_name);
-          graph_nodes_map_.at(umrf_node_name)->instantiate(
-            std::bind(&UmrfGraphExec::notifyFinished, this, std::placeholders::_1)
-          , std::bind(&UmrfGraphExec::startChildNodes, this, std::placeholders::_1, std::placeholders::_2));
-        }
+        action_rollback_list.insert(umrf_node_name);
+        graph_nodes_map_.at(umrf_node_name)->instantiate(
+          std::bind(&UmrfGraphExec::notifyFinished, this, std::placeholders::_1)
+        , std::bind(&UmrfGraphExec::startChildNodes, this, std::placeholders::_1, std::placeholders::_2));
       }
-      catch(TemotoErrorStack e)
+    }
+    catch(TemotoErrorStack e)
+    {
+      throw FORWARD_TEMOTO_ERROR_STACK(e);
+    } 
+    catch(const std::exception& e)
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Cannot initialize the actions because: " + std::string(e.what()));
+    }
+
+    /*
+     * Initialize the actions. If the action is asynchronous and has already been invoked before, then
+     * it's not initialized (denoted via its state equal to State::FINISHED)
+     */
+    for (const auto& umrf_node_name : umrf_node_names_exec)
+    try
+    {
+      if (graph_nodes_map_.at(umrf_node_name)->getState() == UmrfNode::State::READY)
       {
-        throw FORWARD_TEMOTO_ERROR_STACK(e);
-      } 
-      catch(const std::exception& e)
-      {
-        throw CREATE_TEMOTO_ERROR_STACK("Cannot initialize the actions because: " + std::string(e.what()));
+        action_rollback_list.insert(umrf_node_name);
+        graph_nodes_map_.at(umrf_node_name)->initializeNode();
       }
+    }
+    catch(TemotoErrorStack e)
+    {
+      throw FORWARD_TEMOTO_ERROR_STACK(e);
+    } 
+    catch(const std::exception& e)
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Cannot execute the actions because: " + std::string(e.what()));
     }
 
     /*
@@ -264,21 +283,18 @@ void UmrfGraphExec::startNodes(const std::vector<std::string> umrf_node_names, b
      * the graph, then the whole graph is rolled back
      */
     for (const auto& umrf_node_name : umrf_node_names_exec)
+    try
     {
-      // Execute the action
-      try
-      {
-        action_rollback_list.insert(umrf_node_name);
-        graph_nodes_map_.at(umrf_node_name)->startNodeThread();
-      }
-      catch(TemotoErrorStack e)
-      {
-        throw FORWARD_TEMOTO_ERROR_STACK(e);
-      } 
-      catch(const std::exception& e)
-      {
-        throw CREATE_TEMOTO_ERROR_STACK("Cannot execute the actions because: " + std::string(e.what()));
-      }
+      action_rollback_list.insert(umrf_node_name);
+      graph_nodes_map_.at(umrf_node_name)->startNodeThread();
+    }
+    catch(TemotoErrorStack e)
+    {
+      throw FORWARD_TEMOTO_ERROR_STACK(e);
+    } 
+    catch(const std::exception& e)
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Cannot execute the actions because: " + std::string(e.what()));
     }
   }
   catch(TemotoErrorStack e)
