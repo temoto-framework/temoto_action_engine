@@ -128,41 +128,51 @@ void UmrfNodeExec::clearNode()
 
 void UmrfNodeExec::instantiate(NotifyFinishedCb notify_finished_cb
 , StartChildNodesCb start_child_nodes_cb)
-{ 
+try
+{
   LOCK_GUARD_TYPE guard_action_instance(action_instance_rw_mutex_);
   LOCK_GUARD_TYPE guard_class_loader(class_loader_rw_mutex_);
 
-  if (getState() == State::ERROR)
+  if (getState() != State::UNINITIALIZED)
   {
-    throw CREATE_TEMOTO_ERROR_STACK("Cannot instantiate the action because it's in error state");
-  }
-  else if (getState() == State::INSTANTIATED)
-  {
-    throw CREATE_TEMOTO_ERROR_STACK("The action is already instantiated");
+    throw CREATE_TEMOTO_ERROR_STACK("Cannot instantiate the action because it's in UNINITIALIZED state");
   }
 
-  try
-  {
-    action_instance_ = class_loader_->createInstance<ActionBase>(getName());
-    action_instance_->setUmrf(UmrfNode(*this));
+  action_instance_ = class_loader_->createInstance<ActionBase>(getName());
+  action_instance_->setUmrf(UmrfNode(*this));
 
-    notify_finished_cb_ = notify_finished_cb;
-    start_child_nodes_cb_ = start_child_nodes_cb;
+  notify_finished_cb_ = notify_finished_cb;
+  start_child_nodes_cb_ = start_child_nodes_cb;
 
-    if (inputParametersReceived() && requiredParentsFinished())
-    {
-      setState(State::READY);
-    }
-    else
-    {
-      setState(State::INSTANTIATED);
-    }
-  }
-  catch(const std::exception& e)
+  if (inputParametersReceived() && requiredParentsFinished())
   {
-    setState(State::ERROR);
-    throw CREATE_TEMOTO_ERROR_STACK("Failed to create an instance of the action: " + std::string(e.what()));
+    setState(State::READY);
   }
+  else
+  {
+    setState(State::INSTANTIATED);
+  }
+}
+catch(const std::exception& e)
+{
+  setState(State::ERROR);
+  throw CREATE_TEMOTO_ERROR_STACK("Failed to create an instance of the action: " + std::string(e.what()));
+}
+
+void UmrfNodeExec::initializeNode()
+try
+{
+  LOCK_GUARD_TYPE guard_action_instance(action_instance_rw_mutex_);
+  if (getState() != State::READY)
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("Cannot execute the action because it's not in READY state");
+  }
+  action_instance_->initializeAction();
+}
+catch(TemotoErrorStack e)
+{
+  setState(State::ERROR);
+  throw FORWARD_TEMOTO_ERROR_STACK(e);
 }
 
 void UmrfNodeExec::startNode()
@@ -172,9 +182,9 @@ void UmrfNodeExec::startNode()
   // while the action is running
   //LOCK_GUARD_TYPE guard_action_instance(action_instance_rw_mutex_);
 
-  if (getState() != State::READY)
+  if (getState() != State::READY && getState() != State::FINISHED)
   {
-    error_messages_ = CREATE_TEMOTO_ERROR_STACK("Cannot execute the action because it's not in READY state");
+    error_messages_ = CREATE_TEMOTO_ERROR_STACK("Cannot execute the action because it's not in READY or FINISHED state");
     return;
   }
   try
@@ -198,9 +208,9 @@ void UmrfNodeExec::startNodeThread()
 
 void UmrfNodeExec::umrfNodeExecThread()
 {
-  if (getState() != State::READY)
+  if (getState() != State::READY && getState() != State::FINISHED)
   {
-    throw CREATE_TEMOTO_ERROR_STACK("Cannot execute the action because it's not in READY state");
+    throw CREATE_TEMOTO_ERROR_STACK("Cannot execute the action because it's not in READY or FINISHED state");
   }
   try
   {
@@ -277,7 +287,7 @@ void UmrfNodeExec::updateInstanceParams(const ActionParameters& ap_in)
   }
 }
 
-bool UmrfNodeExec::getInctanceInputParametersReceived() const
+bool UmrfNodeExec::getInstanceInputParametersReceived() const
 {
   LOCK_GUARD_TYPE guard_action_instance(action_instance_rw_mutex_);
   if (getState() != State::INSTANTIATED)

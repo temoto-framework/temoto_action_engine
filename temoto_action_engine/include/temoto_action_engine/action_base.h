@@ -29,35 +29,9 @@
  */
 class ActionBase
 {
+friend class UmrfNodeExec;
+
 public:
-  /**
-   * @brief Wraps the virtual executeAction() method with common catch blocks and checks if the invoked action is initialized.
-   * 
-   */
-  void executeActionWrapped()
-  {
-    if (!isInitialized())
-    {
-      throw CREATE_TEMOTO_ERROR_STACK("Failed to execute the action because the UMRF is uninitialised");
-    }
-    
-    try
-    {
-      executeAction();
-    }
-    catch(TemotoErrorStack e)
-    {
-      throw FORWARD_TEMOTO_ERROR_STACK(e);
-    }
-    catch(const std::exception& e)
-    {
-      throw CREATE_TEMOTO_ERROR_STACK(std::string(e.what()));
-    }
-    catch(...)
-    {  
-      throw CREATE_TEMOTO_ERROR_STACK("Caught an unhandled error.");
-    }
-  }
 
   /**
    * @brief Parameter updating routine
@@ -92,6 +66,14 @@ public:
   virtual ~ActionBase(){};
 
 protected:
+
+  /**
+   * @brief Method that is invoked when action is initilized. Has to be implemented by an action that
+   * inherits this class.
+   * 
+   */
+  virtual void initializeAction(){}
+
   /**
    * @brief Method that is invoked when action is executed. Has to be implemented by an action that
    * inherits this class.
@@ -117,6 +99,58 @@ protected:
   }
 
 private:
+
+  /**
+   * @brief Wraps the virtual initializeAction() method with common catch blocks.
+   * 
+   */
+  void initializeActionWrapped()
+  try
+  {
+    initializeAction();
+  }
+  catch(TemotoErrorStack e)
+  {
+    throw FORWARD_TEMOTO_ERROR_STACK(e);
+  }
+  catch(const std::exception& e)
+  {
+    throw CREATE_TEMOTO_ERROR_STACK(std::string(e.what()));
+  }
+  catch(...)
+  {  
+    throw CREATE_TEMOTO_ERROR_STACK("Caught an unhandled error.");
+  }
+
+  /**
+   * @brief Wraps the virtual executeAction() method with common catch blocks and checks if the invoked action is initialized.
+   * 
+   */
+  void executeActionWrapped()
+  {
+    if (!isInitialized())
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Failed to execute the action because the UMRF is uninitialised");
+    }
+    
+    try
+    {
+      executeAction();
+    }
+    catch(TemotoErrorStack e)
+    {
+      throw FORWARD_TEMOTO_ERROR_STACK(e);
+    }
+    catch(const std::exception& e)
+    {
+      throw CREATE_TEMOTO_ERROR_STACK(std::string(e.what()));
+    }
+    catch(...)
+    {  
+      throw CREATE_TEMOTO_ERROR_STACK("Caught an unhandled error.");
+    }
+  }
+
   /// Checks if the pointer to a UMRF has been set or not
   bool isInitialized()
   {

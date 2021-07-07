@@ -44,6 +44,12 @@ public:
   virtual UmrfNode asUmrfNode() const;
 
   /**
+   * @brief Initializes the action
+   * 
+   */
+  void initializeNode();
+
+  /**
    * @brief Executes the action
    * 
    */
@@ -91,7 +97,7 @@ public:
 
   void updateInstanceParams(const ActionParameters& ap_in);
 
-  bool getInctanceInputParametersReceived() const;
+  bool getInstanceInputParametersReceived() const;
 
   const TemotoErrorStack& getErrorMessages() const;
 

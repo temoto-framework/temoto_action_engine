@@ -181,10 +181,21 @@ public:
     {
       std::set<std::string> local_params_in_group = checkParamSourceGroup(*parameters_.find(*local_param_names.begin()));
       
-      // First make sure that the parameters are of same type
-      for (const auto& param_in : params_in.getParameterGroup(local_params_in_group))
+      if (!params_in.getParameterGroup(local_params_in_group).empty())
       {
-        transferable_params.insert(local_params_in_group.begin(), local_params_in_group.end());
+        bool all_params_in_group_ok = true;
+        for (const auto& param_in : params_in.getParameterGroup(local_params_in_group))
+        {
+          if (!checkParamAllowedData(getParameter(param_in.getName()), param_in))
+          {
+            all_params_in_group_ok = false;
+          }
+        }
+
+        if(all_params_in_group_ok)
+        {
+          transferable_params.insert(local_params_in_group.begin(), local_params_in_group.end());
+        }
       }
 
       for (const auto& p : local_params_in_group)
