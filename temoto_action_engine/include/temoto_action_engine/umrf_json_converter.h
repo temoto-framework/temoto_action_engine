@@ -65,6 +65,7 @@ static const struct RelationFields
   const char* name = "name";
   const char* suffix = "id";
   const char* required = "required";
+  const char* stop_when_received = "stop_when_received";
 }RELATION_FIELDS;
 
 UmrfNode fromUmrfJsonStr(const std::string& umrf_json_str, bool as_descriptor = false);

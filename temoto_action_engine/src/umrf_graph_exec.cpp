@@ -309,92 +309,112 @@ void UmrfGraphExec::startNodes(const std::vector<std::string> umrf_node_names, b
 }
 
 void UmrfGraphExec::startChildNodes(const std::string& parent_node_name, const ActionParameters& parent_action_parameters)
+try
 {
   /*
-   * Pass the output parameters of the parent action to child actions
-   */
-  try
+    * Pass the output parameters of the parent action to child actions
+    */
+
+  if (getState() == State::STOP_REQUESTED)
   {
-    if (getState() == State::STOP_REQUESTED)
+    return;
+  }
+
+  LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
+  std::shared_ptr<UmrfNodeExec> parent_node = graph_nodes_map_.at(parent_node_name);
+  std::vector<std::string> child_node_names;
+
+  if (parent_node->getChildren().empty())
+  {
+    return;
+  }
+  else
+  {
+    for (const auto& child_node_relation : parent_node->getChildren())
     {
-      return;
+      child_node_names.push_back(child_node_relation.getFullName());
     }
+  }
+  
+  /*
+   * Check which children are required to stop and wich are required to start
+   */
+  std::vector<std::string> children_to_start;
+  std::vector<std::string> children_to_stop;
 
-    LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
-    std::shared_ptr<UmrfNodeExec> parent_node = graph_nodes_map_.at(parent_node_name);
-    std::vector<std::string> child_node_names;
-
-    if (parent_node->getChildren().empty())
+  for (const auto& child_node_name : child_node_names)
+  {
+    if (graph_nodes_map_.at(child_node_name)->getStopWhenReceived(parent_node->asRelation()))
     {
-      return;
+      children_to_stop.push_back(child_node_name);
     }
     else
     {
-      for (const auto& child_node_relation : parent_node->getChildren())
-      {
-        child_node_names.push_back(child_node_relation.getFullName());
-      }
-    }
-    
-    // Notify the children that the parent has finished
-    for (const auto& child_node_name : child_node_names)
-    {
+      children_to_start.push_back(child_node_name);
       graph_nodes_map_.at(child_node_name)->setParentReceived(parent_node->asRelation());
     }
+  }
 
-    // If the parent has output parameters then pass them to the children
-    if (!parent_action_parameters.empty())
+  // If the parent has output parameters then pass them to the children
+  if (!parent_action_parameters.empty())
+  {
+    for (const auto& child_node_name : children_to_start)
     {
-      for (const auto& child_node_name : child_node_names)
+      std::shared_ptr<UmrfNodeExec> child_node = graph_nodes_map_.at(child_node_name);
+      std::set<std::string> transferable_param_names = child_node->getInputParameters().getTransferableParams(parent_action_parameters);
+
+      if (transferable_param_names.empty())
       {
-        std::shared_ptr<UmrfNodeExec> child_node = graph_nodes_map_.at(child_node_name);
-        std::set<std::string> transferable_param_names = child_node->getInputParameters().getTransferableParams(parent_action_parameters);
-
-        if (transferable_param_names.empty())
-        {
-          continue;
-        }
-        /*
-         * Parameters are directly passed to the child action instance in the loaded shared library,
-         * because only the child action instance knows how to exactly copy the parameters without
-         * depending on the virtual deleter that resides in the parent action. Hence first the child
-         * action is instantiated and then the parameters are passed over.
-         */
-        if (child_node->getState() == UmrfNode::State::UNINITIALIZED)
-        {
-          child_node->instantiate(
-            std::bind(&UmrfGraphExec::notifyFinished, this, std::placeholders::_1)
-          , std::bind(&UmrfGraphExec::startChildNodes, this, std::placeholders::_1, std::placeholders::_2));
-        }
-
-        ActionParameters transferable_params;
-        for (const auto& transf_param_name : transferable_param_names)
-        {
-          transferable_params.setParameter(parent_action_parameters.getParameter(transf_param_name));
-        }
-        
-        child_node->updateInstanceParams(transferable_params);
+        continue;
       }
-    }
+      /*
+        * Parameters are directly passed to the child action instance in the loaded shared library,
+        * because only the child action instance knows how to exactly copy the parameters without
+        * depending on the virtual deleter that resides in the parent action. Hence first the child
+        * action is instantiated and then the parameters are passed over.
+        */
+      if (child_node->getState() == UmrfNode::State::UNINITIALIZED)
+      {
+        child_node->instantiate(
+          std::bind(&UmrfGraphExec::notifyFinished, this, std::placeholders::_1)
+        , std::bind(&UmrfGraphExec::startChildNodes, this, std::placeholders::_1, std::placeholders::_2));
+      }
 
-    /*
-     * Run the children actions
-     */
-    startNodes(child_node_names, false);
+      ActionParameters transferable_params;
+      for (const auto& transf_param_name : transferable_param_names)
+      {
+        transferable_params.setParameter(parent_action_parameters.getParameter(transf_param_name));
+      }
+      
+      child_node->updateInstanceParams(transferable_params);
+    }
   }
-  catch(TemotoErrorStack e)
+
+  /*
+   * Stop the children_to_stop actions
+   */
+  for (const auto& child_node_name : children_to_stop)
   {
-    throw FORWARD_TEMOTO_ERROR_STACK(e);
-  }
-  catch(const std::exception& e)
-  {
-    throw CREATE_TEMOTO_ERROR_STACK(std::string(e.what()));
-  }
-  catch(...)
-  {
-    throw CREATE_TEMOTO_ERROR_STACK("Caught an unhandled exception");
-  }
+    stopNode(child_node_name);
+  } 
+
+  /*
+   * Run the children_to_start actions
+   */
+  startNodes(children_to_start, false);
   return;
+}
+catch(TemotoErrorStack e)
+{
+  throw FORWARD_TEMOTO_ERROR_STACK(e);
+}
+catch(const std::exception& e)
+{
+  throw CREATE_TEMOTO_ERROR_STACK(std::string(e.what()));
+}
+catch(...)
+{
+  throw CREATE_TEMOTO_ERROR_STACK("Caught an unhandled exception");
 }
 
 void UmrfGraphExec::notifyFinished(const std::string& node_name)

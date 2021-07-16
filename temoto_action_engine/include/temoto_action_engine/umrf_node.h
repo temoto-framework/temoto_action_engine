@@ -62,6 +62,7 @@ public:
     , suffix_(suffix)
     , required_(required)
     , received_(false)
+    , stop_when_received_(false)
     {}
 
     Relation(const Relation& r_in)
@@ -69,6 +70,7 @@ public:
     , suffix_(r_in.getSuffix())
     , required_(r_in.getRequired())
     , received_(r_in.getReceived())
+    , stop_when_received_(r_in.stop_when_received_)
     {}
 
     void operator=(const Relation& r_in)
@@ -77,6 +79,7 @@ public:
       suffix_ = r_in.getSuffix();
       required_ = r_in.getRequired();
       received_ = r_in.getReceived();
+      stop_when_received_ = r_in.getStopWhenReceived();
     }
 
     bool operator==(const Relation& r_in) const
@@ -104,6 +107,11 @@ public:
       return received_;
     }
 
+    bool getStopWhenReceived() const
+    {
+      return stop_when_received_;
+    }
+
     std::string getFullName() const
     {
       return name_ + "_" + std::to_string(suffix_);
@@ -118,6 +126,7 @@ public:
     unsigned int suffix_;
     bool required_; // Indicates whether the child can only execute once the parent has finished the execution  
     bool received_; // Indicates whether the parent has finished execution. Applies only to parent-type relations
+    bool stop_when_received_; // Indicates whether the parent should make the child stop. Applies only to parent-type relations
   };
 
   UmrfNode();
@@ -175,6 +184,8 @@ public:
   bool requiredParentsFinished() const;
 
   void setParentReceived(const UmrfNode::Relation& parent);
+
+  bool getStopWhenReceived(const UmrfNode::Relation& parent) const;
 
 protected:
 
