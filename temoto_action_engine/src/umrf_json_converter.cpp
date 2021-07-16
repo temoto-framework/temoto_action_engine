@@ -404,6 +404,15 @@ std::vector<UmrfNode::Relation> parseRelations(const rapidjson::Value& value_in)
       // Do nothing
     }
 
+    try
+    {
+      relation.stop_when_received_ = getBoolFromValue(getJsonElement(RELATION_FIELDS.stop_when_received, value_in[i]));
+    }
+    catch(TemotoErrorStack e)
+    {
+      // Do nothing
+    }
+
     umrf_relations.push_back(relation);
   }
 
@@ -533,6 +542,9 @@ void toUmrfJsonValue(rapidjson::Value& from_scratch
 
       // Add required
       parent_object.AddMember(rapidjson::StringRef(RELATION_FIELDS.required), parent.getRequired(), allocator);
+
+      // Add stop when received
+      parent_object.AddMember(rapidjson::StringRef(RELATION_FIELDS.stop_when_received), parent.getStopWhenReceived(), allocator);
 
       parents_object.PushBack(parent_object, allocator);
     }
