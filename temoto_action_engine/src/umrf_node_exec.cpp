@@ -192,11 +192,12 @@ void UmrfNodeExec::startNode()
     setState(State::RUNNING);
     action_instance_->executeActionWrapped(); // Blocking call, returns when finished
 
+    // If the action finished without external interruption (stop request) then start the child nodes
     if (getState() == State::RUNNING)
     {
       start_child_nodes_cb_(getFullName(), action_instance_->getUmrfNodeConst().getOutputParameters());
-      setState(State::FINISHED);
     }
+    setState(State::FINISHED);
   }
   catch(TemotoErrorStack e)
   {
