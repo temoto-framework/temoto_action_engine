@@ -8,7 +8,7 @@ This repository contains ROS independent *core C++ implementation* of the TeMoto
 * [UMRF](https://doi.org/10.1145/3522580) (paper published in [THRI](https://dl.acm.org/journal/thri))
 * [TeMoto Framework](https://github.com/temoto-framework/temoto)
 
-[![Build Status](https://travis-ci.org/temoto-telerobotics/temoto_action_engine.svg?branch=master)](https://travis-ci.org/temoto-telerobotics/temoto_action_engine)
+[![Build Status](https://github.com/temoto-framework/temoto_action_engine/actions/workflows/cmake.yml/badge.svg)](https://github.com/temoto-framework/temoto_action_engine/actions/workflows/cmake.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ## Install Instructions
