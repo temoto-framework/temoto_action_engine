@@ -1,10 +1,12 @@
 **TeMoto Action Engine** is a task management system that executes tasks based on UMRF descriptions. Tasks can be started, stopped and modified during runtime.
 
-This repository contains ROS independent core C++ implementation of the Temoto Action Engine. [ROS1](https://github.com/temoto-framework/temoto_action_engine_ros1) or [ROS2](https://github.com/temoto-framework/temoto_action_engine_ros2) wrappers are available.
+This repository contains ROS independent *core C++ implementation* of the TeMoto Action Engine. ROS wrappers with respective build instructions and examples available:
+* [ROS1](https://github.com/temoto-framework/temoto_action_engine_ros1)
+* [ROS2](https://github.com/temoto-framework/temoto_action_engine_ros2)
 
-**For more information about**:
-* **UMRF** - (or referring this work) please have a look at our paper: *"[Unified Meaning Representation Format (UMRF) - A Task Description and Execution Formalism for HRI](https://doi.org/10.1145/3522580)"*
-* **TeMoto Framework** - [here](https://github.com/temoto-framework/temoto).
+**More information about**:
+* [UMRF](https://doi.org/10.1145/3522580) (paper published in [THRI](https://dl.acm.org/journal/thri))
+* [TeMoto Framework](https://github.com/temoto-framework/temoto)
 
 [![Build Status](https://travis-ci.org/temoto-telerobotics/temoto_action_engine.svg?branch=master)](https://travis-ci.org/temoto-telerobotics/temoto_action_engine)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
@@ -28,10 +30,20 @@ sudo make install
 ```
 
 ## Run the demos
-There are couple of UMRF graphs in the ```examples/umrf_graphs``` folder which use the ```ta_example_1``` action.
+There are couple of UMRF graphs in the `examples/umrf_graphs` folder which utilize the `ta_example_1` action. This simple action is designed to increment a number (numerical value + unit), thus it accepts and outputs a parameter named `distance`. In `example_1.umrfg.json`, multiple instances of `ta_example_1` form a loop, and therefore you can see an increasing number being printed out in the terminal:
 ```bash
 cd build
 ./tae_example --actions-path actions --umrf-graph ../examples/umrf_graphs/example_1.umrfg.json
+
+...
+
+[executeTemotoAction of TaExample1_1] got: 1.000000 meters
+[executeTemotoAction of TaExample1_2] got: 2.000000 meters
+[executeTemotoAction of TaExample1_1] got: 3.000000 meters
+[executeTemotoAction of TaExample1_2] got: 4.000000 meters
+[executeTemotoAction of TaExample1_1] got: 5.000000 meters
+
+...
 ```
 
 ## g++ build example
