@@ -88,10 +88,31 @@ class_loader_hide_library_symbols(ta_example_1)
 
 # Install the headers and the library
 install(TARGETS ${PROJECT_NAME}
+  EXPORT ${PROJECT_NAME}Targets
   ARCHIVE DESTINATION bin
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
+
+install(
+  EXPORT ${PROJECT_NAME}Targets 
+  FILE ${PROJECT_NAME}Targets.cmake
+  DESTINATION "lib/cmake/${PROJECT_NAME}"
+  # NAMESPACE ${PROJECT_NAME}::
+)
+
+include(CMakePackageConfigHelpers)
+configure_package_config_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in
+  "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+  INSTALL_DESTINATION "lib/cmake/${PROJECT_NAME}"
+)
+
+install(
+    FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+    DESTINATION "lib/cmake/${PROJECT_NAME}"
+)
+
 install(DIRECTORY include/temoto_action_engine/
   DESTINATION include/${PROJECT_NAME}
 )
@@ -101,8 +122,3 @@ set(TARGET_NAME ${PROJECT_NAME})
 set(PKGCONFIG_LIBS
   ${libraries}
 )
-
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}.pc.in
-  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc @ONLY)
-
-install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc DESTINATION lib/pkgconfig)

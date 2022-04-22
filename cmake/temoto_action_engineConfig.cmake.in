@@ -1,0 +1,10 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+find_dependency(Boost)
+find_dependency(class_loader)
+
+include("${CMAKE_CURRENT_LIST_DIR}/temoto_action_engineTargets.cmake")
+
+check_required_components(Boost)
+check_required_components(class_loader)
