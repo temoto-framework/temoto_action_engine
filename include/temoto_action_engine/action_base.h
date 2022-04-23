@@ -109,7 +109,7 @@ private:
   {
     initializeAction();
   }
-  catch(TemotoErrorStack e)
+  catch(TemotoErrorStack& e)
   {
     throw FORWARD_TEMOTO_ERROR_STACK(e);
   }
@@ -137,7 +137,7 @@ private:
     {
       executeAction();
     }
-    catch(TemotoErrorStack e)
+    catch(TemotoErrorStack& e)
     {
       throw FORWARD_TEMOTO_ERROR_STACK(e);
     }

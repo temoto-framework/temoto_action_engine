@@ -109,7 +109,7 @@ public:
       }
       return true;
     }
-    catch(TemotoErrorStack e)
+    catch(TemotoErrorStack& e)
     {
       throw FORWARD_TEMOTO_ERROR_STACK(e);
     }
@@ -205,7 +205,7 @@ public:
     }
     return transferable_params;
   }
-  catch(TemotoErrorStack e)
+  catch(TemotoErrorStack& e)
   {
     throw FORWARD_TEMOTO_ERROR_STACK(e);
   }
@@ -283,7 +283,7 @@ public:
     {
       parameters_out.insert(*parameters_.find(param_name));
     }
-    return std::move(parameters_out);
+    return parameters_out;
   }
 
   bool hasParameter(const std::string& parameter_name) const

@@ -45,22 +45,22 @@ public:
   };
 
   UmrfGraphCommon(const std::string& graph_name)
-  : state_(State::UNINITIALIZED)
-  , graph_name_(graph_name)
+  : graph_name_(graph_name)
+  , state_(State::UNINITIALIZED)
   {}
 
   UmrfGraphCommon(const std::string& graph_name, const std::vector<UmrfNode>& umrf_nodes_vec)
-  : state_(State::UNINITIALIZED)
-  , graph_name_(graph_name)
+  : graph_name_(graph_name)
+  , state_(State::UNINITIALIZED)
   , umrf_nodes_vec_(umrf_nodes_vec)
   {}
 
   UmrfGraphCommon(const UmrfGraphCommon& ugc)
   : graph_name_(ugc.graph_name_)
-  , graph_description_(ugc.graph_name_)
-  , root_node_names_(ugc.root_node_names_)
   , state_(ugc.state_)
   , umrf_nodes_vec_(ugc.umrf_nodes_vec_)
+  , graph_description_(ugc.graph_name_)
+  , root_node_names_(ugc.root_node_names_)
   {}
 
   void setName(const std::string& name)
@@ -111,17 +111,18 @@ protected:
   mutable MUTEX_TYPE_R graph_name_rw_mutex_;
   GUARDED_VARIABLE(std::string graph_name_, graph_name_rw_mutex_);
 
+  mutable MUTEX_TYPE_R state_rw_mutex_;
+  GUARDED_VARIABLE(State state_, state_rw_mutex_);
+
+  mutable MUTEX_TYPE_R umrf_nodes_vec_rw_mutex_;
+  GUARDED_VARIABLE(mutable std::vector<UmrfNode> umrf_nodes_vec_, umrf_nodes_vec_rw_mutex_);
+
   mutable MUTEX_TYPE_R graph_description_rw_mutex_;
   GUARDED_VARIABLE(std::string graph_description_, graph_description_rw_mutex_);
 
   mutable MUTEX_TYPE_R root_node_names_rw_mutex_;
   GUARDED_VARIABLE(std::vector<std::string> root_node_names_, root_node_names_rw_mutex_);
 
-  mutable MUTEX_TYPE_R state_rw_mutex_;
-  GUARDED_VARIABLE(State state_, state_rw_mutex_);
-
-  mutable MUTEX_TYPE_R umrf_nodes_vec_rw_mutex_;
-  GUARDED_VARIABLE(mutable std::vector<UmrfNode> umrf_nodes_vec_, umrf_nodes_vec_rw_mutex_);
 };
 
 /**

@@ -45,15 +45,15 @@ public:
                  , std::string example = ""
                  , int64_t source_id = UNDEFINED_SOURCE
                  , bool required = true
-                 , bool updatable = false
-                 , bool quaranteed = false)
+                 , bool quaranteed = false
+                 , bool updatable = false)
   : name_(name)
   , type_(type)
   , example_(example)
   , source_id_(source_id)
   , required_(required)
-  , updatable_(updatable)
   , quaranteed_(quaranteed)
+  , updatable_(updatable)
   {}
 
   ActionParameter(const ActionParameter<T>& ap)
@@ -300,8 +300,8 @@ private:
   mutable int64_t source_id_;
   mutable int64_t timestamp_;
   mutable bool required_;
-  mutable bool updatable_;
   mutable bool quaranteed_;
+  mutable bool updatable_;
   mutable std::vector<T> data_;
   mutable std::vector<T> allowed_data_;
 };
