@@ -266,6 +266,10 @@ catch(TemotoErrorStack e)
   throw FORWARD_TEMOTO_ERROR_STACK(e);
 }
 
+void ActionEngine::setActorSynchronizerUmrf(const UmrfNode& actor_synchronizer_umrf)
+{
+  amf_.setActorSynchronizerUmrf(actor_synchronizer_umrf);
+}
 
 bool ActionEngine::stop()
 {

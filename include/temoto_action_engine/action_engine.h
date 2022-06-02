@@ -52,6 +52,8 @@ public:
   
   bool addActionsPath(const std::string& action_packages_path);
 
+  void setActorSynchronizerUmrf(const UmrfNode& actor_synchronizer_umrf);
+
   std::vector<std::string> getGraphJsons() const;
 
   ~ActionEngine();
@@ -76,7 +78,6 @@ private:
   void notifyGraphFinished(const std::string& graph_name);
 
   // void updateUmrfGraph(const std::string& graph_name, std::vector<UmrfNode> umrfs_vec);
-
   ActionIndexer ai_;
   ActionMatchFinder amf_;
 

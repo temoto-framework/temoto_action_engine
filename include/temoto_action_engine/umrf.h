@@ -42,6 +42,7 @@ public:
   void operator=(const Umrf& umrf)
   {
     name_ = umrf.name_;
+    actor_ = umrf.actor_;
     notation_ = umrf.notation_;
     effect_ = umrf.effect_;
     description_ = umrf.description_;
@@ -54,6 +55,9 @@ public:
   const std::string& getName() const;
   std::string& getNameNc();
   bool setName(const std::string& name);
+
+  const std::string& getActor() const;
+  bool setActor(const std::string& actor);
 
   const std::string& getNotation() const;
   bool setNotation(const std::string& notation);
@@ -90,6 +94,9 @@ protected:
 
   mutable MUTEX_TYPE_R name_rw_mutex_;
   GUARDED_VARIABLE(std::string name_, name_rw_mutex_);
+
+  mutable MUTEX_TYPE_R actor_rw_mutex_;
+  GUARDED_VARIABLE(std::string actor_, actor_rw_mutex_);
 
   mutable MUTEX_TYPE_R notation_rw_mutex_;
   GUARDED_VARIABLE(std::string notation_, notation_rw_mutex_);
