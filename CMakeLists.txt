@@ -18,7 +18,7 @@ if(${Boost_MINOR_VERSION} GREATER_EQUAL 70)
   foreach(lib_target ${Boost_LIBRARIES})
     get_target_property(lib_location ${lib_target} LOCATION)
     list(APPEND boost_libraries ${lib_location})
-  endforeach()  
+  endforeach()
 else()
   set(boost_libraries ${Boost_LIBRARIES})
 endif()
@@ -50,6 +50,7 @@ add_library(${PROJECT_NAME} SHARED
   src/action_indexer.cpp
   src/action_match_finder.cpp
   src/action_engine.cpp
+  src/arg_parser.cpp
   src/umrf_json_converter.cpp
   src/umrf_graph_fs.cpp
 )
@@ -68,7 +69,7 @@ target_link_libraries(tae_example
 set(ACTION_LIB_DIR
   ${CMAKE_CURRENT_SOURCE_DIR}/build/actions/ta_example_1/lib/
 )
-file(MAKE_DIRECTORY 
+file(MAKE_DIRECTORY
   ${ACTION_LIB_DIR}
 )
 add_library(ta_example_1 SHARED
@@ -81,7 +82,7 @@ set_target_properties(ta_example_1
 target_link_libraries(ta_example_1
   ${PROJECT_NAME}
 )
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/examples/actions/ta_example_1/ta_example_1.umrf.json 
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/examples/actions/ta_example_1/ta_example_1.umrf.json
   ${CMAKE_CURRENT_SOURCE_DIR}/build/actions/ta_example_1/ta_example_1.umrf.json COPYONLY
 )
 class_loader_hide_library_symbols(ta_example_1)
@@ -95,7 +96,7 @@ install(TARGETS ${PROJECT_NAME}
 )
 
 install(
-  EXPORT ${PROJECT_NAME}Targets 
+  EXPORT ${PROJECT_NAME}Targets
   FILE ${PROJECT_NAME}Targets.cmake
   DESTINATION "lib/cmake/${PROJECT_NAME}"
   # NAMESPACE ${PROJECT_NAME}::
