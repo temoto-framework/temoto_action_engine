@@ -27,6 +27,7 @@ public:
   /// Defines all possible states for the action handle
   enum class State
   {
+    NOT_SET,
     UNINITIALIZED,      // Action library is not loaded or input parameters not received
     INSTANTIATED,
     READY,              // Action instance is loaded and input parameters received

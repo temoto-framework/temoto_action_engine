@@ -11,6 +11,7 @@ endif()
 
 find_package(Boost COMPONENTS filesystem program_options REQUIRED)
 find_package(class_loader REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
 set(boost_libraries)
 if(${Boost_MINOR_VERSION} GREATER_EQUAL 70)
@@ -56,6 +57,15 @@ add_library(${PROJECT_NAME} SHARED
 )
 target_link_libraries(${PROJECT_NAME}
   ${libraries}
+)
+
+# Build nlohmann json based converter
+add_executable(nlj_example
+  src/umrf_json_converter_nlj.cpp
+)
+target_link_libraries(nlj_example
+  ${PROJECT_NAME}
+  nlohmann_json
 )
 
 # Build the examples

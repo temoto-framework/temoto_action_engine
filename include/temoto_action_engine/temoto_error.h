@@ -25,6 +25,7 @@
 #define CREATE_TEMOTO_ERROR(message) TemotoError(message, __func__)
 #define CREATE_TEMOTO_ERROR_STACK(message) TemotoErrorStack(message, __func__)
 #define FORWARD_TEMOTO_ERROR_STACK(error_stack) error_stack.appendError("forwarding", __func__)
+#define FORWARD_TEMOTO_ERROR_STACK_WMSG(error_stack, msg) error_stack.appendError(msg, __func__)
 
 class TemotoError : public std::exception
 {
