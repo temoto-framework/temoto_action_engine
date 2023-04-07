@@ -59,7 +59,7 @@ public:
   : graph_name_(ugc.graph_name_)
   , state_(ugc.state_)
   , umrf_nodes_vec_(ugc.umrf_nodes_vec_)
-  , graph_description_(ugc.graph_name_)
+  , graph_description_(ugc.graph_description_)
   , root_node_names_(ugc.root_node_names_)
   {}
 
