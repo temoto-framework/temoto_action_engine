@@ -1,0 +1,193 @@
+{
+  "graph_name": "robot go observe the valve [x=-93.6; y=11.0; yaw=-0.85]",
+  "graph_description": "Robot navigates to the valve and observes it",
+  "actions": [
+        {
+          "name": "navigate",
+          "description": "go",
+          "id": 0,
+          "effect": "synchronous",
+          "input_parameters": {
+              "test_param_1": {
+                  "pvf_type": "string",
+                  "pvf_allowed_values": [
+                      "allowed value 1",
+                      "allowed value 2",
+                      "allowed value 3"
+                  ]
+              },
+              "test_param_2": {
+                "pvf_type": "number",
+                "pvf_allowed_values": [
+                    123,
+                    22.22,
+                    -33.65
+                ]
+            },
+              "location": {
+                  "pvf_type": "string",
+                  "pvf_value": "valve"
+              },
+              "pose_2d": {
+                  "x": {
+                      "pvf_type": "number",
+                      "pvf_value": -93.6
+                  },
+                  "y": {
+                      "pvf_type": "number",
+                      "pvf_value": 11.0
+                  },
+                  "yaw": {
+                      "pvf_type": "number",
+                      "pvf_value": -0.85
+                  }
+              }
+          },
+          "children": [
+              {
+                  "name": "move_arm",
+                  "id": 0
+              }
+          ]
+      },
+      {
+          "name": "move_arm",
+          "description": "observe",
+          "id": 0,
+          "effect": "synchronous",
+          "input_parameters": {
+              "pose_quat": {
+                  "orientation": {
+                      "w": {
+                          "pvf_type": "number",
+                          "pvf_value": 0.54
+                      },
+                      "x": {
+                          "pvf_type": "number",
+                          "pvf_value": 0.2
+                      },
+                      "y": {
+                          "pvf_type": "number",
+                          "pvf_value": 0.33
+                      },
+                      "z": {
+                          "pvf_type": "number",
+                          "pvf_value": -0.1
+                      }
+                  },
+                  "position": {
+                      "x": {
+                          "pvf_type": "number",
+                          "pvf_value": 0.2
+                      },
+                      "y": {
+                          "pvf_type": "number",
+                          "pvf_value": 0.54
+                      },
+                      "z": {
+                          "pvf_type": "number",
+                          "pvf_value": 0.32
+                      }
+                  }
+              }
+          },
+          "children": [
+              {
+                  "name": "take_picture",
+                  "id": 0
+              }
+          ],
+          "parents": [
+              {
+                  "name": "navigate",
+                  "id": 0
+              }
+          ]
+      },
+      {
+          "name": "take_picture",
+          "description": "observe",
+          "id": 0,
+          "effect": "synchronous",
+          "children": [
+              {
+                  "name": "move_arm",
+                  "id": 1
+              }
+          ],
+          "parents": [
+              {
+                  "name": "move_arm",
+                  "id": 0
+              }
+          ]
+      },
+      {
+          "name": "move_arm",
+          "description": "observe",
+          "id": 1,
+          "effect": "synchronous",
+          "input_parameters": {
+              "pose_quat": {
+                  "orientation": {
+                      "w": {
+                          "pvf_type": "number",
+                          "pvf_value": 1.0
+                      },
+                      "x": {
+                          "pvf_type": "number",
+                          "pvf_value": 0.0
+                      },
+                      "y": {
+                          "pvf_type": "number",
+                          "pvf_value": 0.0
+                      },
+                      "z": {
+                          "pvf_type": "number",
+                          "pvf_value": 0.0
+                      }
+                  },
+                  "position": {
+                      "x": {
+                          "pvf_type": "number",
+                          "pvf_value": 0.2
+                      },
+                      "y": {
+                          "pvf_type": "number",
+                          "pvf_value": 0.0
+                      },
+                      "z": {
+                          "pvf_type": "number",
+                          "pvf_value": 0.32
+                      }
+                  }
+              }
+          },
+          "children": [
+              {
+                  "name": "take_picture",
+                  "id": 1
+              }
+          ],
+          "parents": [
+              {
+                  "name": "take_picture",
+                  "id": 0
+              }
+          ]
+      },
+      {
+          "name": "take_picture",
+          "description": "observe",
+          "id": 1,
+          "effect": "synchronous",
+          "parents": [
+              {
+                  "name": "move_arm",
+                  "id": 1,
+                  "preempted_by": true
+              }
+          ]
+      }
+  ]
+}
