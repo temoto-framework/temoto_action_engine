@@ -8,20 +8,19 @@
 
 using json = nlohmann::json;
 
-// TODO - make it generic and not depend on pvf_value. 
 boost::any toParameterData(const std::string& type, const json& data_json)
 {
   if (type == "string")
   {
-    return boost::any(std::string{data_json.at("pvf_value")});
+    return boost::any(std::string{data_json});
   }
   else if (type == "number")
   {
-    return boost::any(double{data_json.at("pvf_value")});
+    return boost::any(double{data_json});
   }
   else if (type == "bool")
   {
-    return boost::any(bool{data_json.at("pvf_value")});
+    return boost::any(bool{data_json});
   }
   else
   {
@@ -73,18 +72,18 @@ ActionParameters::Parameters parseParameters(std::string parent_member_name, con
     /*
      * Get allowed values
      */
-    // if (parameters_json.contains("pvf_allowed_values"))
-    // try
-    // {
-    //   for (const auto& allowed_value_json : parameters_json.at("pvf_allowed_values").)
-    //   {
-    //     pc.addAllowedData(toParameterData(pc.getType(), allowed_value_json));
-    //   }
-    // }
-    // catch(TemotoErrorStack e)
-    // {
-    //   throw CREATE_TEMOTO_ERROR_STACK("Invalid 'pvf_allowed_values': " + std::string(e.what()));
-    // }
+    if (parameters_json.contains("pvf_allowed_values"))
+    try
+    {
+      for (const auto& allowed_value_json : parameters_json.at("pvf_allowed_values"))
+      {
+        pc.addAllowedData(toParameterData(pc.getType(), allowed_value_json));
+      }
+    }
+    catch(TemotoErrorStack e)
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Invalid 'pvf_allowed_values': " + std::string(e.what()));
+    }
 
     /*
      * Get value
@@ -92,7 +91,7 @@ ActionParameters::Parameters parseParameters(std::string parent_member_name, con
     if (parameters_json.contains("pvf_value")) 
     try
     {
-      pc.setData(toParameterData(pc.getType(), parameters_json));
+      pc.setData(toParameterData(pc.getType(), parameters_json.at("pvf_value")));
     }
     catch(TemotoErrorStack e)
     {
@@ -451,6 +450,7 @@ int main()
               std::cout << boost::any_cast<bool>(allowed_data) << ", ";
             }
           }
+          std::cout << std::endl;
         }
       }
     }
