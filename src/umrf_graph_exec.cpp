@@ -69,7 +69,7 @@ void UmrfGraphExec::stopGraph()
 
   for (auto& graph_node : graph_nodes_map_)
   {
-    graph_node.second->stopNode(10);
+    graph_node.second->stopNode(15);
   }
 }
 
