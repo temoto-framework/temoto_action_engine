@@ -433,6 +433,14 @@ void toUmrfJsonValue(rapidjson::Value& from_scratch
   name_value.SetString(umrf_node.getName().c_str(), umrf_node.getName().size(), allocator);
   from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.name), name_value, allocator);
 
+  // Set the description
+  if (!umrf_node.getActor().empty())
+  {
+    rapidjson::Value actor_value(rapidjson::kStringType);
+    actor_value.SetString(umrf_node.getActor().c_str(), umrf_node.getActor().size(), allocator);
+    from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.actor), actor_value, allocator);
+  }
+
   // Set the package name
   if (!umrf_node.getPackageName().empty())
   {
@@ -441,7 +449,7 @@ void toUmrfJsonValue(rapidjson::Value& from_scratch
     from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.package_name), package_name_value, allocator);
   }
 
-  // Set the description name
+  // Set the description
   if (!umrf_node.getDescription().empty())
   {
     rapidjson::Value description_value(rapidjson::kStringType);
@@ -449,16 +457,20 @@ void toUmrfJsonValue(rapidjson::Value& from_scratch
     from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.description), description_value, allocator);
   }
 
-  // Set the suffix
+  // Set the suffix and the state
   if (as_descriptor)
   {
-    /* do not add the suffix field */
+    /* do not add the suffix and the state field */
   }
   else
   {
     rapidjson::Value suffix_value(rapidjson::kNumberType);
     suffix_value.SetInt(umrf_node.getSuffix());
     from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.suffix), suffix_value, allocator);
+
+    rapidjson::Value state_value(rapidjson::kNumberType);
+    state_value.SetInt((unsigned int) umrf_node.getState());
+    from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.state), state_value, allocator);
   }
 
   // Set the notation
@@ -601,7 +613,22 @@ UmrfNode fromUmrfJsonValue(const rapidjson::Value& json_doc, bool as_descriptor 
   /*
    * Parse the not required fields
    * TODO: If the non-required field exists but is ill formatted, then raise an error
-   */ 
+   */
+
+  // Actor
+  try
+  {
+    std::string actor = getStringFromValue(getRootJsonElement(UMRF_FIELDS.actor, json_doc));
+    if (!umrf_node.setActor(actor))
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Illegal value in the actor field.");
+    }
+  }
+  catch(const TemotoErrorStack& e)
+  {
+    // ... do nothing
+  }
+
   // Library path
   try
   {
@@ -707,6 +734,17 @@ UmrfNode fromUmrfJsonValue(const rapidjson::Value& json_doc, bool as_descriptor 
   try
   {
     umrf_node.setExecuteFirst(getBoolFromValue(getRootJsonElement(UMRF_FIELDS.execute_first, json_doc)));
+  }
+  catch(const std::exception& e)
+  {
+    // ... do nothing
+  }
+
+  // State
+  try
+  {
+    unsigned int state = getNumberFromValue(getRootJsonElement(UMRF_FIELDS.state, json_doc));
+    umrf_node.setState(UmrfNode::State(state));
   }
   catch(const std::exception& e)
   {

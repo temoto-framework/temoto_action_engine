@@ -40,6 +40,7 @@ static const struct UmrfFields
   const char* library_path = "library_path";
   const char* state = "state";
   const char* name = "name";
+  const char* actor = "actor";
   const char* package_name = "package_name";
   const char* description = "description";
   const char* suffix = "id";
