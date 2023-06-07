@@ -23,7 +23,31 @@
                     22.22,
                     -33.65
                 ]
-            },
+              },
+              "test_param_3": {
+                "pvf_type": "strings",
+                "pvf_value": [
+                    "vec value 1",
+                    "vec value 2",
+                    "vec value 3"
+                ]
+              },
+              "test_param_4": {
+                "pvf_type": "numbers",
+                "pvf_value": [
+                    123.123,
+                    234.234,
+                    345.345
+                ]
+              },
+              "test_param_5": {
+                "pvf_type": "bools",
+                "pvf_value": [
+                    true,
+                    false,
+                    true
+                ]
+              },
               "location": {
                   "pvf_type": "string",
                   "pvf_value": "valve"

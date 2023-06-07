@@ -14,13 +14,25 @@ boost::any toParameterData(const std::string& type, const json& data_json)
   {
     return boost::any(std::string{data_json});
   }
+  else if (type == "strings")
+  {
+    return boost::any(data_json.get<std::vector<std::string>>());
+  }
   else if (type == "number")
   {
     return boost::any(double{data_json});
   }
+  else if (type == "numbers")
+  {
+    return boost::any(data_json.get<std::vector<double>>());
+  }
   else if (type == "bool")
   {
     return boost::any(bool{data_json});
+  }
+  else if (type == "bools")
+  {
+    return boost::any(data_json.get<std::vector<bool>>());
   }
   else
   {
@@ -422,13 +434,40 @@ int main()
           {
             std::cout << "     value: " << boost::any_cast<std::string>(data) << std::endl;
           }
+          else if (parameter.getType() == "strings")
+          {
+            std::cout << "     value: ";
+            for (const auto& data_item : boost::any_cast<std::vector<std::string>>(data))
+            {
+              std::cout << data_item << ", ";
+            }
+            std::cout << std::endl;
+          }
           else if (parameter.getType() == "number")
           {
             std::cout << "     value: " << boost::any_cast<double>(data) << std::endl;
           }
+          else if (parameter.getType() == "numbers")
+          {
+            std::cout << "     value: ";
+            for (const auto& data_item : boost::any_cast<std::vector<double>>(data))
+            {
+              std::cout << data_item << ", ";
+            }
+            std::cout << std::endl;
+          }
           else if (parameter.getType() == "bool")
           {
             std::cout << "     value: " << boost::any_cast<bool>(data) << std::endl;
+          }
+          else if (parameter.getType() == "bools")
+          {
+            std::cout << "     value: ";
+            for (const auto& data_item : boost::any_cast<std::vector<bool>>(data))
+            {
+              std::cout << data_item << ", ";
+            }
+            std::cout << std::endl;
           }
         }
 
