@@ -374,10 +374,16 @@ catch(const std::exception& e)
   throw CREATE_TEMOTO_ERROR_STACK("The provided JSON string contains syntax errors: " + std::string(e.what()));
 }
 
+std::string toUmrfGraphJsonStr(const UmrfGraph& ug)
+{
+  return "TODO";
+}
+
 int main()
 {
   std::string ug_json_str = temoto_action_engine::readFromFile("example.json");
   UmrfGraph ug = fromUmrfGraphJsonStr(ug_json_str);
+  std::string ug_json_str_new = toUmrfGraphJsonStr(ug);
 
   std::cout << "graph_name: " << ug.getName() << std::endl;
   std::cout << "graph_description: " << ug.getDescription() << std::endl;
