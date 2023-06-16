@@ -20,6 +20,7 @@ UmrfNode::UmrfNode()
 : state_(State::UNINITIALIZED)
 , suffix_(0)
 , execute_first_(false)
+, is_remote_actor_(false)
 {}
 
 UmrfNode::UmrfNode(const UmrfNode& un)
@@ -32,6 +33,7 @@ UmrfNode::UmrfNode(const UmrfNode& un)
 , children_(un.children_)
 , full_name_(un.full_name_)
 , execute_first_(un.execute_first_)
+, is_remote_actor_(un.is_remote_actor_)
 {}
 
 UmrfNode UmrfNode::asUmrfNode() const
@@ -285,4 +287,14 @@ bool UmrfNode::getStopWhenReceived(const UmrfNode::Relation& parent) const
   {
     throw CREATE_TEMOTO_ERROR_STACK("The parent does not exist");
   }
+}
+
+void UmrfNode::setIsRemoteActor(bool is_remote_actor)
+{
+  is_remote_actor_ = is_remote_actor;
+}
+
+bool UmrfNode::getIsRemoteActor() const
+{
+  return is_remote_actor_;
 }

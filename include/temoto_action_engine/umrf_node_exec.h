@@ -101,6 +101,9 @@ public:
 
   const TemotoErrorStack& getErrorMessages() const;
 
+  std::string getLatestUmrfJsonStr() const;
+  void setLatestUmrfJsonStr(const std::string& latest_umrf_json_str);
+
 private:
 
   mutable MUTEX_TYPE class_loader_rw_mutex_;
@@ -120,7 +123,9 @@ private:
   NotifyFinishedCb notify_finished_cb_ = NULL;
 
   StartChildNodesCb start_child_nodes_cb_ = NULL;
-
+  
+  mutable MUTEX_TYPE latest_umrf_json_str_rw_mutex_;
+  GUARDED_VARIABLE(std::string latest_umrf_json_str_, latest_umrf_json_str_rw_mutex_);
 };
 
 #endif

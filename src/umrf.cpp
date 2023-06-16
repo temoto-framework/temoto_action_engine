@@ -23,6 +23,7 @@ Umrf::Umrf()
 
 Umrf::Umrf(const Umrf& uj)
 : name_(uj.name_)
+, actor_(uj.actor_)
 , description_(uj.description_)
 , notation_(uj.notation_)
 , effect_(uj.effect_)
@@ -52,6 +53,18 @@ bool Umrf::setName(const std::string& name)
   {
     return false;
   }
+}
+
+const std::string& Umrf::getActor() const
+{
+  return actor_;
+}
+
+bool Umrf::setActor(const std::string& actor)
+{
+  LOCK_GUARD_TYPE_R guard_description(actor_rw_mutex_);
+  actor_ = actor;
+  return true;
 }
 
 const std::string& Umrf::getDescription() const

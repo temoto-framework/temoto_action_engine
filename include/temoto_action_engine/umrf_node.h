@@ -149,6 +149,7 @@ public:
     full_name_ = un.full_name_;
     execute_first_ = un.execute_first_;
     state_ = un.state_;
+    is_remote_actor_ = un.is_remote_actor_;
   }
 
   const std::string& getPackageName() const;
@@ -188,6 +189,9 @@ public:
 
   bool getStopWhenReceived(const UmrfNode::Relation& parent) const;
 
+  void setIsRemoteActor(bool is_remote_actor);
+  bool getIsRemoteActor() const;
+
 protected:
 
   mutable MUTEX_TYPE parents_rw_mutex_;
@@ -213,6 +217,8 @@ protected:
 
   mutable MUTEX_TYPE execute_first_rw_mutex_;
   GUARDED_VARIABLE(bool execute_first_, execute_first_rw_mutex_);
+
+  bool is_remote_actor_;
 };
 
 #endif

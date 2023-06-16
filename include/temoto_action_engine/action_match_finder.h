@@ -27,6 +27,10 @@ class ActionMatchFinder
 {
 public:
   bool findMatchingAction(UmrfNode& umrf_node_in, const std::vector<UmrfNode>& known_umrfs, bool name_match = false) const;
+  void setActorSynchronizerUmrf(const UmrfNode& actor_synchronizer_umrf);
+
+private:
+  UmrfNode actor_synchronizer_umrf_;
 };
 
 #endif

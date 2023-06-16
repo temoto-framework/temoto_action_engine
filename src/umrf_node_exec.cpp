@@ -17,6 +17,7 @@
 #include "temoto_action_engine/umrf_node_exec.h"
 #include "temoto_action_engine/basic_timer.h"
 #include "temoto_action_engine/messaging.h"
+#include "temoto_action_engine/umrf_json_converter.h"
 
 UmrfNodeExec::UmrfNodeExec(const UmrfNode& umrf_node)
 : UmrfNode(umrf_node)
@@ -31,7 +32,10 @@ UmrfNodeExec::UmrfNodeExec(const UmrfNode& umrf_node)
     bool class_found = false;
     for (const auto& class_in_classloader : classes_in_classloader)
     {
-      if (class_in_classloader == getName())
+      // TODO: If it is actually a remotely executed action, then get the name of actor
+      // synchronizer class name, which is embedded into the description. Why todo? It's ugly
+      // to obfuscate info like this
+      if (class_in_classloader == getName() || class_in_classloader == getDescription())
       {
         class_found = true;
         break;
@@ -44,6 +48,8 @@ UmrfNodeExec::UmrfNodeExec(const UmrfNode& umrf_node)
       setState(State::ERROR);
       return;
     }
+
+     setLatestUmrfJsonStr(umrf_json_converter::toUmrfJsonStr(*this));
   }
   catch(const std::exception& e)
   {
@@ -68,7 +74,10 @@ UmrfNodeExec::~UmrfNodeExec()
 
 UmrfNode UmrfNodeExec::asUmrfNode() const
 {
-  return UmrfNode(*this);
+  UmrfNode umrf_node = umrf_json_converter::fromUmrfJsonStr(getLatestUmrfJsonStr());
+  umrf_node.setState(getState());
+  return umrf_node;
+  //return UmrfNode(*this);
 }
 
 bool UmrfNodeExec::stopNode(float timeout)
@@ -135,10 +144,17 @@ try
 
   if (getState() != State::UNINITIALIZED)
   {
-    throw CREATE_TEMOTO_ERROR_STACK("Cannot instantiate the action because it's in UNINITIALIZED state");
+    throw CREATE_TEMOTO_ERROR_STACK("Cannot instantiate the action because it's not in UNINITIALIZED state");
   }
 
-  action_instance_ = class_loader_->createInstance<ActionBase>(getName());
+  if (getIsRemoteActor())
+  {
+    action_instance_ = class_loader_->createInstance<ActionBase>(getDescription());
+  }
+  else
+  {
+    action_instance_ = class_loader_->createInstance<ActionBase>(getName());
+  }
   action_instance_->setUmrf(UmrfNode(*this));
 
   notify_finished_cb_ = notify_finished_cb;
@@ -196,6 +212,11 @@ void UmrfNodeExec::startNode()
     if (getState() == State::RUNNING)
     {
       start_child_nodes_cb_(getFullName(), action_instance_->getUmrfNodeConst().getOutputParameters());
+    }
+
+    if (!getIsRemoteActor())
+    {
+      setLatestUmrfJsonStr(umrf_json_converter::toUmrfJsonStr(action_instance_->getUmrfNodeConst()));
     }
     setState(State::FINISHED);
   }
@@ -300,4 +321,16 @@ bool UmrfNodeExec::getInstanceInputParametersReceived() const
     throw CREATE_TEMOTO_ERROR_STACK("The action is not instantiated");
   }
   return action_instance_->getUmrfNodeConst().inputParametersReceived();
+}
+
+std::string UmrfNodeExec::getLatestUmrfJsonStr() const
+{
+  LOCK_GUARD_TYPE guard_latest_umrf_json_string(latest_umrf_json_str_rw_mutex_);
+  return latest_umrf_json_str_;
+}
+
+void UmrfNodeExec::setLatestUmrfJsonStr(const std::string& latest_umrf_json_str)
+{
+  LOCK_GUARD_TYPE guard_latest_umrf_json_string(latest_umrf_json_str_rw_mutex_);
+  latest_umrf_json_str_ = latest_umrf_json_str;
 }
