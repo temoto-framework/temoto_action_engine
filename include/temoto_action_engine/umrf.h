@@ -23,11 +23,12 @@
 #include "temoto_action_engine/compiler_macros.h"
 #include "temoto_action_engine/action_parameters.h"
 
-namespace action_effect
+namespace action_type
 {
-  const std::vector<std::string> EFFECT_LIST {
-    "synchronous",
-    "asynchronous"
+  const std::vector<std::string> TYPE_LIST {
+    "sync",
+    "async",
+    "spontaneous"
   };
 }
 
@@ -44,7 +45,7 @@ public:
     name_ = umrf.name_;
     actor_ = umrf.actor_;
     notation_ = umrf.notation_;
-    effect_ = umrf.effect_;
+    type_ = umrf.type_;
     description_ = umrf.description_;
     input_parameters_ = umrf.input_parameters_;
     output_parameters_ = umrf.output_parameters_;
@@ -65,9 +66,9 @@ public:
   const std::string& getDescription() const;
   bool setDescription(const std::string& description);
 
-  const std::string& getEffect() const;
-  std::string& getEffectNc();
-  bool setEffect(const std::string& effect);
+  const std::string& getType() const;
+  std::string& getTypeNc();
+  bool setType(const std::string& type);
 
   const ActionParameters& getInputParameters() const;
   ActionParameters& getInputParametersNc();
@@ -101,8 +102,8 @@ protected:
   mutable MUTEX_TYPE_R notation_rw_mutex_;
   GUARDED_VARIABLE(std::string notation_, notation_rw_mutex_);
 
-  mutable MUTEX_TYPE_R effect_rw_mutex_;
-  GUARDED_VARIABLE(std::string effect_, effect_rw_mutex_);
+  mutable MUTEX_TYPE_R type_rw_mutex_;
+  GUARDED_VARIABLE(std::string type_, type_rw_mutex_);
 
   mutable MUTEX_TYPE_R description_rw_mutex_;
   GUARDED_VARIABLE(std::string description_, description_rw_mutex_);

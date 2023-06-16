@@ -150,7 +150,7 @@ void UmrfGraphExec::monitoringLoop()
         }
 
         // Clear the umrf node if it's synchronous
-        if (graph_node->getEffect() == "synchronous")
+        if (graph_node->getType() == "synchronous")
         {
           graph_node->clearNode();
         }
@@ -175,7 +175,7 @@ void UmrfGraphExec::monitoringLoop()
     bool all_actions_finished = true;
     for (const auto& graph_node : graph_nodes_map_)
     {
-      if (graph_node.second->getEffect() != "synchronous" || 
+      if (graph_node.second->getType() != "synchronous" || 
           graph_node.second->getState() != UmrfNode::State::UNINITIALIZED)
       {
         all_actions_finished = false;

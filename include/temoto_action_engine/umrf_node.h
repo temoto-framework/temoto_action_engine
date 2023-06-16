@@ -32,22 +32,23 @@ public:
     INSTANTIATED,
     READY,              // Action instance is loaded and input parameters received
     RUNNING,            // Action instance is running
+    PAUSED,
     STOP_REQUESTED,     // A request to stop has been registered
     FINISHED,           // Action instance has finished execution
     ERROR,              // Problems with any critical component of the action
   };
 
   /// A convenience datastructure which helps to convert state names to std::string
-  std::map<State, std::string> state_to_str_map_ = 
-  {
+  const static inline std::map<State, std::string> state_to_str_map_{
+    {State::NOT_SET, "NOT_SET"},
     {State::UNINITIALIZED, "UNINITIALIZED"},
     {State::INSTANTIATED, "INSTANTIATED"},
     {State::READY, "READY"},
     {State::RUNNING, "RUNNING"},
+    {State::PAUSED, "PAUSED"},
     {State::STOP_REQUESTED, "STOP_REQUESTED"},
     {State::FINISHED, "FINISHED"},
-    {State::ERROR, "ERROR"},
-  };
+    {State::ERROR, "ERROR"},};
 
   /**
    * @brief Embeds infromation about a parent/child connection
@@ -64,6 +65,7 @@ public:
     , required_(required)
     , received_(false)
     , stop_when_received_(false)
+    , condition_("always->run")
     {}
 
     Relation(const Relation& r_in)
@@ -72,6 +74,7 @@ public:
     , required_(r_in.getRequired())
     , received_(r_in.getReceived())
     , stop_when_received_(r_in.stop_when_received_)
+    , condition_(r_in.condition_)
     {}
 
     void operator=(const Relation& r_in)
@@ -81,6 +84,7 @@ public:
       required_ = r_in.getRequired();
       received_ = r_in.getReceived();
       stop_when_received_ = r_in.getStopWhenReceived();
+      condition_ = r_in.getCondition();
     }
 
     bool operator==(const Relation& r_in) const
@@ -118,16 +122,32 @@ public:
       return name_ + "_" + std::to_string(suffix_);
     }
 
+    std::string getCondition() const
+    {
+      return condition_;
+    }
+
     bool empty() const
     {
       return name_.empty();
     }
 
+    const static inline std::vector<std::string> valid_preconditions_{
+      "always",
+      "on_success", 
+      "on_failure"};
+    
+    const static inline std::vector<std::string> valid_condition_responses_{
+      "run",
+      "pause",
+      "stop"};
+
     std::string name_;
     unsigned int suffix_;
     bool required_; // Indicates whether the child can only execute once the parent has finished the execution  
     bool received_; // Indicates whether the parent has finished execution. Applies only to parent-type relations
-    bool stop_when_received_; // Indicates whether the parent should make the child stop. Applies only to parent-type relations
+    bool stop_when_received_; // DEPRECATED, replaced with "condition": Indicates whether the parent should make the child stop. Applies only to parent-type relations
+    std::string condition_; // Outlines the condition of execution
   };
 
   UmrfNode();

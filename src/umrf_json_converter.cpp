@@ -482,10 +482,10 @@ void toUmrfJsonValue(rapidjson::Value& from_scratch
   }
 
   // Set the effect
-  if (!umrf_node.getEffect().empty())
+  if (!umrf_node.getType().empty())
   {
     rapidjson::Value effect_value(rapidjson::kStringType);
-    effect_value.SetString(umrf_node.getEffect().c_str(), umrf_node.getEffect().size(), allocator);
+    effect_value.SetString(umrf_node.getType().c_str(), umrf_node.getType().size(), allocator);
     from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.effect), effect_value, allocator);
   }
 
@@ -581,7 +581,7 @@ UmrfNode fromUmrfJsonValue(const rapidjson::Value& json_doc, bool as_descriptor 
     }
 
     std::string effect = getStringFromValue(getRootJsonElement(UMRF_FIELDS.effect, json_doc));
-    if (!umrf_node.setEffect(effect))
+    if (!umrf_node.setType(effect))
     {
       throw CREATE_TEMOTO_ERROR_STACK("Illegal value in effect field.");
     }

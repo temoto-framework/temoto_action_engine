@@ -160,22 +160,11 @@ std::vector<UmrfNode::Relation> parseParentRelations(const json& relations_json)
     try
     {
       // Default to false
-      relation.required_ = (relation_json.contains("required")) ? bool(relation_json.at("required")) : false;
+      relation.required_ = (relation_json.contains("required")) ? bool(relation_json.at("required")) : true;
     }
     catch(const std::exception& e)
     {
-      throw CREATE_TEMOTO_ERROR_STACK("Invalid 'preempted_by':" + std::string(e.what()));
-    }
-
-    // GET PRE-EMPTED
-    try
-    {
-      // Default to false
-      relation.stop_when_received_ = (relation_json.contains("preempted_by")) ? bool(relation_json.at("preempted_by")) : false;
-    }
-    catch(const std::exception& e)
-    {
-      throw CREATE_TEMOTO_ERROR_STACK("Invalid 'preempted_by':" + std::string(e.what()));
+      throw CREATE_TEMOTO_ERROR_STACK("Invalid 'required':" + std::string(e.what()));
     }
 
     relations.push_back(relation);
@@ -210,6 +199,17 @@ std::vector<UmrfNode::Relation> parseChildRelations(const json& relations_json)
     }
     relation.suffix_ = relation_json.at("id");
 
+    // GET CONDITION
+    try
+    {
+      // Default to "always -> run"
+      relation.condition_ = (relation_json.contains("condition")) ? relation_json.at("condition") : "always -> run";
+    }
+    catch(const std::exception& e)
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Invalid 'condition':" + std::string(e.what()));
+    }
+
     relations.push_back(relation);
   }
 
@@ -231,14 +231,25 @@ try
   }
 
   // GET TYPE
-  if (!un.setEffect(umrf_json.at("effect")))
+  if (!un.setType(umrf_json.at("type")))
   {
-    throw CREATE_TEMOTO_ERROR_STACK("Illegal value in 'effect' field.");
+    throw CREATE_TEMOTO_ERROR_STACK("Illegal value in 'type' field.");
   }
 
   /*
    * Parse the optional fields
    */
+
+  // GET ACTOR
+  if (umrf_json.contains("actor"))
+  try
+  {
+    un.setActor(umrf_json.at("actor"));
+  }
+  catch(const std::exception& e)
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("Invalid 'actor' in " + un.getName() + ": " + std::string(e.what()));
+  }
 
   // GET DESCRIPTION
   if (umrf_json.contains("description"))
@@ -346,6 +357,42 @@ try
     umrf_actions.push_back(fromUmrfJson(umrf_json));
   }
 
+  /*
+   * Parse graph entry and exit actions
+   */
+  std::vector<UmrfNode::Relation> graph_entry, graph_exit;
+  
+  // Graph entry and exit doesn't have to be explicitly defined if graph contains only one action 
+  if (umrf_actions.size() == 1)
+  {
+    UmrfNode::Relation r_entry, r_exit;
+
+    r_entry.condition_ = "always -> run";
+    r_entry.name_ = umrf_actions.front().getName();
+    r_entry.suffix_ = umrf_actions.front().getSuffix();
+    graph_entry.push_back(r_entry);
+
+    r_exit.required_ = true;
+    r_exit.name_ = umrf_actions.front().getName();
+    r_exit.suffix_ = umrf_actions.front().getSuffix();
+    graph_exit.push_back(r_exit);
+  }
+  else
+  {
+    graph_entry = parseChildRelations(ug_json["graph_entry"]);
+    graph_exit = parseParentRelations(ug_json["graph_exit"]);
+  }
+
+  UmrfNode graph_entry_action;
+  graph_entry_action.setName("graph_entry");
+  graph_entry_action.setChildren(graph_entry);
+  umrf_actions.push_back(graph_entry_action);
+
+  UmrfNode graph_exit_action;
+  graph_exit_action.setName("graph_exit");
+  graph_exit_action.setParents(graph_exit);
+  umrf_actions.push_back(graph_exit_action);
+
   UmrfGraph umrf_graph(graph_name, umrf_actions);
 
   /*
@@ -381,19 +428,35 @@ std::string toUmrfGraphJsonStr(const UmrfGraph& ug)
 
 int main()
 {
-  std::string ug_json_str = temoto_action_engine::readFromFile("example.json");
+  std::string ug_json_str = temoto_action_engine::readFromFile("example_b.json");
   UmrfGraph ug = fromUmrfGraphJsonStr(ug_json_str);
   std::string ug_json_str_new = toUmrfGraphJsonStr(ug);
 
   std::cout << "graph_name: " << ug.getName() << std::endl;
   std::cout << "graph_description: " << ug.getDescription() << std::endl;
+
+  // std::cout << "   children: " << std::endl;
+
+  // for (const auto& child : ug.getG())
+  // {
+  //   std::cout << "   - name: " << child.getName() << std::endl;
+  //   std::cout << "     id: " << child.getSuffix() << std::endl;
+  //   std::cout << "     condition: " << child.getCondition() << std::endl;
+  // }
+
+
   std::cout << "actions: " << std::endl;
 
   for (const auto& action : ug.getUmrfNodes())
   {
     std::cout << " - name: " << action.getName() << std::endl;
     std::cout << "   id: " << action.getSuffix() << std::endl;
-    std::cout << "   type: " << action.getEffect() << std::endl;
+    std::cout << "   type: " << action.getType() << std::endl;
+
+    if (!action.getActor().empty())
+    {
+      std::cout << "   actor: " << action.getActor() << std::endl;
+    }
 
     if (!action.getDescription().empty())
     {
@@ -409,7 +472,6 @@ int main()
         std::cout << "   - name: " << parent.getName() << std::endl;
         std::cout << "     id: " << parent.getSuffix() << std::endl;
         std::cout << "     required: " << parent.getRequired() << std::endl;
-        std::cout << "     preempted_by: " << parent.getStopWhenReceived() << std::endl;
       }
     }
 
@@ -421,6 +483,7 @@ int main()
       {
         std::cout << "   - name: " << child.getName() << std::endl;
         std::cout << "     id: " << child.getSuffix() << std::endl;
+        std::cout << "     condition: " << child.getCondition() << std::endl;
       }
     }
 

@@ -26,7 +26,7 @@ Umrf::Umrf(const Umrf& uj)
 , actor_(uj.actor_)
 , description_(uj.description_)
 , notation_(uj.notation_)
-, effect_(uj.effect_)
+, type_(uj.type_)
 , input_parameters_(uj.input_parameters_)
 , output_parameters_(uj.output_parameters_)
 {}
@@ -79,22 +79,22 @@ bool Umrf::setDescription(const std::string& description)
   return true;
 }
 
-const std::string& Umrf::getEffect() const
+const std::string& Umrf::getType() const
 {
-  return effect_;
+  return type_;
 }
 
-std::string& Umrf::getEffectNc()
+std::string& Umrf::getTypeNc()
 {
-  return effect_;
+  return type_;
 }
 
-bool Umrf::setEffect(const std::string& effect)
+bool Umrf::setType(const std::string& type)
 {
-  LOCK_GUARD_TYPE_R guard_effect(effect_rw_mutex_);
-  if (!effect.empty())
+  LOCK_GUARD_TYPE_R guard_type(type_rw_mutex_);
+  if (!type.empty())
   {
-    effect_ = effect;
+    type_ = type;
     return true;  
   }
   else
@@ -209,7 +209,7 @@ bool Umrf::inputParametersReceived() const
 std::ostream& operator<<( std::ostream& stream, const Umrf& umrf)
 {
   stream << "  name: " << umrf.getName() << std::endl;
-  stream << "  effect: " << umrf.getEffect() << std::endl;
+  stream << "  type: " << umrf.getType() << std::endl;
 
   if (!umrf.getInputParameters().empty())
   {
@@ -292,7 +292,7 @@ bool Umrf::isEqual(const Umrf& umrf_in, bool check_updatable) const
    */
   if ((name_ != umrf_in.name_) ||
       (notation_ != umrf_in.notation_) ||
-      (effect_ != umrf_in.effect_))
+      (type_ != umrf_in.type_))
   {
     return false;
   }

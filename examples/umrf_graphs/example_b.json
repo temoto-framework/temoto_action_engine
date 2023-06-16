@@ -1,0 +1,143 @@
+{
+	"graph_name": "robot go observe the valve [x=-93.6; y=11.0; yaw=-0.85]",
+	"graph_description": "Robot navigates to the valve and observes it",
+	"graph_entry": [
+		{
+			"name": "action_0",
+      "id": 0
+		},
+		{
+			"name": "action_1",
+      "id": 0
+		},
+		{
+			"name": "action_2",
+      "id": 0
+		}
+	],
+	"graph_exit": [
+		{
+			"name": "action_4",
+			"id": 0,
+			"required": true 
+		},
+		{
+			"name": "action_5",
+			"id": 0,
+			"required": false
+		}
+	],
+	"actions": [
+		{
+			"name": "action_0",
+			"description": "action_0 description",
+			"id": 0,
+			"type": "sync",
+			"input_parameters": {},
+			"output_parameters": {},
+			"parents": [
+				{
+					"name": "action_3",
+					"id": 0
+				}
+			],
+			"children": [
+				{
+					"name": "action_3",
+					"id": 0
+				}
+			]
+		},
+		{
+			"name": "action_1",
+			"description": "action_1 description",
+			"id": 0,
+			"type": "sync",
+			"input_parameters": {},
+			"output_parameters": {},
+			"children": [
+				{
+					"name": "action_3",
+					"id": 0
+				}
+			]
+		},
+		{
+			"name": "action_2",
+			"description": "action_2 description",
+			"id": 0,
+			"type": "sync",
+			"input_parameters": {},
+			"output_parameters": {},
+			"children": [
+				{
+					"name": "action_3",
+					"id": 0
+				}
+			]
+		},
+		{
+			"name": "action_3",
+			"description": "action_3 description",
+			"id": 0,
+			"type": "sync",
+			"input_parameters": {},
+			"output_parameters": {},
+			"parents": [
+				{
+					"name": "action_1",
+					"id": 0
+				},
+				{
+					"name": "action_2",
+					"id": 0
+				}
+			],
+			"children": [
+				{
+					"name": "action_0",
+					"id": 0,
+					"condition": "always -> stop"
+				},
+				{
+					"name": "action_4",
+					"id": 0,
+					"condition": "on_failure -> run"
+				},
+				{
+					"name": "action_5",
+					"id": 0,
+					"condition": "on_success -> run"
+				}
+			]
+		},
+		{
+			"name": "action_4",
+			"description": "action_4 description",
+			"id": 0,
+			"type": "sync",
+			"input_parameters": {},
+			"output_parameters": {},
+			"parents": [
+				{
+					"name": "action_3",
+					"id": 0
+				}
+			]
+		},
+		{
+			"name": "action_5",
+			"description": "action_5 description",
+			"id": 0,
+			"type": "sync",
+			"input_parameters": {},
+			"output_parameters": {},
+			"parents": [
+				{
+					"name": "action_3",
+					"id": 0
+				}
+			]
+		}
+	]
+}

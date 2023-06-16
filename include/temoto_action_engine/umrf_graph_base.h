@@ -336,6 +336,9 @@ protected:
     return true;
   }
 
+  /*
+   * TODO: Remove when graph_entry and graph_exit actions are implemented  
+   */
   bool findRootNodes()
   {
     LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);

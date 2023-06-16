@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.1)
 project(temoto_action_engine)
 
-add_compile_options(-std=c++11)
+add_compile_options(-std=c++17)
 
 # Check which compiler is required
 if( "$ENV{TEMOTO_COMPILER}" STREQUAL "clang")

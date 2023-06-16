@@ -3,10 +3,11 @@
   "graph_description": "Robot navigates to the valve and observes it",
   "actions": [
         {
+          "actor": "Robot A",
           "name": "navigate",
           "description": "go",
           "id": 0,
-          "effect": "synchronous",
+          "type": "sync",
           "input_parameters": {
               "test_param_1": {
                   "pvf_type": "string",
@@ -70,15 +71,17 @@
           "children": [
               {
                   "name": "move_arm",
-                  "id": 0
+                  "id": 0,
+                  "condition": "always -> run"
               }
           ]
       },
       {
+          "actor": "Robot B",
           "name": "move_arm",
           "description": "observe",
           "id": 0,
-          "effect": "synchronous",
+          "type": "sync",
           "input_parameters": {
               "pose_quat": {
                   "orientation": {
@@ -124,7 +127,8 @@
           "parents": [
               {
                   "name": "navigate",
-                  "id": 0
+                  "id": 0,
+                  "required": true
               }
           ]
       },
@@ -132,7 +136,7 @@
           "name": "take_picture",
           "description": "observe",
           "id": 0,
-          "effect": "synchronous",
+          "type": "sync",
           "children": [
               {
                   "name": "move_arm",
@@ -150,7 +154,7 @@
           "name": "move_arm",
           "description": "observe",
           "id": 1,
-          "effect": "synchronous",
+          "type": "sync",
           "input_parameters": {
               "pose_quat": {
                   "orientation": {
@@ -204,12 +208,11 @@
           "name": "take_picture",
           "description": "observe",
           "id": 1,
-          "effect": "synchronous",
+          "type": "sync",
           "parents": [
               {
                   "name": "move_arm",
-                  "id": 1,
-                  "preempted_by": true
+                  "id": 1
               }
           ]
       }
