@@ -59,9 +59,9 @@ public:
     Relation()
     {}
 
-    Relation(const std::string& name, const unsigned int& suffix, bool required = true)
+    Relation(const std::string& name, const unsigned int& instance_id, bool required = true)
     : name_(name)
-    , suffix_(suffix)
+    , instance_id_(instance_id)
     , required_(required)
     , received_(false)
     , stop_when_received_(false)
@@ -70,7 +70,7 @@ public:
 
     Relation(const Relation& r_in)
     : name_(r_in.getName())
-    , suffix_(r_in.getSuffix())
+    , instance_id_(r_in.getInstanceId())
     , required_(r_in.getRequired())
     , received_(r_in.getReceived())
     , stop_when_received_(r_in.stop_when_received_)
@@ -80,7 +80,7 @@ public:
     void operator=(const Relation& r_in)
     {
       name_ = r_in.getName();
-      suffix_ = r_in.getSuffix();
+      instance_id_ = r_in.getInstanceId();
       required_ = r_in.getRequired();
       received_ = r_in.getReceived();
       stop_when_received_ = r_in.getStopWhenReceived();
@@ -89,7 +89,7 @@ public:
 
     bool operator==(const Relation& r_in) const
     {
-      return (name_ == r_in.getName()) && (suffix_ == r_in.getSuffix());
+      return (name_ == r_in.getName()) && (instance_id_ == r_in.getInstanceId());
     }
 
     const std::string& getName() const
@@ -97,9 +97,9 @@ public:
       return name_;
     }
 
-    const unsigned int& getSuffix() const
+    const unsigned int& getInstanceId() const
     {
-      return suffix_;
+      return instance_id_;
     }
 
     bool getRequired() const
@@ -119,7 +119,7 @@ public:
 
     std::string getFullName() const
     {
-      return name_ + "_" + std::to_string(suffix_);
+      return name_ + "_" + std::to_string(instance_id_);
     }
 
     std::string getCondition() const
@@ -143,7 +143,7 @@ public:
       "stop"};
 
     std::string name_;
-    unsigned int suffix_;
+    unsigned int instance_id_;
     bool required_; // Indicates whether the child can only execute once the parent has finished the execution  
     bool received_; // Indicates whether the parent has finished execution. Applies only to parent-type relations
     bool stop_when_received_; // DEPRECATED, replaced with "condition": Indicates whether the parent should make the child stop. Applies only to parent-type relations
@@ -162,7 +162,7 @@ public:
   {
     this->Umrf::operator=(un);
     package_name_ = un.package_name_;
-    suffix_ = un.suffix_;
+    instance_id_ = un.instance_id_;
     library_path_ = un.library_path_;
     parents_ = un.parents_;
     children_ = un.children_;
@@ -175,8 +175,8 @@ public:
   const std::string& getPackageName() const;
   bool setPackageName(const std::string& name);
 
-  const unsigned int& getSuffix() const;
-  bool setSuffix(const unsigned int& suffix);
+  const unsigned int& getInstanceId() const;
+  bool setInstanceId(const unsigned int& instance_id);
 
   const std::string& getFullName() const;
 
@@ -223,8 +223,8 @@ protected:
   mutable MUTEX_TYPE package_name_rw_mutex_;
   GUARDED_VARIABLE(std::string package_name_, package_name_rw_mutex_);
 
-  mutable MUTEX_TYPE suffix_rw_mutex_;
-  GUARDED_VARIABLE(unsigned int suffix_, suffix_rw_mutex_);
+  mutable MUTEX_TYPE instance_id_rw_mutex_;
+  GUARDED_VARIABLE(unsigned int instance_id_, instance_id_rw_mutex_);
 
   mutable MUTEX_TYPE full_name_rw_mutex_;
   GUARDED_VARIABLE(mutable std::string full_name_, full_name_rw_mutex_);

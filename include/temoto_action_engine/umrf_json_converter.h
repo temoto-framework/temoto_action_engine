@@ -43,7 +43,7 @@ static const struct UmrfFields
   const char* actor = "actor";
   const char* package_name = "package_name";
   const char* description = "description";
-  const char* suffix = "id";
+  const char* instance_id = "id";
   const char* effect = "effect";
   const char* notation = "notation";
   const char* input_parameters = "input_parameters";
@@ -64,7 +64,7 @@ static const struct PvfFields
 static const struct RelationFields
 {
   const char* name = "name";
-  const char* suffix = "id";
+  const char* instance_id = "id";
   const char* required = "required";
   const char* stop_when_received = "stop_when_received";
 }RELATION_FIELDS;

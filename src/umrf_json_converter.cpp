@@ -387,7 +387,7 @@ std::vector<UmrfNode::Relation> parseRelations(const rapidjson::Value& value_in)
     try
     {
       relation.name_ = getStringFromValue(getJsonElement(RELATION_FIELDS.name, value_in[i]));
-      relation.suffix_ = getNumberFromValue(getJsonElement(RELATION_FIELDS.suffix, value_in[i]));
+      relation.instance_id_ = getNumberFromValue(getJsonElement(RELATION_FIELDS.instance_id, value_in[i]));
     }
     catch(TemotoErrorStack e)
     {
@@ -457,16 +457,16 @@ void toUmrfJsonValue(rapidjson::Value& from_scratch
     from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.description), description_value, allocator);
   }
 
-  // Set the suffix and the state
+  // Set the instance_id and the state
   if (as_descriptor)
   {
-    /* do not add the suffix and the state field */
+    /* do not add the instance_id and the state field */
   }
   else
   {
-    rapidjson::Value suffix_value(rapidjson::kNumberType);
-    suffix_value.SetInt(umrf_node.getSuffix());
-    from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.suffix), suffix_value, allocator);
+    rapidjson::Value instance_id_value(rapidjson::kNumberType);
+    instance_id_value.SetInt(umrf_node.getInstanceId());
+    from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.instance_id), instance_id_value, allocator);
 
     rapidjson::Value state_value(rapidjson::kNumberType);
     state_value.SetInt((unsigned int) umrf_node.getState());
@@ -527,9 +527,9 @@ void toUmrfJsonValue(rapidjson::Value& from_scratch
       //rapidjson::Value child_name_value = rapidjson::StringRef(child.getName().c_str());
       child_object.AddMember(rapidjson::StringRef(RELATION_FIELDS.name), rapidjson::StringRef(child.getName().c_str()), allocator);
 
-      rapidjson::Value child_suffix_value(rapidjson::kNumberType);
-      child_suffix_value.SetInt(child.getSuffix());
-      child_object.AddMember(rapidjson::StringRef(RELATION_FIELDS.suffix), child_suffix_value, allocator);
+      rapidjson::Value child_instance_id_value(rapidjson::kNumberType);
+      child_instance_id_value.SetInt(child.getInstanceId());
+      child_object.AddMember(rapidjson::StringRef(RELATION_FIELDS.instance_id), child_instance_id_value, allocator);
 
       children_object.PushBack(child_object, allocator);
     }
@@ -547,10 +547,10 @@ void toUmrfJsonValue(rapidjson::Value& from_scratch
       // Add name
       parent_object.AddMember(rapidjson::StringRef(RELATION_FIELDS.name), rapidjson::StringRef(parent.getName().c_str()), allocator);
 
-      // Add suffix
-      rapidjson::Value parent_suffix_value(rapidjson::kNumberType);
-      parent_suffix_value.SetInt(parent.getSuffix());
-      parent_object.AddMember(rapidjson::StringRef(RELATION_FIELDS.suffix), parent_suffix_value, allocator);
+      // Add instance_id
+      rapidjson::Value parent_instance_id_value(rapidjson::kNumberType);
+      parent_instance_id_value.SetInt(parent.getInstanceId());
+      parent_object.AddMember(rapidjson::StringRef(RELATION_FIELDS.instance_id), parent_instance_id_value, allocator);
 
       // Add required
       parent_object.AddMember(rapidjson::StringRef(RELATION_FIELDS.required), parent.getRequired(), allocator);
@@ -598,10 +598,10 @@ UmrfNode fromUmrfJsonValue(const rapidjson::Value& json_doc, bool as_descriptor 
     }
     else
     {
-      unsigned int suffix = getNumberFromValue(getRootJsonElement(UMRF_FIELDS.suffix, json_doc));
-      if (!umrf_node.setSuffix(suffix))
+      unsigned int instance_id = getNumberFromValue(getRootJsonElement(UMRF_FIELDS.instance_id, json_doc));
+      if (!umrf_node.setInstanceId(instance_id))
       {
-        throw CREATE_TEMOTO_ERROR_STACK("Illegal value in suffix field.");
+        throw CREATE_TEMOTO_ERROR_STACK("Illegal value in instance_id field.");
       }
     }
   }

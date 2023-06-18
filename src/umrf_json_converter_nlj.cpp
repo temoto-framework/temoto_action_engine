@@ -142,19 +142,23 @@ std::vector<UmrfNode::Relation> parseParentRelations(const json& relations_json)
   {
     UmrfNode::Relation relation;
 
-    // GET NAME
+    // GET NAME - required
     if (!relation_json.contains("name"))
     {
       throw CREATE_TEMOTO_ERROR_STACK("Relation must contain a name");
     }
     relation.name_ = relation_json.at("name");
 
-    // GET ID
-    if (!relation_json.contains("id"))
+    // GET INSTANCE ID - not required if there are no duplicate instances
+    try
     {
-      throw CREATE_TEMOTO_ERROR_STACK("Relation must contain an ID");
+      // Default to '0'
+      relation.instance_id_ = (relation_json.contains("instance_id")) ? uint16_t (relation_json.at("instance_id")) : 0;
     }
-    relation.suffix_ = relation_json.at("id");
+    catch(const std::exception& e)
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Invalid 'instance_id': " + std::string(e.what()));
+    }
 
     // GET REQUIRED
     try
@@ -192,12 +196,16 @@ std::vector<UmrfNode::Relation> parseChildRelations(const json& relations_json)
     }
     relation.name_ = relation_json.at("name");
 
-    // GET ID
-    if (!relation_json.contains("id"))
+    // GET INSTANCE ID - not required if there are no duplicate instances
+    try
     {
-      throw CREATE_TEMOTO_ERROR_STACK("Relation must contain an ID");
+      // Default to '0'
+      relation.instance_id_ = (relation_json.contains("instance_id")) ? uint16_t (relation_json.at("instance_id")) : 0;
     }
-    relation.suffix_ = relation_json.at("id");
+    catch(const std::exception& e)
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Invalid 'instance_id': " + std::string(e.what()));
+    }
 
     // GET CONDITION
     try
@@ -263,14 +271,14 @@ try
   }
 
   // GET ID
-  if (umrf_json.contains("id"))
+  if (umrf_json.contains("instance_id"))
   try
   {
-    un.setSuffix(umrf_json.at("id"));
+    un.setInstanceId(umrf_json.at("instance_id"));
   }
   catch(const std::exception& e)
   {
-    throw CREATE_TEMOTO_ERROR_STACK("Invalid 'id' in " + un.getName() + ": " + std::string(e.what()));
+    throw CREATE_TEMOTO_ERROR_STACK("Invalid 'instance_id' in " + un.getName() + ": " + std::string(e.what()));
   }
 
   // GET STATE
@@ -369,12 +377,12 @@ try
 
     r_entry.condition_ = "always -> run";
     r_entry.name_ = umrf_actions.front().getName();
-    r_entry.suffix_ = umrf_actions.front().getSuffix();
+    r_entry.instance_id_ = umrf_actions.front().getInstanceId();
     graph_entry.push_back(r_entry);
 
     r_exit.required_ = true;
     r_exit.name_ = umrf_actions.front().getName();
-    r_exit.suffix_ = umrf_actions.front().getSuffix();
+    r_exit.instance_id_ = umrf_actions.front().getInstanceId();
     graph_exit.push_back(r_exit);
   }
   else
@@ -435,22 +443,13 @@ int main()
   std::cout << "graph_name: " << ug.getName() << std::endl;
   std::cout << "graph_description: " << ug.getDescription() << std::endl;
 
-  // std::cout << "   children: " << std::endl;
-
-  // for (const auto& child : ug.getG())
-  // {
-  //   std::cout << "   - name: " << child.getName() << std::endl;
-  //   std::cout << "     id: " << child.getSuffix() << std::endl;
-  //   std::cout << "     condition: " << child.getCondition() << std::endl;
-  // }
-
 
   std::cout << "actions: " << std::endl;
 
   for (const auto& action : ug.getUmrfNodes())
   {
     std::cout << " - name: " << action.getName() << std::endl;
-    std::cout << "   id: " << action.getSuffix() << std::endl;
+    std::cout << "   instance_id: " << action.getInstanceId() << std::endl;
     std::cout << "   type: " << action.getType() << std::endl;
 
     if (!action.getActor().empty())
@@ -470,7 +469,7 @@ int main()
       for (const auto& parent : action.getParents())
       {
         std::cout << "   - name: " << parent.getName() << std::endl;
-        std::cout << "     id: " << parent.getSuffix() << std::endl;
+        std::cout << "     instance_id: " << parent.getInstanceId() << std::endl;
         std::cout << "     required: " << parent.getRequired() << std::endl;
       }
     }
@@ -482,7 +481,7 @@ int main()
       for (const auto& child : action.getChildren())
       {
         std::cout << "   - name: " << child.getName() << std::endl;
-        std::cout << "     id: " << child.getSuffix() << std::endl;
+        std::cout << "     instance_id: " << child.getInstanceId() << std::endl;
         std::cout << "     condition: " << child.getCondition() << std::endl;
       }
     }

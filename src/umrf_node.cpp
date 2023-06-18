@@ -18,7 +18,7 @@
 
 UmrfNode::UmrfNode()
 : state_(State::UNINITIALIZED)
-, suffix_(0)
+, instance_id_(0)
 , execute_first_(false)
 , is_remote_actor_(false)
 {}
@@ -27,7 +27,7 @@ UmrfNode::UmrfNode(const UmrfNode& un)
 : Umrf(un)
 , state_(un.state_)
 , package_name_(un.package_name_)
-, suffix_(un.suffix_)
+, instance_id_(un.instance_id_)
 , library_path_(un.library_path_)
 , parents_(un.parents_)
 , children_(un.children_)
@@ -67,7 +67,7 @@ bool UmrfNode::setPackageName(const std::string& package_name)
 const std::string& UmrfNode::getFullName() const
 {
   LOCK_GUARD_TYPE guard_full_name(full_name_rw_mutex_);
-  full_name_ = name_ + "_" + std::to_string(suffix_);
+  full_name_ = name_ + "_" + std::to_string(instance_id_);
   return full_name_;
 }
 
@@ -115,17 +115,17 @@ bool UmrfNode::setLibraryPath(const std::string& library_path)
   }
 }
 
-const unsigned int& UmrfNode::getSuffix() const
+const unsigned int& UmrfNode::getInstanceId() const
 {
-  LOCK_GUARD_TYPE guard_suffix(suffix_rw_mutex_);
-  return suffix_;
+  LOCK_GUARD_TYPE guard_instance_id(instance_id_rw_mutex_);
+  return instance_id_;
 }
 
-bool UmrfNode::setSuffix(const unsigned int& suffix)
+bool UmrfNode::setInstanceId(const unsigned int& instance_id)
 {
-  LOCK_GUARD_TYPE guard_suffix(suffix_rw_mutex_);
-  suffix_ = suffix;
-  full_name_ = name_ + "_" + std::to_string(suffix_);
+  LOCK_GUARD_TYPE guard_instance_id(instance_id_rw_mutex_);
+  instance_id_ = instance_id;
+  full_name_ = name_ + "_" + std::to_string(instance_id_);
   return true;  
 }
 
@@ -243,7 +243,7 @@ bool UmrfNode::removeChild(const UmrfNode::Relation& child)
 
 UmrfNode::Relation UmrfNode::asRelation() const
 {
-  return UmrfNode::Relation(getName(), getSuffix());
+  return UmrfNode::Relation(getName(), getInstanceId());
 }
 
 bool UmrfNode::requiredParentsFinished() const
