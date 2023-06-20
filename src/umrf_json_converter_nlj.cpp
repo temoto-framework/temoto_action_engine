@@ -391,16 +391,57 @@ try
     graph_exit = parseParentRelations(ug_json["graph_exit"]);
   }
 
+  // Create a new action that represents the entry 
   UmrfNode graph_entry_action;
   graph_entry_action.setName("graph_entry");
   graph_entry_action.setChildren(graph_entry);
+
+  // Get the input parameters for the entry
+  for (const auto& a : graph_entry)
+  {
+    const auto& it = std::find_if(
+      umrf_actions.begin(),
+      umrf_actions.end(),
+      [&](const UmrfNode& u)
+      {
+        return u.getFullName() == a.getFullName();
+      });
+
+    if (it == umrf_actions.end())
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Graph entry '" + a.getFullName() + "' not found in the list of actions");
+    }
+    graph_entry_action.setInputParameters(it->getInputParameters());
+  }
+
   umrf_actions.push_back(graph_entry_action);
 
+  // Create a new action that represents the exit
   UmrfNode graph_exit_action;
   graph_exit_action.setName("graph_exit");
   graph_exit_action.setParents(graph_exit);
+
+  // Get the output parameters for the exit
+  for (const auto& a : graph_exit)
+  {
+    const auto& it = std::find_if(
+      umrf_actions.begin(),
+      umrf_actions.end(),
+      [&](const UmrfNode& u)
+      {
+        return u.getFullName() == a.getFullName();
+      });
+
+    if (it == umrf_actions.end())
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Graph exit '" + a.getFullName() + "' not found in the list of actions");
+    }
+    graph_exit_action.setOutputParameters(it->getOutputParameters());
+  }
+
   umrf_actions.push_back(graph_exit_action);
 
+  // Now we can greate the UmrfGraph datastructure
   UmrfGraph umrf_graph(graph_name, umrf_actions);
 
   /*
@@ -432,6 +473,80 @@ catch(const std::exception& e)
 std::string toUmrfGraphJsonStr(const UmrfGraph& ug)
 {
   return "TODO";
+}
+
+void printParameters(const ActionParameters params)
+{
+  for (const auto& parameter : params)
+  {
+    std::cout << "   - name: " << parameter.getName() << std::endl;
+    std::cout << "     type: " << parameter.getType() << std::endl;
+
+    if (parameter.getDataSize() != 0)
+    {
+      const auto& data = parameter.getData();
+      if (parameter.getType() == "string")
+      {
+        std::cout << "     value: " << boost::any_cast<std::string>(data) << std::endl;
+      }
+      else if (parameter.getType() == "strings")
+      {
+        std::cout << "     value: ";
+        for (const auto& data_item : boost::any_cast<std::vector<std::string>>(data))
+        {
+          std::cout << data_item << ", ";
+        }
+        std::cout << std::endl;
+      }
+      else if (parameter.getType() == "number")
+      {
+        std::cout << "     value: " << boost::any_cast<double>(data) << std::endl;
+      }
+      else if (parameter.getType() == "numbers")
+      {
+        std::cout << "     value: ";
+        for (const auto& data_item : boost::any_cast<std::vector<double>>(data))
+        {
+          std::cout << data_item << ", ";
+        }
+        std::cout << std::endl;
+      }
+      else if (parameter.getType() == "bool")
+      {
+        std::cout << "     value: " << boost::any_cast<bool>(data) << std::endl;
+      }
+      else if (parameter.getType() == "bools")
+      {
+        std::cout << "     value: ";
+        for (const auto& data_item : boost::any_cast<std::vector<bool>>(data))
+        {
+          std::cout << data_item << ", ";
+        }
+        std::cout << std::endl;
+      }
+    }
+
+    if (parameter.getAllowedData().size() != 0)
+    {
+      std::cout << "     allowed_values: ";
+      for (const auto& allowed_data : parameter.getAllowedData())
+      {
+        if (parameter.getType() == "string")
+        {
+          std::cout << boost::any_cast<std::string>(allowed_data) << ", ";
+        }
+        else if (parameter.getType() == "number")
+        {
+          std::cout << boost::any_cast<double>(allowed_data) << ", ";
+        }
+        else if (parameter.getType() == "bool")
+        {
+          std::cout << boost::any_cast<bool>(allowed_data) << ", ";
+        }
+      }
+      std::cout << std::endl;
+    }
+  }
 }
 
 int main()
@@ -489,78 +604,15 @@ int main()
     if (!action.getInputParameters().empty())
     {
       std::cout << "   input_parameters: " << std::endl;
-
-      for (const auto& parameter : action.getInputParameters())
-      {
-        std::cout << "   - name: " << parameter.getName() << std::endl;
-        std::cout << "     type: " << parameter.getType() << std::endl;
-
-        if (parameter.getDataSize() != 0)
-        {
-          const auto& data = parameter.getData();
-          if (parameter.getType() == "string")
-          {
-            std::cout << "     value: " << boost::any_cast<std::string>(data) << std::endl;
-          }
-          else if (parameter.getType() == "strings")
-          {
-            std::cout << "     value: ";
-            for (const auto& data_item : boost::any_cast<std::vector<std::string>>(data))
-            {
-              std::cout << data_item << ", ";
-            }
-            std::cout << std::endl;
-          }
-          else if (parameter.getType() == "number")
-          {
-            std::cout << "     value: " << boost::any_cast<double>(data) << std::endl;
-          }
-          else if (parameter.getType() == "numbers")
-          {
-            std::cout << "     value: ";
-            for (const auto& data_item : boost::any_cast<std::vector<double>>(data))
-            {
-              std::cout << data_item << ", ";
-            }
-            std::cout << std::endl;
-          }
-          else if (parameter.getType() == "bool")
-          {
-            std::cout << "     value: " << boost::any_cast<bool>(data) << std::endl;
-          }
-          else if (parameter.getType() == "bools")
-          {
-            std::cout << "     value: ";
-            for (const auto& data_item : boost::any_cast<std::vector<bool>>(data))
-            {
-              std::cout << data_item << ", ";
-            }
-            std::cout << std::endl;
-          }
-        }
-
-        if (parameter.getAllowedData().size() != 0)
-        {
-          std::cout << "     allowed_values: ";
-          for (const auto& allowed_data : parameter.getAllowedData())
-          {
-            if (parameter.getType() == "string")
-            {
-              std::cout << boost::any_cast<std::string>(allowed_data) << ", ";
-            }
-            else if (parameter.getType() == "number")
-            {
-              std::cout << boost::any_cast<double>(allowed_data) << ", ";
-            }
-            else if (parameter.getType() == "bool")
-            {
-              std::cout << boost::any_cast<bool>(allowed_data) << ", ";
-            }
-          }
-          std::cout << std::endl;
-        }
-      }
+      printParameters(action.getInputParameters());
     }
+
+    if (!action.getOutputParameters().empty())
+    {
+      std::cout << "   output_parameters: " << std::endl;
+      printParameters(action.getOutputParameters());
+    }
+
     std::cout << std::endl;
   }
 }

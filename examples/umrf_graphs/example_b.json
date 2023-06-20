@@ -25,10 +25,52 @@
 	"actions": [
 		{
 			"name": "action_0",
+      "actor": "Actor A",
 			"description": "action_0 description",
 			"instance_id": 0,
 			"type": "sync",
-			"input_parameters": {},
+			"input_parameters": {
+        "test_param_1": {
+          "pvf_type": "string",
+          "pvf_allowed_values": [
+            "allowed value 1",
+            "allowed value 2",
+            "allowed value 3"
+          ]
+        },
+        "test_param_2": {
+          "pvf_type": "number",
+          "pvf_allowed_values": [
+            123,
+            22.22,
+            -33.65
+          ]
+        },
+        "test_param_3": {
+          "pvf_type": "strings",
+          "pvf_value": [
+            "vec value 1",
+            "vec value 2",
+            "vec value 3"
+          ]
+        },
+        "test_param_4": {
+          "pvf_type": "numbers",
+          "pvf_value": [
+            123.123,
+            234.234,
+            345.345
+          ]
+        },
+        "test_param_5": {
+          "pvf_type": "bools",
+          "pvf_value": [
+            true,
+            false,
+            true
+          ]
+        }
+      },
 			"output_parameters": {},
 			"parents": [
 				{
@@ -45,6 +87,7 @@
 		},
 		{
 			"name": "action_1",
+      "actor": "Actor B",
 			"description": "action_1 description",
 			"instance_id": 0,
 			"type": "sync",
@@ -59,6 +102,7 @@
 		},
 		{
 			"name": "action_2",
+      "actor": "Actor C",
 			"description": "action_2 description",
 			"instance_id": 0,
 			"type": "sync",
@@ -126,7 +170,14 @@
 			"instance_id": 0,
 			"type": "sync",
 			"input_parameters": {},
-			"output_parameters": {},
+			"output_parameters": {
+        "test_param_3": {
+          "pvf_type": "strings"
+        },
+        "test_param_4": {
+          "pvf_type": "numbers"
+        }
+      },
 			"parents": [
 				{
 					"name": "action_3",
