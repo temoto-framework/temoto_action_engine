@@ -472,7 +472,40 @@ catch(const std::exception& e)
 
 std::string toUmrfGraphJsonStr(const UmrfGraph& ug)
 {
-  return "TODO";
+  json ug_json;
+  ug_json["graph_name"] = ug.getName();
+  ug_json["graph_description"] = ug.getDescription();
+  
+  // parse graph entry
+  {
+    json graph_entry = json::array();
+    for (const auto& child : ug.getUmrfNode("graph_entry_0")->getChildren())
+    {
+      json child_json;
+      child_json["name"] = child.getName();
+      child_json["instance_id"] = std::to_string(child.getInstanceId());
+      graph_entry.push_back(child_json);
+    }
+
+    ug_json["graph_entry"] = graph_entry;
+  }
+
+  // parse graph exit
+  {
+    json graph_exit = json::array();
+    for (const auto& parent : ug.getUmrfNode("graph_exit_0")->getParents())
+    {
+      json parent_json;
+      parent_json["name"] = parent.getName();
+      parent_json["required"] = parent.getRequired();
+      parent_json["instance_id"] = std::to_string(parent.getInstanceId());
+      graph_exit.push_back(parent_json);
+    }
+
+    ug_json["graph_exit"] = graph_exit;
+  }
+
+  return ug_json.dump(4);
 }
 
 void printParameters(const ActionParameters params)
@@ -557,8 +590,6 @@ int main()
 
   std::cout << "graph_name: " << ug.getName() << std::endl;
   std::cout << "graph_description: " << ug.getDescription() << std::endl;
-
-
   std::cout << "actions: " << std::endl;
 
   for (const auto& action : ug.getUmrfNodes())
@@ -614,5 +645,7 @@ int main()
     }
 
     std::cout << std::endl;
+
+    std::cout << ug_json_str_new << std::endl;
   }
 }

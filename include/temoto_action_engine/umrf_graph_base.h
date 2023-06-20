@@ -179,6 +179,12 @@ public:
     return std::move(child_node_names);
   }
 
+  const std::shared_ptr<UmrfNode> getUmrfNode(const std::string umrf_name) const
+  {
+    LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);
+    return graph_nodes_map_.at(umrf_name);
+  }
+
   // TODO: https://github.com/temoto-telerobotics/temoto_action_engine/issues/1
   const std::vector<UmrfNode>& getUmrfNodes() const
   {
