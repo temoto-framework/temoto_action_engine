@@ -470,6 +470,165 @@ catch(const std::exception& e)
   throw CREATE_TEMOTO_ERROR_STACK("The provided JSON string contains syntax errors: " + std::string(e.what()));
 }
 
+std::string removeFirstToken(const std::vector<std::string>& tokens_in)
+{
+  if (tokens_in.empty())
+  {
+    return std::string("");
+  }
+  else if (tokens_in.size() == 1)
+  {
+    return tokens_in.at(0);
+  }
+  else
+  {
+    std::string name;
+    std::vector<std::string> name_tokens_renamed(tokens_in.begin() + 2, tokens_in.end());
+  
+    for (const auto& name_token : name_tokens_renamed)
+    {
+      if (name_token.empty())
+      {
+        continue;
+      }
+      else if (name.empty())
+      {
+        name += name_token;
+      }
+      else
+      {
+        name += "::" + name_token;
+      }
+    }
+    return name;
+  }
+}
+
+json parameterValueToJson(const std::string type, const ActionParameters::Payload& data)
+{
+  json val_json;
+  if (type == "string")
+  {
+    val_json = boost::any_cast<std::string>(data);
+  }
+  else if (type == "strings")
+  {
+    val_json = boost::any_cast<std::vector<std::string>>(data);
+  }
+  else if (type == "number")
+  {
+    val_json = boost::any_cast<double>(data);
+  }
+  else if (type == "numbers")
+  {
+    val_json = boost::any_cast<std::vector<double>>(data);
+  }
+  else if (type == "bool")
+  {
+    val_json = boost::any_cast<bool>(data);
+  }
+  else if (type == "bools")
+  {
+    val_json = boost::any_cast<std::vector<bool>>(data);
+  }
+
+  return val_json;
+}
+
+json parameterFieldsToJson(const ActionParameters::ParameterContainer& p)
+{
+  json p_json;
+
+  p_json["pvf_type"] = p.getType();
+  if (p.getDataSize() != 0)
+  {
+    p_json["pvf_value"] = parameterValueToJson(p.getType(), p.getData());
+  }
+  
+  // Parse the updatablilty
+  if (p.isUpdatable())
+  {
+    p_json["updatable"] = true;
+  }
+
+  // Parse allowed values
+  if (!p.getAllowedData().empty())
+  {
+    
+  }
+
+  json_value.AddMember(parameter_name, parameter_value, allocator);
+} 
+
+void parameterToJson(const ActionParameters::ParameterContainer& p, json& parent_json)
+{
+  // Split the name of the parameter into tokens
+  std::vector<std::string> name_tokens;
+  boost::split(name_tokens, p.getName(), boost::is_any_of("::"));
+
+  if (name_tokens.empty())
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("No name tokens received");
+  }
+
+  // Extract the "first_token" and check if such "sub_json_object" exists in the "input_json_object"
+  if (parent_json.contains(name_tokens.at(0)))
+  {
+    // IF there are more tokens left then:
+    if(name_tokens.size() > 1)
+    {
+      // Rename the "parameter" by removing the first token and leaving the rest as "renamed_parameter"
+      ActionParameters::ParameterContainer renamed_param = p;
+      renamed_param.setName(removeFirstToken(name_tokens));
+
+      // Recursively invoke parseParameter("sub_json_object", "renamed_parameter")
+      parameterToJson(renamed_param, parent_json[name_tokens.at(0)]);
+    }
+    else
+    {
+      // Throw an error, because it's a duplicate entry
+      throw CREATE_TEMOTO_ERROR_STACK("Duplicate entry detected");
+    }
+  }
+  else
+  {
+    if(name_tokens.size() > 1)
+    {
+      // Rename the "parameter" by removing the first token and leaving the rest as "renamed_parameter"
+      ActionParameters::ParameterContainer renamed_param = p;
+      renamed_param.setName(removeFirstToken(name_tokens));
+
+      // Create new json object and Recursively invoke parseParameter
+      json nested_parent_json;
+      parameterToJson(renamed_param, nested_parent_json);
+
+      parent_json[name_tokens.at(0)] = nested_parent_json;
+      return;
+    }
+    else
+    {
+      // Parse the all the pvf_values of the parameter and insert them to the json object
+      parsePvfFields(json_value, allocator, pc);
+      return;
+    }
+  }
+}
+
+json parametersToJson(const ActionParameters& parameters)
+{
+  json parameters_json;
+  for (const auto& parameter : parameters)
+  {
+    parameterToJson(parameter, parameters_json);
+  }
+  return json::array();
+}
+
+// void parseParameter(rapidjson::Value& json_value
+// , rapidjson::Document::AllocatorType& allocator
+// , const ActionParameters::ParameterContainer& pc)
+
+
 std::string toUmrfGraphJsonStr(const UmrfGraph& ug)
 {
   json ug_json;
@@ -503,6 +662,30 @@ std::string toUmrfGraphJsonStr(const UmrfGraph& ug)
     }
 
     ug_json["graph_exit"] = graph_exit;
+  }
+
+  // parse the actions
+  {
+    json actions = json::array();
+    for (const auto& u : ug.getUmrfNodes())
+    {
+      if (u.getName() == "graph_entry" || u.getName() == "graph_exit")
+      {
+        continue;
+      }
+
+      json action;
+      action["name"] = u.getName();
+      action["actor"] = u.getActor();
+      action["instance_id"] = u.getInstanceId();
+      action["description"] = u.getDescription();
+      action["type"] = u.getType();
+      action["input_parameters"] = parametersToJson(u.getInputParameters());
+      action["output_parameters"] = parametersToJson(u.getOutputParameters());
+      actions.push_back(action);
+    }
+
+    ug_json["actions"] = actions;
   }
 
   return ug_json.dump(4);
