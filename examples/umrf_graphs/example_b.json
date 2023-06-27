@@ -69,6 +69,16 @@
             false,
             true
           ]
+        },
+        "test_param_6": {
+          "a": {
+            "pvf_type": "string",
+            "pvf_value": "tere"
+          },
+          "b": {
+            "pvf_type": "number",
+            "pvf_value": 1.23
+          }
         }
       },
 			"output_parameters": {},

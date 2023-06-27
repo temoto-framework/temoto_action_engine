@@ -8,6 +8,15 @@
 
 using json = nlohmann::json;
 
+const std::vector<std::string> native_json_types{
+  "string",
+  "strings",
+  "number",
+  "numbers",
+  "bool",
+  "bools"
+};
+
 boost::any toParameterData(const std::string& type, const json& data_json)
 {
   if (type == "string")
@@ -224,9 +233,10 @@ std::vector<UmrfNode::Relation> parseChildRelations(const json& relations_json)
   return relations;
 }
 
-UmrfNode fromUmrfJson(const json& umrf_json)
+UmrfNode fromUmrfJsonStr(const std::string& umrf_json_str)
 try
 {
+  json umrf_json = json::parse(umrf_json_str);
   UmrfNode un;
 
   /*
@@ -362,7 +372,7 @@ try
 
   for (auto& umrf_json : ug_json["actions"])
   {
-    umrf_actions.push_back(fromUmrfJson(umrf_json));
+    umrf_actions.push_back(fromUmrfJsonStr(umrf_json.dump()));
   }
 
   /*
@@ -504,9 +514,10 @@ std::string removeFirstToken(const std::vector<std::string>& tokens_in)
   }
 }
 
-json parameterValueToJson(const std::string type, const ActionParameters::Payload& data)
+json parameterValueToJson(const std::string& type, const ActionParameters::Payload& data)
 {
   json val_json;
+
   if (type == "string")
   {
     val_json = boost::any_cast<std::string>(data);
@@ -538,9 +549,19 @@ json parameterValueToJson(const std::string type, const ActionParameters::Payloa
 json parameterFieldsToJson(const ActionParameters::ParameterContainer& p)
 {
   json p_json;
+  
+  auto isNative = [&](const std::string& type) 
+  { 
+    for (const auto& native_datatype : native_json_types)
+    {
+      if (native_datatype == type)
+        return true;
+    }
+    return false;
+  };
 
   p_json["pvf_type"] = p.getType();
-  if (p.getDataSize() != 0)
+  if (p.getDataSize() != 0 && isNative(p.getType()))
   {
     p_json["pvf_value"] = parameterValueToJson(p.getType(), p.getData());
   }
@@ -548,16 +569,20 @@ json parameterFieldsToJson(const ActionParameters::ParameterContainer& p)
   // Parse the updatablilty
   if (p.isUpdatable())
   {
-    p_json["updatable"] = true;
+    p_json["pvf_updatable"] = true;
   }
 
   // Parse allowed values
-  if (!p.getAllowedData().empty())
+  if (!p.getAllowedData().empty() && isNative(p.getType()))
   {
-    
+    p_json["pvf_allowed_values"] = json::array();
+    for (const auto& allowed_value : p.getAllowedData())
+    {
+      p_json["pvf_allowed_values"].push_back(parameterValueToJson(p.getType(), allowed_value));
+    }
   }
 
-  json_value.AddMember(parameter_name, parameter_value, allocator);
+  return p_json;
 } 
 
 void parameterToJson(const ActionParameters::ParameterContainer& p, json& parent_json)
@@ -608,7 +633,7 @@ void parameterToJson(const ActionParameters::ParameterContainer& p, json& parent
     else
     {
       // Parse the all the pvf_values of the parameter and insert them to the json object
-      parsePvfFields(json_value, allocator, pc);
+      parent_json[p.getName()] = parameterFieldsToJson(p);
       return;
     }
   }
@@ -621,71 +646,106 @@ json parametersToJson(const ActionParameters& parameters)
   {
     parameterToJson(parameter, parameters_json);
   }
-  return json::array();
+  return parameters_json;
 }
 
-// void parseParameter(rapidjson::Value& json_value
-// , rapidjson::Document::AllocatorType& allocator
-// , const ActionParameters::ParameterContainer& pc)
+json toUmrfJson(const UmrfNode& u)
+{
+  json action;
+  action["name"] = u.getName();
+  action["actor"] = u.getActor();
+  action["instance_id"] = u.getInstanceId();
+  action["description"] = u.getDescription();
+  action["type"] = u.getType();
 
+  // parse input parameters
+  if (u.getInputParameters().getParameters().size() != 0)
+  {
+    action["input_parameters"] = parametersToJson(u.getInputParameters());
+  }
+
+  // parse output parameters
+  if (u.getOutputParameters().getParameters().size() != 0)
+  {
+    action["output_parameters"] = parametersToJson(u.getOutputParameters());
+  }
+
+  // parse parents
+  if (u.getParents().size() != 0)
+  {
+    action["parents"] = json::array();
+    for (const auto& parent : u.getParents())
+    {
+      json parent_j;
+      parent_j["name"] = parent.getName();
+      parent_j["instance_id"] = parent.getInstanceId();
+      parent_j["required"] = parent.getRequired();
+
+      action["parents"].push_back(parent_j);
+    }
+  }
+
+  // parse children
+  if (u.getChildren().size() != 0)
+  {
+    action["children"] = json::array();
+    for (const auto& child : u.getChildren())
+    {
+      json child_j;
+      child_j["name"] = child.getName();
+      child_j["instance_id"] = child.getInstanceId();
+      child_j["condition"] = child.getCondition();
+
+      action["children"].push_back(child_j);
+    }
+  }
+  
+  return action;
+}
+
+std::string toUmrfJsonStr(const UmrfNode& u)
+{
+  return toUmrfJson(u).dump(4);
+}
 
 std::string toUmrfGraphJsonStr(const UmrfGraph& ug)
 {
+  /*
+   * TODO: use ordered_json: https://json.nlohmann.me/api/ordered_json/
+   */
   json ug_json;
   ug_json["graph_name"] = ug.getName();
   ug_json["graph_description"] = ug.getDescription();
   
   // parse graph entry
+  ug_json["graph_entry"] = json::array();
+  for (const auto& child : ug.getUmrfNode("graph_entry_0")->getChildren())
   {
-    json graph_entry = json::array();
-    for (const auto& child : ug.getUmrfNode("graph_entry_0")->getChildren())
-    {
-      json child_json;
-      child_json["name"] = child.getName();
-      child_json["instance_id"] = std::to_string(child.getInstanceId());
-      graph_entry.push_back(child_json);
-    }
-
-    ug_json["graph_entry"] = graph_entry;
+    json child_json;
+    child_json["name"] = child.getName();
+    child_json["instance_id"] = std::to_string(child.getInstanceId());
+    ug_json["graph_entry"].push_back(child_json);
   }
 
   // parse graph exit
+  ug_json["graph_exit"] = json::array();
+  for (const auto& parent : ug.getUmrfNode("graph_exit_0")->getParents())
   {
-    json graph_exit = json::array();
-    for (const auto& parent : ug.getUmrfNode("graph_exit_0")->getParents())
-    {
-      json parent_json;
-      parent_json["name"] = parent.getName();
-      parent_json["required"] = parent.getRequired();
-      parent_json["instance_id"] = std::to_string(parent.getInstanceId());
-      graph_exit.push_back(parent_json);
-    }
-
-    ug_json["graph_exit"] = graph_exit;
+    json parent_json;
+    parent_json["name"] = parent.getName();
+    parent_json["required"] = parent.getRequired();
+    parent_json["instance_id"] = std::to_string(parent.getInstanceId());
+    ug_json["graph_exit"].push_back(parent_json);
   }
 
   // parse the actions
+  ug_json["actions"] = json::array();
+  for (const auto& u : ug.getUmrfNodes())
   {
-    json actions = json::array();
-    for (const auto& u : ug.getUmrfNodes())
+    if (u.getName() != "graph_entry" && u.getName() != "graph_exit")
     {
-      if (u.getName() == "graph_entry" || u.getName() == "graph_exit")
-      {
-        continue;
-      }
-
-      json action;
-      action["name"] = u.getName();
-      action["actor"] = u.getActor();
-      action["instance_id"] = u.getInstanceId();
-      action["description"] = u.getDescription();
-      action["type"] = u.getType();
-      action["input_parameters"] = parametersToJson(u.getInputParameters());
-      action["output_parameters"] = parametersToJson(u.getOutputParameters());
-      actions.push_back(action);
+      ug_json["actions"].push_back(toUmrfJson(u));
     }
-
-    ug_json["actions"] = actions;
   }
 
   return ug_json.dump(4);
@@ -826,9 +886,8 @@ int main()
       std::cout << "   output_parameters: " << std::endl;
       printParameters(action.getOutputParameters());
     }
-
-    std::cout << std::endl;
-
-    std::cout << ug_json_str_new << std::endl;
   }
+
+  std::cout << std::endl;
+  std::cout << ug_json_str_new << std::endl;
 }
