@@ -26,7 +26,6 @@ endif()
 
 set(headers
   include
-  ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include
   ${Boost_INCLUDE_DIRS}
   ${class_loader_INCLUDE_DIRS}
   examples/actions/ta_example_1/include
@@ -60,13 +59,13 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 # Build nlohmann json based converter
-add_executable(nlj_example
-  src/umrf_json_converter_nlj.cpp
-)
-target_link_libraries(nlj_example
-  ${PROJECT_NAME}
-  nlohmann_json
-)
+# add_executable(nlj_example
+#   src/umrf_json_converter_nlj.cpp
+# )
+# target_link_libraries(nlj_example
+#   ${PROJECT_NAME}
+#   nlohmann_json
+# )
 
 # Build the examples
 add_executable(tae_example

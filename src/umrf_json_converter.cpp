@@ -1,5 +1,5 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * Copyright 2019 TeMoto Telerobotics
+ * Copyright 2023 TeMoto Framework
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,135 +14,479 @@
  * limitations under the License.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+#include <fstream>
+#include <iostream>
+#include <nlohmann/json.hpp>
+
 #include "temoto_action_engine/umrf_json_converter.h"
-#include "temoto_action_engine/temoto_error.h"
-#include "rapidjson/document.h"
-#include "rapidjson/prettywriter.h"
-#include "rapidjson/stringbuffer.h"
-#include <boost/algorithm/string.hpp>
+#include "temoto_action_engine/umrf_graph_fs.h"
 
-namespace umrf_json_converter
+using json = nlohmann::json;
+
+namespace umrf_json
 {
 
-const rapidjson::Value& getRootJsonElement(const char* element_name, const rapidjson::Value& json_doc)
+boost::any toParameterData(const std::string& type, const json& data_json)
 {
-  if(!json_doc.HasMember(element_name))
+  if (type == "string")
   {
-    throw CREATE_TEMOTO_ERROR_STACK("This JSON does not contain element '" + std::string(element_name) + "'");
+    return boost::any(std::string{data_json});
   }
-  return json_doc[element_name];
-}
-
-const rapidjson::Value& getJsonElement(const char* element_name, const rapidjson::Value& value_in)
-{
-  if(!value_in.HasMember(element_name))
+  else if (type == "strings")
   {
-    throw CREATE_TEMOTO_ERROR_STACK("This field does not contain element '" + std::string(element_name) + "'");
+    return boost::any(data_json.get<std::vector<std::string>>());
   }
-  return value_in[element_name];
-}
-
-std::string getStringFromValue(const rapidjson::Value& value)
-{
-  if (!value.IsString())
+  else if (type == "number")
   {
-    throw CREATE_TEMOTO_ERROR_STACK("This JSON value is not a string");
+    return boost::any(double{data_json});
   }
-  return value.GetString();
-}
-
-bool getBoolFromValue(const rapidjson::Value& value)
-{
-  if (!value.IsBool())
+  else if (type == "numbers")
   {
-    throw CREATE_TEMOTO_ERROR_STACK("This JSON value is not a boolean");
+    return boost::any(data_json.get<std::vector<double>>());
   }
-  return value.GetBool();
-}
-
-float getNumberFromValue(const rapidjson::Value& value)
-{
-  if (!value.IsNumber())
+  else if (type == "bool")
   {
-    throw CREATE_TEMOTO_ERROR_STACK("This JSON value is not a number");
+    return boost::any(bool{data_json});
   }
-  return value.GetFloat();
-}
-
-void parsePvfFields(rapidjson::Value& json_value
-, rapidjson::Document::AllocatorType& allocator
-, const ActionParameters::ParameterContainer& parameter)
-{
-  rapidjson::Value parameter_name(rapidjson::kStringType);
-  parameter_name.SetString(parameter.getName().c_str(), parameter.getName().size(), allocator);
-
-  rapidjson::Value pvf_value_json_value(rapidjson::kStringType);
-  rapidjson::Value pvf_type_json_value(rapidjson::kStringType);
-  rapidjson::Value pvf_example_json_value(rapidjson::kStringType);
-  rapidjson::Value pvf_updatable_json_value(rapidjson::kStringType);
-  rapidjson::Value pvf_allowed_values_json_value(rapidjson::kStringType);
-  pvf_value_json_value.SetString(PVF_FIELDS.value, allocator);
-  pvf_type_json_value.SetString(PVF_FIELDS.type, allocator);
-  pvf_example_json_value.SetString(PVF_FIELDS.example, allocator);
-  pvf_updatable_json_value.SetString(PVF_FIELDS.updatable, allocator);
-  pvf_allowed_values_json_value.SetString(PVF_FIELDS.allowed_values, allocator);
-
-  rapidjson::Value parameter_value(rapidjson::kObjectType);
-  if (parameter.getType() == "string")
+  else if (type == "bools")
   {
-    parameter_value.AddMember(pvf_type_json_value, "string", allocator);
-
-    if (parameter.getDataSize() != 0)
-    {
-      std::string pvf_value_str = boost::any_cast<std::string>(parameter.getData());
-      rapidjson::Value pvf_value(rapidjson::kStringType);
-      pvf_value.SetString(pvf_value_str.c_str(), pvf_value_str.size(), allocator);
-      parameter_value.AddMember(pvf_value_json_value, pvf_value, allocator);
-    }
-  }
-  else if (parameter.getType() == "number")
-  {
-    parameter_value.AddMember(pvf_type_json_value, "number", allocator);
-
-    if (parameter.getDataSize() != 0)
-    {
-      double pvf_value_number = boost::any_cast<double>(parameter.getData());
-      rapidjson::Value pvf_value(rapidjson::kNumberType);
-      pvf_value.SetDouble(pvf_value_number);
-      parameter_value.AddMember(pvf_value_json_value, pvf_value, allocator);
-    }
+    return boost::any(data_json.get<std::vector<bool>>());
   }
   else
   {
-    rapidjson::Value pvf_type(rapidjson::kStringType);
-    pvf_type.SetString(parameter.getType().c_str(), parameter.getType().size(), allocator);
-    parameter_value.AddMember(pvf_type_json_value, pvf_type, allocator);
+    throw CREATE_TEMOTO_ERROR_STACK("Unable to parse the 'value'");
+  }
+}
+
+ActionParameters::Parameters parseParameters(std::string parent_member_name, const json& parameters_json)
+{
+  if(!parameters_json.is_object())
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("The parameters field must be an object");
+  }
+
+  ActionParameters::Parameters action_parameters;
+  if (parameters_json.contains(PVF_FIELDS.type))
+  {
+    /*
+     * Get type
+     */
+    ActionParameters::ParameterContainer pc(parent_member_name, parameters_json.at(PVF_FIELDS.type));
+
+    /*
+     * Get required
+     */
+    if (parameters_json.contains(PVF_FIELDS.required))
+    try
+    {
+      pc.setRequired(parameters_json.at(PVF_FIELDS.required));
+    }
+    catch(TemotoErrorStack e)
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Invalid 'pvf_required': " + std::string(e.what()));
+    }
+
+    /*
+     * Get updatable
+     */
+    if (parameters_json.contains(PVF_FIELDS.updatable))
+    try
+    {
+      pc.setUpdatable(parameters_json.at(PVF_FIELDS.updatable));
+    }
+    catch(TemotoErrorStack e)
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Invalid 'pvf_updatable': " + std::string(e.what()));
+    }
+
+    /*
+     * Get allowed values
+     */
+    if (parameters_json.contains(PVF_FIELDS.allowed_values))
+    try
+    {
+      for (const auto& allowed_value_json : parameters_json.at(PVF_FIELDS.allowed_values))
+      {
+        pc.addAllowedData(toParameterData(pc.getType(), allowed_value_json));
+      }
+    }
+    catch(TemotoErrorStack e)
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Invalid 'pvf_allowed_values': " + std::string(e.what()));
+    }
+
+    /*
+     * Get value
+     */
+    if (parameters_json.contains(PVF_FIELDS.value)) 
+    try
+    {
+      pc.setData(toParameterData(pc.getType(), parameters_json.at(PVF_FIELDS.value)));
+    }
+    catch(TemotoErrorStack e)
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Invalid 'pvf_value' of parameter " + pc.getName() + ": " + std::string(e.what()));
+    }
+
+    action_parameters.insert(pc);
+  }
+  else
+  {
+    for (const auto& member_json : parameters_json.items())
+    {
+      std::string member_name{member_json.key()};
+      if (!parent_member_name.empty())
+      {
+        member_name = parent_member_name + "::" + member_name;
+      }
+      
+      ActionParameters::Parameters ap_rec = parseParameters(member_name, member_json.value());
+      action_parameters.insert(ap_rec.begin(), ap_rec.end());
+    }
   }
   
-  // Parse the updatablilty
-  if (parameter.isUpdatable())
+  return action_parameters;
+}
+
+std::vector<UmrfNode::Relation> parseParentRelations(const json& relations_json)
+{
+  if(!relations_json.is_array())
   {
-    parameter_value.AddMember(pvf_updatable_json_value, "true", allocator);
+    throw CREATE_TEMOTO_ERROR_STACK("The relations field must be an array");
   }
 
-  // Parse the example
-  if (!parameter.getExample().empty())
+  std::vector<UmrfNode::Relation> relations;
+  for (const auto& relation_json : relations_json)
   {
-    rapidjson::Value parameter_example(rapidjson::kStringType);
-    parameter_example.SetString(parameter.getExample().c_str(), parameter.getExample().size(), allocator);
-    parameter_value.AddMember(pvf_example_json_value, parameter_example, allocator);
+    UmrfNode::Relation relation;
+
+    // GET NAME - required
+    if (!relation_json.contains(RELATION_FIELDS.name))
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Relation must contain a name");
+    }
+    relation.name_ = relation_json.at(RELATION_FIELDS.name);
+
+    // GET INSTANCE ID - not required if there are no duplicate instances
+    try
+    {
+      // Default to '0'
+      relation.instance_id_ = (relation_json.contains(RELATION_FIELDS.instance_id)) ? uint16_t (relation_json.at(RELATION_FIELDS.instance_id)) : 0;
+    }
+    catch(const std::exception& e)
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Invalid 'instance_id': " + std::string(e.what()));
+    }
+
+    // GET REQUIRED
+    try
+    {
+      // Default to false
+      relation.required_ = (relation_json.contains(RELATION_FIELDS.required)) ? bool(relation_json.at(RELATION_FIELDS.required)) : true;
+    }
+    catch(const std::exception& e)
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Invalid 'required':" + std::string(e.what()));
+    }
+
+    relations.push_back(relation);
   }
 
-  // Parse allowed values
-  if (!parameter.getAllowedData().empty())
+  return relations;
+}
+
+std::vector<UmrfNode::Relation> parseChildRelations(const json& relations_json)
+{
+  if(!relations_json.is_array())
   {
-    std::string pvf_allowed_data = boost::any_cast<std::string>(parameter.getAllowedData().front());
-    rapidjson::Value pvf_allowed_data_value(rapidjson::kStringType);
-    pvf_allowed_data_value.SetString(pvf_allowed_data.c_str(), pvf_allowed_data.size(), allocator);
-    parameter_value.AddMember(pvf_allowed_values_json_value, pvf_allowed_data_value, allocator);
+    throw CREATE_TEMOTO_ERROR_STACK("The relations field must be an array");
   }
 
-  json_value.AddMember(parameter_name, parameter_value, allocator);
+  std::vector<UmrfNode::Relation> relations;
+  for (const auto& relation_json : relations_json)
+  {
+    UmrfNode::Relation relation;
+
+    // GET NAME
+    if (!relation_json.contains(RELATION_FIELDS.name))
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Relation must contain a name");
+    }
+    relation.name_ = relation_json.at(RELATION_FIELDS.name);
+
+    // GET INSTANCE ID - not required if there are no duplicate instances
+    try
+    {
+      // Default to '0'
+      relation.instance_id_ = (relation_json.contains(RELATION_FIELDS.instance_id)) ? uint16_t (relation_json.at(RELATION_FIELDS.instance_id)) : 0;
+    }
+    catch(const std::exception& e)
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Invalid 'instance_id': " + std::string(e.what()));
+    }
+
+    // GET CONDITION
+    try
+    {
+      // Default to "always -> run"
+      relation.condition_ = (relation_json.contains(RELATION_FIELDS.condition)) ? relation_json.at(RELATION_FIELDS.condition) : "always -> run";
+    }
+    catch(const std::exception& e)
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Invalid 'condition':" + std::string(e.what()));
+    }
+
+    relations.push_back(relation);
+  }
+
+  return relations;
+}
+
+UmrfNode fromUmrfJsonStr(const std::string& umrf_json_str)
+try
+{
+  json uj = json::parse(umrf_json_str);
+  UmrfNode un;
+
+  /*
+   * Parse the required fields
+   */
+  // GET NAME
+  if (!un.setName(uj.at(UMRF_FIELDS.name)))
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("Illegal value in 'name' field.");
+  }
+
+  // GET TYPE
+  if (!un.setType(uj.at(UMRF_FIELDS.type)))
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("Illegal value in 'type' field.");
+  }
+
+  /*
+   * Parse the optional fields
+   */
+
+  // GET ACTOR
+  if (uj.contains(UMRF_FIELDS.actor))
+  try
+  {
+    un.setActor(uj.at(UMRF_FIELDS.actor));
+  }
+  catch(const std::exception& e)
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("Invalid 'actor' in " + un.getName() + ": " + std::string(e.what()));
+  }
+
+  // GET DESCRIPTION
+  if (uj.contains(UMRF_FIELDS.description))
+  try
+  {
+    un.setDescription(uj.at(UMRF_FIELDS.description));
+  }
+  catch(const std::exception& e)
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("Invalid 'description' in " + un.getName() + ": " + std::string(e.what()));
+  }
+
+  // GET ID
+  if (uj.contains(UMRF_FIELDS.instance_id))
+  try
+  {
+    un.setInstanceId(uj.at(UMRF_FIELDS.instance_id));
+  }
+  catch(const std::exception& e)
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("Invalid 'instance_id' in " + un.getName() + ": " + std::string(e.what()));
+  }
+
+  // GET STATE
+  if (uj.contains(UMRF_FIELDS.state))
+  try
+  {
+    un.setState(uj.at(UMRF_FIELDS.state));
+  }
+  catch(const std::exception& e)
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("Invalid 'state' in " + un.getName() + ": " + std::string(e.what()));
+  }
+
+  // GET PARENTS
+  if (uj.contains(UMRF_FIELDS.parents))
+  try
+  {
+    std::vector<UmrfNode::Relation> parents = parseParentRelations(uj[UMRF_FIELDS.parents]);
+    un.setParents(parents);
+  }
+  catch(TemotoErrorStack e)
+  {
+    throw FORWARD_TEMOTO_ERROR_STACK_WMSG(e, "Invalid 'parents' in " + un.getName());
+  }
+
+  // GET CHILDREN
+  if (uj.contains(UMRF_FIELDS.children))
+  try
+  {
+    std::vector<UmrfNode::Relation> children = parseChildRelations(uj[UMRF_FIELDS.children]);
+    un.setChildren(children);
+  }
+  catch(TemotoErrorStack e)
+  {
+    throw FORWARD_TEMOTO_ERROR_STACK_WMSG(e, "Invalid 'children' in " + un.getName());
+  }
+
+  // GET INPUT PARAMETERS
+  if (uj.contains(UMRF_FIELDS.input_parameters))
+  try
+  {
+    un.setInputParameters(parseParameters("", uj[UMRF_FIELDS.input_parameters]));
+  }
+  catch(TemotoErrorStack e)
+  {
+    throw FORWARD_TEMOTO_ERROR_STACK_WMSG(e, "Invalid 'input_parameters' in " + un.getName());
+  }
+
+  // GET OUTPUT PARAMETERS
+  if (uj.contains(UMRF_FIELDS.output_parameters))
+  try
+  {
+    un.setOutputParameters(parseParameters("", uj[UMRF_FIELDS.output_parameters]));
+  }
+  catch(TemotoErrorStack e)
+  {
+    throw FORWARD_TEMOTO_ERROR_STACK_WMSG(e, "Invalid 'output_parameters' in " + un.getName());
+  }
+
+  return un;
+}
+catch(TemotoErrorStack e)
+{
+  throw FORWARD_TEMOTO_ERROR_STACK(e);
+}
+catch(const std::exception& e)
+{
+  throw CREATE_TEMOTO_ERROR_STACK("UMRF JSON error: " + std::string(e.what()));
+}
+
+UmrfGraph fromUmrfGraphJsonStr(const std::string& ug_json_str)
+try
+{
+  json ug_json = json::parse(ug_json_str);
+
+  /*
+   * Parse the required fields
+   */
+  std::string graph_name{ug_json[GRAPH_FIELDS.name]};
+  std::vector<UmrfNode> umrf_actions;
+
+  for (auto& umrf_json : ug_json[GRAPH_FIELDS.actions])
+  {
+    umrf_actions.push_back(fromUmrfJsonStr(umrf_json.dump()));
+  }
+
+  /*
+   * Parse graph entry and exit actions
+   */
+  std::vector<UmrfNode::Relation> graph_entry, graph_exit;
+  
+  // Graph entry and exit doesn't have to be explicitly defined if graph contains only one action 
+  if (umrf_actions.size() == 1)
+  {
+    UmrfNode::Relation r_entry, r_exit;
+
+    r_entry.condition_ = "always -> run";
+    r_entry.name_ = umrf_actions.front().getName();
+    r_entry.instance_id_ = umrf_actions.front().getInstanceId();
+    graph_entry.push_back(r_entry);
+
+    r_exit.required_ = true;
+    r_exit.name_ = umrf_actions.front().getName();
+    r_exit.instance_id_ = umrf_actions.front().getInstanceId();
+    graph_exit.push_back(r_exit);
+  }
+  else
+  {
+    graph_entry = parseChildRelations(ug_json[GRAPH_FIELDS.entry]);
+    graph_exit = parseParentRelations(ug_json[GRAPH_FIELDS.exit]);
+  }
+
+  // Create a new action that represents the entry 
+  UmrfNode graph_entry_action;
+  graph_entry_action.setName(GRAPH_FIELDS.entry);
+  graph_entry_action.setChildren(graph_entry);
+
+  // Get the input parameters for the entry
+  for (const auto& a : graph_entry)
+  {
+    const auto& it = std::find_if(
+      umrf_actions.begin(),
+      umrf_actions.end(),
+      [&](const UmrfNode& u)
+      {
+        return u.getFullName() == a.getFullName();
+      });
+
+    if (it == umrf_actions.end())
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Graph entry '" + a.getFullName() + "' not found in the list of actions");
+    }
+    graph_entry_action.setInputParameters(it->getInputParameters());
+  }
+
+  umrf_actions.push_back(graph_entry_action);
+
+  // Create a new action that represents the exit
+  UmrfNode graph_exit_action;
+  graph_exit_action.setName(GRAPH_FIELDS.exit);
+  graph_exit_action.setParents(graph_exit);
+
+  // Get the output parameters for the exit
+  for (const auto& a : graph_exit)
+  {
+    const auto& it = std::find_if(
+      umrf_actions.begin(),
+      umrf_actions.end(),
+      [&](const UmrfNode& u)
+      {
+        return u.getFullName() == a.getFullName();
+      });
+
+    if (it == umrf_actions.end())
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Graph exit '" + a.getFullName() + "' not found in the list of actions");
+    }
+    graph_exit_action.setOutputParameters(it->getOutputParameters());
+  }
+
+  umrf_actions.push_back(graph_exit_action);
+
+  // Now we can greate the UmrfGraph datastructure
+  UmrfGraph umrf_graph(graph_name, umrf_actions);
+
+  /*
+   * Parse the optional fields
+   */
+
+  // GET DESCRIPTION
+  if (ug_json.contains(GRAPH_FIELDS.description))
+  try
+  {
+    umrf_graph.setDescription(ug_json.at(GRAPH_FIELDS.description));
+  }
+  catch(const std::exception& e)
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("Invalid 'description' in " + umrf_graph.getName() + ": " + std::string(e.what()));
+  }
+
+  return umrf_graph;
+}
+catch(TemotoErrorStack e)
+{
+  throw FORWARD_TEMOTO_ERROR_STACK(e);
+}
+catch(const std::exception& e)
+{
+  throw CREATE_TEMOTO_ERROR_STACK("The provided JSON string contains syntax errors: " + std::string(e.what()));
 }
 
 std::string removeFirstToken(const std::vector<std::string>& tokens_in)
@@ -179,13 +523,81 @@ std::string removeFirstToken(const std::vector<std::string>& tokens_in)
   }
 }
 
-void parseParameter(rapidjson::Value& json_value
-, rapidjson::Document::AllocatorType& allocator
-, const ActionParameters::ParameterContainer& pc)
+json parameterValueToJson(const std::string& type, const ActionParameters::Payload& data)
+{
+  json val_json;
+
+  if (type == "string")
+  {
+    val_json = boost::any_cast<std::string>(data);
+  }
+  else if (type == "strings")
+  {
+    val_json = boost::any_cast<std::vector<std::string>>(data);
+  }
+  else if (type == "number")
+  {
+    val_json = boost::any_cast<double>(data);
+  }
+  else if (type == "numbers")
+  {
+    val_json = boost::any_cast<std::vector<double>>(data);
+  }
+  else if (type == "bool")
+  {
+    val_json = boost::any_cast<bool>(data);
+  }
+  else if (type == "bools")
+  {
+    val_json = boost::any_cast<std::vector<bool>>(data);
+  }
+
+  return val_json;
+}
+
+json parameterFieldsToJson(const ActionParameters::ParameterContainer& p)
+{
+  json p_json;
+  
+  auto isNative = [&](const std::string& type) 
+  { 
+    for (const auto& native_datatype : NATIVE_JSON_TYPES)
+    {
+      if (native_datatype == type) return true;
+    }
+    return false;
+  };
+
+  p_json[PVF_FIELDS.type] = p.getType();
+  if (p.getDataSize() != 0 && isNative(p.getType()))
+  {
+    p_json[PVF_FIELDS.value] = parameterValueToJson(p.getType(), p.getData());
+  }
+  
+  // Parse the updatablilty
+  if (p.isUpdatable())
+  {
+    p_json[PVF_FIELDS.updatable] = true;
+  }
+
+  // Parse allowed values
+  if (!p.getAllowedData().empty() && isNative(p.getType()))
+  {
+    p_json[PVF_FIELDS.allowed_values] = json::array();
+    for (const auto& allowed_value : p.getAllowedData())
+    {
+      p_json[PVF_FIELDS.allowed_values].push_back(parameterValueToJson(p.getType(), allowed_value));
+    }
+  }
+
+  return p_json;
+} 
+
+void parameterToJson(const ActionParameters::ParameterContainer& p, json& parent_json)
 {
   // Split the name of the parameter into tokens
   std::vector<std::string> name_tokens;
-  boost::split(name_tokens, pc.getName(), boost::is_any_of("::"));
+  boost::split(name_tokens, p.getName(), boost::is_any_of("::"));
 
   if (name_tokens.empty())
   {
@@ -193,17 +605,17 @@ void parseParameter(rapidjson::Value& json_value
   }
 
   // Extract the "first_token" and check if such "sub_json_object" exists in the "input_json_object"
-  if (json_value.HasMember(name_tokens.at(0).c_str()))
+  if (parent_json.contains(name_tokens.at(0)))
   {
     // IF there are more tokens left then:
     if(name_tokens.size() > 1)
     {
       // Rename the "parameter" by removing the first token and leaving the rest as "renamed_parameter"
-      ActionParameters::ParameterContainer renamed_param = pc;
+      ActionParameters::ParameterContainer renamed_param = p;
       renamed_param.setName(removeFirstToken(name_tokens));
 
       // Recursively invoke parseParameter("sub_json_object", "renamed_parameter")
-      parseParameter(json_value[name_tokens.at(0).c_str()], allocator, renamed_param);
+      parameterToJson(renamed_param, parent_json[name_tokens.at(0)]);
     }
     else
     {
@@ -216,696 +628,281 @@ void parseParameter(rapidjson::Value& json_value
     if(name_tokens.size() > 1)
     {
       // Rename the "parameter" by removing the first token and leaving the rest as "renamed_parameter"
-      ActionParameters::ParameterContainer renamed_param = pc;
+      ActionParameters::ParameterContainer renamed_param = p;
       renamed_param.setName(removeFirstToken(name_tokens));
 
       // Create new json object and Recursively invoke parseParameter
-      rapidjson::Value new_json_name(rapidjson::kStringType);
-      new_json_name.SetString(name_tokens.at(0).c_str(), name_tokens.at(0).size(), allocator);
+      json nested_parent_json;
+      parameterToJson(renamed_param, nested_parent_json);
 
-      rapidjson::Value new_json_value(rapidjson::kObjectType);
-      parseParameter(new_json_value, allocator, renamed_param);
-
-      json_value.AddMember(new_json_name, new_json_value, allocator);
+      parent_json[name_tokens.at(0)] = nested_parent_json;
       return;
     }
     else
     {
       // Parse the all the pvf_values of the parameter and insert them to the json object
-      parsePvfFields(json_value, allocator, pc);
+      parent_json[p.getName()] = parameterFieldsToJson(p);
       return;
     }
   }
 }
 
-ActionParameters::Parameters parseParameters(const rapidjson::Value& value_in, std::string parent_member_name)
+json parametersToJson(const ActionParameters& parameters)
 {
-  if (!value_in.IsObject())
+  json parameters_json;
+  for (const auto& parameter : parameters)
   {
-    throw CREATE_TEMOTO_ERROR_STACK("The parameters were not formatted as JSON objects");
+    parameterToJson(parameter, parameters_json);
+  }
+  return parameters_json;
+}
+
+json toUmrfJson(const UmrfNode& u)
+{
+  json action;
+  action[UMRF_FIELDS.name] = u.getName();
+  action[UMRF_FIELDS.actor] = u.getActor();
+  action[UMRF_FIELDS.instance_id] = u.getInstanceId();
+  action[UMRF_FIELDS.description] = u.getDescription();
+  action[UMRF_FIELDS.type] = u.getType();
+
+  // parse input parameters
+  if (u.getInputParameters().getParameters().size() != 0)
+  {
+    action[UMRF_FIELDS.input_parameters] = parametersToJson(u.getInputParameters());
   }
 
-  ActionParameters::Parameters action_parameters;
-  if (value_in.HasMember(PVF_FIELDS.type))
+  // parse output parameters
+  if (u.getOutputParameters().getParameters().size() != 0)
   {
-    /*
-     * Get type
-     */
-    std::string type = value_in[PVF_FIELDS.type].GetString();
-    ActionParameters::ParameterContainer pc(parent_member_name, type);
-
-    /*
-     * Get required
-     */
-    try
-    {
-      std::string required = getStringFromValue(getJsonElement(PVF_FIELDS.required, value_in));
-      if (required == "true")
-      {
-        pc.setRequired(true);
-      }
-      else
-      {
-        pc.setRequired(false);
-      }
-    }
-    catch(TemotoErrorStack e)
-    {
-      //std::cerr << e.what() << '\n';
-    }
-
-    /*
-     * Get updatable
-     */
-    try
-    {
-      std::string updatable = getStringFromValue(getJsonElement(PVF_FIELDS.updatable, value_in));
-      if (updatable == "true")
-      {
-        pc.setUpdatable(true);
-      }
-      else
-      {
-        pc.setUpdatable(false);
-      }
-    }
-    catch(TemotoErrorStack e)
-    {
-      //std::cerr << e.what() << '\n';
-    }
-
-    /*
-     * Get example
-     */
-    try
-    {
-      std::string example = getStringFromValue(getJsonElement(PVF_FIELDS.example, value_in));
-      pc.setExample(example);
-    }
-    catch(TemotoErrorStack e)
-    {
-      //std::cerr << e.what() << '\n';
-    }
-
-    /*
-     * Get allowed values
-     */
-    try
-    {
-      std::string allowed_val = getStringFromValue(getJsonElement(PVF_FIELDS.allowed_values, value_in));
-      pc.addAllowedData(boost::any(allowed_val));
-    }
-    catch(TemotoErrorStack e)
-    {
-      //std::cerr << e.what() << '\n';
-    }
-
-    /*
-     * Get value
-     */ 
-    try
-    {
-      if (type == "string")
-      {
-        std::string value = getStringFromValue(getJsonElement(PVF_FIELDS.value, value_in));
-        pc.setData(boost::any(value));
-      }
-      else if (type == "number")
-      {
-        double value = getNumberFromValue(getJsonElement(PVF_FIELDS.value, value_in));
-        pc.setData(boost::any(value));
-      }
-    }
-    catch(TemotoErrorStack e)
-    {
-      //std::cerr << e.what() << '\n';
-    }
-
-    action_parameters.insert(pc);
+    action[UMRF_FIELDS.output_parameters] = parametersToJson(u.getOutputParameters());
   }
-  else
+
+  // parse parents
+  if (u.getParents().size() != 0)
   {
-    for (const auto& member : value_in.GetObject())
+    action[UMRF_FIELDS.parents] = json::array();
+    for (const auto& parent : u.getParents())
     {
-      std::string member_name;
-      if (parent_member_name.empty())
-      {
-        member_name = member.name.GetString();
-      }
-      else
-      {
-        member_name = parent_member_name + "::" + member.name.GetString();
-      }
-      ActionParameters::Parameters ap_rec = parseParameters(member.value, member_name);
-      action_parameters.insert(ap_rec.begin(), ap_rec.end());
+      json parent_j;
+      parent_j[RELATION_FIELDS.name] = parent.getName();
+      parent_j[RELATION_FIELDS.instance_id] = parent.getInstanceId();
+      parent_j[RELATION_FIELDS.required] = parent.getRequired();
+
+      action[UMRF_FIELDS.parents].push_back(parent_j);
+    }
+  }
+
+  // parse children
+  if (u.getChildren().size() != 0)
+  {
+    action[UMRF_FIELDS.children] = json::array();
+    for (const auto& child : u.getChildren())
+    {
+      json child_j;
+      child_j[RELATION_FIELDS.name] = child.getName();
+      child_j[RELATION_FIELDS.instance_id] = child.getInstanceId();
+      child_j[RELATION_FIELDS.condition] = child.getCondition();
+
+      action[UMRF_FIELDS.children].push_back(child_j);
     }
   }
   
-  return action_parameters;
+  return action;
+}
+
+std::string toUmrfJsonStr(const UmrfNode& u)
+{
+  return toUmrfJson(u).dump(4);
+}
+
+std::string toUmrfGraphJsonStr(const UmrfGraph& ug)
+{
+  /*
+   * TODO: use ordered_json: https://json.nlohmann.me/api/ordered_json/
+   */
+  json ug_json;
+  ug_json[GRAPH_FIELDS.name] = ug.getName();
+  ug_json[GRAPH_FIELDS.description] = ug.getDescription();
+  
+  // parse graph entry
+  ug_json[GRAPH_FIELDS.entry] = json::array();
+  for (const auto& child : ug.getUmrfNode(GRAPH_FIELDS.entry + std::string("_0"))->getChildren())
+  {
+    json child_json;
+    child_json[RELATION_FIELDS.name] = child.getName();
+    child_json[RELATION_FIELDS.instance_id] = std::to_string(child.getInstanceId());
+    ug_json[GRAPH_FIELDS.entry].push_back(child_json);
+  }
+
+  // parse graph exit
+  ug_json[GRAPH_FIELDS.exit] = json::array();
+  for (const auto& parent : ug.getUmrfNode(GRAPH_FIELDS.exit + std::string("_0"))->getParents())
+  {
+    json parent_json;
+    parent_json[RELATION_FIELDS.name] = parent.getName();
+    parent_json[RELATION_FIELDS.required] = parent.getRequired();
+    parent_json[RELATION_FIELDS.instance_id] = std::to_string(parent.getInstanceId());
+    ug_json[GRAPH_FIELDS.exit].push_back(parent_json);
+  }
+
+  // parse the actions
+  ug_json[GRAPH_FIELDS.actions] = json::array();
+  for (const auto& u : ug.getUmrfNodes())
+  {
+    if (u.getName() != GRAPH_FIELDS.entry && u.getName() != GRAPH_FIELDS.exit)
+    {
+      ug_json[GRAPH_FIELDS.actions].push_back(toUmrfJson(u));
+    }
+  }
+
+  return ug_json.dump(4);
 }
 
 ActionParameters::Parameters fromUmrfParametersJsonStr(const std::string umrf_param_json_str)
 {
-  rapidjson::Document json_doc;
-  json_doc.Parse(umrf_param_json_str.c_str());
-  return parseParameters(json_doc, "");
+  return parseParameters("", json::parse(umrf_param_json_str));
 }
 
-std::vector<UmrfNode::Relation> parseRelations(const rapidjson::Value& value_in)
-{
-  if (!value_in.IsArray())
-  {
-    throw CREATE_TEMOTO_ERROR_STACK("The relations field must be an array");
-  }
-
-  std::vector<UmrfNode::Relation> umrf_relations;
-  for (rapidjson::SizeType i=0; i<value_in.Size(); i++)
-  {
-    UmrfNode::Relation relation;
-
-    // Parse the required fields
-    try
-    {
-      relation.name_ = getStringFromValue(getJsonElement(RELATION_FIELDS.name, value_in[i]));
-      relation.instance_id_ = getNumberFromValue(getJsonElement(RELATION_FIELDS.instance_id, value_in[i]));
-    }
-    catch(TemotoErrorStack e)
-    {
-      throw FORWARD_TEMOTO_ERROR_STACK(e);
-    }
-
-    // Parse the not required fields
-    try
-    {
-      relation.required_ = getBoolFromValue(getJsonElement(RELATION_FIELDS.required, value_in[i]));
-    }
-    catch(TemotoErrorStack e)
-    {
-      // Do nothing
-    }
-
-    try
-    {
-      relation.stop_when_received_ = getBoolFromValue(getJsonElement(RELATION_FIELDS.stop_when_received, value_in[i]));
-    }
-    catch(TemotoErrorStack e)
-    {
-      // Do nothing
-    }
-
-    umrf_relations.push_back(relation);
-  }
-
-  return umrf_relations;
-}
-
-void toUmrfJsonValue(rapidjson::Value& from_scratch
-, rapidjson::Document::AllocatorType& allocator
-, const UmrfNode& umrf_node
-, bool as_descriptor = false)
-{
-  /*
-   * Fill the JSON datastructure according to UMRF format
-   */ 
-
-  // Set the name of the UMRF frame
-  rapidjson::Value name_value(rapidjson::kStringType);
-  name_value.SetString(umrf_node.getName().c_str(), umrf_node.getName().size(), allocator);
-  from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.name), name_value, allocator);
-
-  // Set the description
-  if (!umrf_node.getActor().empty())
-  {
-    rapidjson::Value actor_value(rapidjson::kStringType);
-    actor_value.SetString(umrf_node.getActor().c_str(), umrf_node.getActor().size(), allocator);
-    from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.actor), actor_value, allocator);
-  }
-
-  // Set the package name
-  if (!umrf_node.getPackageName().empty())
-  {
-    rapidjson::Value package_name_value(rapidjson::kStringType);
-    package_name_value.SetString(umrf_node.getPackageName().c_str(), umrf_node.getPackageName().size(), allocator);
-    from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.package_name), package_name_value, allocator);
-  }
-
-  // Set the description
-  if (!umrf_node.getDescription().empty())
-  {
-    rapidjson::Value description_value(rapidjson::kStringType);
-    description_value.SetString(umrf_node.getDescription().c_str(), umrf_node.getDescription().size(), allocator);
-    from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.description), description_value, allocator);
-  }
-
-  // Set the instance_id and the state
-  if (as_descriptor)
-  {
-    /* do not add the instance_id and the state field */
-  }
-  else
-  {
-    rapidjson::Value instance_id_value(rapidjson::kNumberType);
-    instance_id_value.SetInt(umrf_node.getInstanceId());
-    from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.instance_id), instance_id_value, allocator);
-
-    rapidjson::Value state_value(rapidjson::kNumberType);
-    state_value.SetInt((unsigned int) umrf_node.getState());
-    from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.state), state_value, allocator);
-  }
-
-  // Set the notation
-  if (!umrf_node.getNotation().empty())
-  {
-    rapidjson::Value notation_value(rapidjson::kStringType);
-    notation_value.SetString(umrf_node.getNotation().c_str(), umrf_node.getNotation().size(), allocator);
-    from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.notation), notation_value, allocator);
-  }
-
-  // Set the effect
-  if (!umrf_node.getType().empty())
-  {
-    rapidjson::Value effect_value(rapidjson::kStringType);
-    effect_value.SetString(umrf_node.getType().c_str(), umrf_node.getType().size(), allocator);
-    from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.effect), effect_value, allocator);
-  }
-
-  // Set the input parameters via a rapidjson object type
-  if (!umrf_node.getInputParameters().empty())
-  {
-    rapidjson::Value input_object(rapidjson::kObjectType);
-    for (const auto& parameter : umrf_node.getInputParameters())
-    {
-      parseParameter(input_object, allocator, parameter);
-    }
-    from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.input_parameters), input_object, allocator);
-  }
-
-  // Set the output parameters via a rapidjson object type
-  if (!umrf_node.getOutputParameters().empty())
-  {
-    rapidjson::Value output_object(rapidjson::kObjectType);
-    for (const auto& parameter : umrf_node.getOutputParameters())
-    {
-      parseParameter(output_object, allocator, parameter);
-    }
-    from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.output_parameters), output_object, allocator);
-  }
-
-  // Set the execute first
-  if (umrf_node.getExecuteFirst())
-  {
-    from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.execute_first), umrf_node.getExecuteFirst(), allocator);
-  }
-
-  // Set children
-  if (!umrf_node.getChildren().empty())
-  {
-    rapidjson::Value children_object(rapidjson::kArrayType);
-    for (const auto& child : umrf_node.getChildren())
-    {
-      rapidjson::Value child_object(rapidjson::kObjectType);
-      //rapidjson::Value child_name_value = rapidjson::StringRef(child.getName().c_str());
-      child_object.AddMember(rapidjson::StringRef(RELATION_FIELDS.name), rapidjson::StringRef(child.getName().c_str()), allocator);
-
-      rapidjson::Value child_instance_id_value(rapidjson::kNumberType);
-      child_instance_id_value.SetInt(child.getInstanceId());
-      child_object.AddMember(rapidjson::StringRef(RELATION_FIELDS.instance_id), child_instance_id_value, allocator);
-
-      children_object.PushBack(child_object, allocator);
-    }
-    from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.children), children_object, allocator);
-  }
-
-  // Set parents
-  if (!umrf_node.getParents().empty())
-  {
-    rapidjson::Value parents_object(rapidjson::kArrayType);
-    for (const auto& parent : umrf_node.getParents())
-    {
-      rapidjson::Value parent_object(rapidjson::kObjectType);
-      
-      // Add name
-      parent_object.AddMember(rapidjson::StringRef(RELATION_FIELDS.name), rapidjson::StringRef(parent.getName().c_str()), allocator);
-
-      // Add instance_id
-      rapidjson::Value parent_instance_id_value(rapidjson::kNumberType);
-      parent_instance_id_value.SetInt(parent.getInstanceId());
-      parent_object.AddMember(rapidjson::StringRef(RELATION_FIELDS.instance_id), parent_instance_id_value, allocator);
-
-      // Add required
-      parent_object.AddMember(rapidjson::StringRef(RELATION_FIELDS.required), parent.getRequired(), allocator);
-
-      // Add stop when received
-      parent_object.AddMember(rapidjson::StringRef(RELATION_FIELDS.stop_when_received), parent.getStopWhenReceived(), allocator);
-
-      parents_object.PushBack(parent_object, allocator);
-    }
-    from_scratch.AddMember(rapidjson::StringRef(UMRF_FIELDS.parents), parents_object, allocator);
-  }
-}
-
-UmrfNode fromUmrfJsonValue(const rapidjson::Value& json_doc, bool as_descriptor = false)
-{
-  // Parse the umrf_node json string to umrf_node datastructure
-  UmrfNode umrf_node;
-
-  /*
-   * Parse the required fields
-   */ 
-  try
-  {
-    std::string name = getStringFromValue(getRootJsonElement(UMRF_FIELDS.name, json_doc));
-    if (!umrf_node.setName(name))
-    {
-      throw CREATE_TEMOTO_ERROR_STACK("Illegal value in name field.");
-    }
-
-    std::string effect = getStringFromValue(getRootJsonElement(UMRF_FIELDS.effect, json_doc));
-    if (!umrf_node.setType(effect))
-    {
-      throw CREATE_TEMOTO_ERROR_STACK("Illegal value in effect field.");
-    }
-
-    // If the UMRF is not used just as a descriptor of an action (as a part of an action package)
-    // then the following fields are required
-    if (as_descriptor)
-    {
-      std::string package_name = getStringFromValue(getRootJsonElement("package_name", json_doc));
-      if (!umrf_node.setPackageName(package_name))
-      {
-        throw CREATE_TEMOTO_ERROR_STACK("Illegal value in package_name field.");
-      }
-    }
-    else
-    {
-      unsigned int instance_id = getNumberFromValue(getRootJsonElement(UMRF_FIELDS.instance_id, json_doc));
-      if (!umrf_node.setInstanceId(instance_id))
-      {
-        throw CREATE_TEMOTO_ERROR_STACK("Illegal value in instance_id field.");
-      }
-    }
-  }
-  catch(TemotoErrorStack e)
-  {
-    throw FORWARD_TEMOTO_ERROR_STACK(e);
-  }
-
-  /*
-   * Parse the not required fields
-   * TODO: If the non-required field exists but is ill formatted, then raise an error
-   */
-
-  // Actor
-  try
-  {
-    std::string actor = getStringFromValue(getRootJsonElement(UMRF_FIELDS.actor, json_doc));
-    if (!umrf_node.setActor(actor))
-    {
-      throw CREATE_TEMOTO_ERROR_STACK("Illegal value in the actor field.");
-    }
-  }
-  catch(const TemotoErrorStack& e)
-  {
-    // ... do nothing
-  }
-
-  // Library path
-  try
-  {
-    std::string lib_path = getStringFromValue(getRootJsonElement(UMRF_FIELDS.library_path, json_doc));
-    umrf_node.setLibraryPath(lib_path);
-  }
-  catch(const TemotoErrorStack& e)
-  {
-    // ... do nothing
-  }
-
-  // Description
-  try
-  {
-    std::string description = getStringFromValue(getRootJsonElement(UMRF_FIELDS.description, json_doc));
-    if (!umrf_node.setDescription(description))
-    {
-      throw CREATE_TEMOTO_ERROR_STACK("Illegal value in description field.");
-    }
-  }
-  catch(const TemotoErrorStack& e)
-  {
-    // ... do nothing
-  }
-
-  // Parents
-  try
-  {
-    bool has_parents = false;
-    try
-    {
-      getRootJsonElement(UMRF_FIELDS.parents, json_doc);
-      has_parents = true;
-    }
-    catch(const std::exception& e)
-    {
-      // ... do nothing
-    }
-    
-    if (has_parents)
-    {
-      std::vector<UmrfNode::Relation> parents = parseRelations(getRootJsonElement(UMRF_FIELDS.parents, json_doc));
-      umrf_node.setParents(parents);
-    }
-  }
-  catch(TemotoErrorStack e)
-  {
-    // If parents field is defined but its ill formated, then throw an error
-    throw FORWARD_TEMOTO_ERROR_STACK(e);
-  }
-
-  // Children
-  try
-  {
-    bool has_children = false;
-    try
-    {
-      getRootJsonElement(UMRF_FIELDS.children, json_doc);
-      has_children = true;
-    }
-    catch(const std::exception& e)
-    {
-      // ... do nothing
-    }
-    
-    if (has_children)
-    {
-      std::vector<UmrfNode::Relation> children = parseRelations(getRootJsonElement(UMRF_FIELDS.children, json_doc));
-      umrf_node.setChildren(children);
-    }
-  }
-  catch(TemotoErrorStack e)
-  {
-    // If children field is defined but its ill formated, then throw an error
-    throw FORWARD_TEMOTO_ERROR_STACK(e);
-  }
-
-  // Input parameters
-  try
-  {
-    ActionParameters::Parameters input_parameters = parseParameters(getRootJsonElement(UMRF_FIELDS.input_parameters, json_doc), "");
-    umrf_node.setInputParameters(input_parameters);
-  }
-  catch(const TemotoErrorStack& e)
-  {
-    // Just print the error
-    //std::cerr << e.what() << '\n';
-  }
-  
-  // Output parameters
-  try
-  {
-    ActionParameters::Parameters output_parameters = parseParameters(getRootJsonElement(UMRF_FIELDS.output_parameters, json_doc), "");
-    umrf_node.setOutputParameters(output_parameters);
-  }
-  catch(const TemotoErrorStack& e)
-  {
-    // Just print the error
-    //std::cerr << e.what() << '\n';
-  }
-
-  // Execute first
-  try
-  {
-    umrf_node.setExecuteFirst(getBoolFromValue(getRootJsonElement(UMRF_FIELDS.execute_first, json_doc)));
-  }
-  catch(const std::exception& e)
-  {
-    // ... do nothing
-  }
-
-  // State
-  try
-  {
-    unsigned int state = getNumberFromValue(getRootJsonElement(UMRF_FIELDS.state, json_doc));
-    umrf_node.setState(UmrfNode::State(state));
-  }
-  catch(const std::exception& e)
-  {
-    // ... do nothing
-  }
-
-  return umrf_node;
-}
-
-UmrfGraph fromUmrfGraphJsonStr(const std::string& umrf_graph_json_str)
-{
-  rapidjson::Document json_doc;
-  json_doc.Parse(umrf_graph_json_str.c_str());
-
-  if (json_doc.HasParseError())
-  {
-    throw CREATE_TEMOTO_ERROR_STACK("The provided JSON string contains syntax errors.");
-  }
-
-  /*
-   * Parse the required fields
-   */
-  std::string graph_name;
-  std::vector<UmrfNode> umrf_actions;
-
-  try
-  {
-    graph_name = getStringFromValue(getRootJsonElement(UMRF_GRAPH_FIELDS.name, json_doc));
-    const rapidjson::Value& umrf_actions_json_value = getRootJsonElement(UMRF_GRAPH_FIELDS.umrf_actions, json_doc);
-    if (!umrf_actions_json_value.IsArray())
-    {
-      throw CREATE_TEMOTO_ERROR_STACK("The umrf_actions field must be an array");
-    }
-
-    for (rapidjson::SizeType i=0; i<umrf_actions_json_value.Size(); i++)
-    {
-      umrf_actions.push_back(fromUmrfJsonValue(umrf_actions_json_value[i]));
-    }
-  }
-  catch(TemotoErrorStack e)
-  {
-    throw FORWARD_TEMOTO_ERROR_STACK(e);
-  }
-
-  // Pass the required fields to a new graph
-  UmrfGraph ug(graph_name, umrf_actions);
-
-  /*
-   * Parse the optional fields
-   */
-  try
-  {
-    std::string graph_description = getStringFromValue(getRootJsonElement(UMRF_GRAPH_FIELDS.description, json_doc));
-    ug.setDescription(graph_description);
-  }
-  catch(TemotoErrorStack e)
-  {
-    /* OPTIONAL FIELD, DO NOTHING */
-  }
-
-  try
-  {
-    unsigned int graph_state = getNumberFromValue(getRootJsonElement(UMRF_GRAPH_FIELDS.state, json_doc));
-    ug.setState(UmrfGraphCommon::State(graph_state));
-  }
-  catch(TemotoErrorStack e)
-  {
-    /* OPTIONAL FIELD, DO NOTHING */
-  }
-
-  return ug;
-}
-
-UmrfNode fromUmrfJsonStr(const std::string& umrf_json_str, bool as_descriptor)
-{
-  rapidjson::Document json_doc;
-  json_doc.Parse(umrf_json_str.c_str());
-
-  if (json_doc.HasParseError())
-  {
-    throw CREATE_TEMOTO_ERROR_STACK("The provided JSON string contains syntax errors.");
-  }
-
-  return fromUmrfJsonValue(json_doc, as_descriptor);
-}
-
-std::string toUmrfGraphJsonStr(const UmrfGraph& umrf_graph)
-{
-  /*
-   * Create UMRF Graph JSON string from scratch.
-   * reference: http://www.thomaswhitton.com/blog/2013/06/28/json-c-plus-plus-examples/
-   */ 
-  rapidjson::Document from_scratch; // document is the root of a json message
-  from_scratch.SetObject(); // define the document as an object rather than an array
-
-  // must pass an allocator when the object may need to allocate memory
-  rapidjson::Document::AllocatorType& allocator = from_scratch.GetAllocator();
-
-  /*
-   * Set the name of the UMRF Graph
-   */ 
-  rapidjson::Value graph_name_value(rapidjson::kStringType);
-  graph_name_value.SetString(umrf_graph.getName().c_str(), umrf_graph.getName().size(), allocator);
-  from_scratch.AddMember(rapidjson::StringRef(UMRF_GRAPH_FIELDS.name), graph_name_value, allocator);
-
-  /*
-   * Set the description of the UMRF Graph
-   */ 
-  rapidjson::Value graph_description_value(rapidjson::kStringType);
-  graph_description_value.SetString(umrf_graph.getDescription().c_str(), umrf_graph.getDescription().size(), allocator);
-  from_scratch.AddMember(rapidjson::StringRef(UMRF_GRAPH_FIELDS.description), graph_description_value, allocator);
-
-  /*
-   * Set the state of the UMRF Graph
-   */
-  rapidjson::Value state_value(rapidjson::kNumberType);
-  state_value.SetInt((unsigned int) umrf_graph.getState());
-  from_scratch.AddMember(rapidjson::StringRef(UMRF_GRAPH_FIELDS.state), state_value, allocator);
-
-  /*
-   * Parse the UMRF Actions
-   */
-  rapidjson::Value umrf_actions_value(rapidjson::kArrayType);
-  for (const auto& umrf_node : umrf_graph.getUmrfNodes())
-  {
-    rapidjson::Value umrf_value(rapidjson::kObjectType);
-    toUmrfJsonValue(umrf_value, allocator, umrf_node);
-    umrf_actions_value.PushBack(umrf_value, allocator);
-  }
-
-  from_scratch.AddMember("umrf_actions", umrf_actions_value, allocator);
-
-  /*
-   * Convert the JSON datastructure to a JSON string
-   */
-  rapidjson::StringBuffer strbuf;
-  rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(strbuf);
-  from_scratch.Accept(writer);
-  return strbuf.GetString();
-}
-
-std::string toUmrfJsonStr(const UmrfNode& umrf_node, bool as_descriptor)
-{
-  /*
-   * Create UMRF JSON string from scratch.
-   */ 
-  rapidjson::Document from_scratch; // document is the root of a json message
-  from_scratch.SetObject(); // define the document as an object rather than an array
-
-  // must pass an allocator when the object may need to allocate memory
-  rapidjson::Document::AllocatorType& allocator = from_scratch.GetAllocator();
-
-  toUmrfJsonValue(from_scratch, allocator, umrf_node, as_descriptor);
-
-  /*
-   * Convert the JSON datastructure to a JSON string
-   */
-  rapidjson::StringBuffer strbuf;
-  rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(strbuf);
-  from_scratch.Accept(writer);
-  return strbuf.GetString();
-}
-
-}// umrf_json_converter namespace
+} // namespace umrf_json
+
+// void printParameters(const ActionParameters params)
+// {
+//   for (const auto& parameter : params)
+//   {
+//     std::cout << "   - name: " << parameter.getName() << std::endl;
+//     std::cout << "     type: " << parameter.getType() << std::endl;
+
+//     if (parameter.getDataSize() != 0)
+//     {
+//       const auto& data = parameter.getData();
+//       if (parameter.getType() == "string")
+//       {
+//         std::cout << "     value: " << boost::any_cast<std::string>(data) << std::endl;
+//       }
+//       else if (parameter.getType() == "strings")
+//       {
+//         std::cout << "     value: ";
+//         for (const auto& data_item : boost::any_cast<std::vector<std::string>>(data))
+//         {
+//           std::cout << data_item << ", ";
+//         }
+//         std::cout << std::endl;
+//       }
+//       else if (parameter.getType() == "number")
+//       {
+//         std::cout << "     value: " << boost::any_cast<double>(data) << std::endl;
+//       }
+//       else if (parameter.getType() == "numbers")
+//       {
+//         std::cout << "     value: ";
+//         for (const auto& data_item : boost::any_cast<std::vector<double>>(data))
+//         {
+//           std::cout << data_item << ", ";
+//         }
+//         std::cout << std::endl;
+//       }
+//       else if (parameter.getType() == "bool")
+//       {
+//         std::cout << "     value: " << boost::any_cast<bool>(data) << std::endl;
+//       }
+//       else if (parameter.getType() == "bools")
+//       {
+//         std::cout << "     value: ";
+//         for (const auto& data_item : boost::any_cast<std::vector<bool>>(data))
+//         {
+//           std::cout << data_item << ", ";
+//         }
+//         std::cout << std::endl;
+//       }
+//     }
+
+//     if (parameter.getAllowedData().size() != 0)
+//     {
+//       std::cout << "     allowed_values: ";
+//       for (const auto& allowed_data : parameter.getAllowedData())
+//       {
+//         if (parameter.getType() == "string")
+//         {
+//           std::cout << boost::any_cast<std::string>(allowed_data) << ", ";
+//         }
+//         else if (parameter.getType() == "number")
+//         {
+//           std::cout << boost::any_cast<double>(allowed_data) << ", ";
+//         }
+//         else if (parameter.getType() == "bool")
+//         {
+//           std::cout << boost::any_cast<bool>(allowed_data) << ", ";
+//         }
+//       }
+//       std::cout << std::endl;
+//     }
+//   }
+// }
+
+// int main()
+// {
+//   std::string ug_json_str = temoto_action_engine::readFromFile("example_b.json");
+//   UmrfGraph ug = umrf_json::fromUmrfGraphJsonStr(ug_json_str);
+//   std::string ug_json_str_new = umrf_json::toUmrfGraphJsonStr(ug);
+
+//   std::cout << "graph_name: " << ug.getName() << std::endl;
+//   std::cout << "graph_description: " << ug.getDescription() << std::endl;
+//   std::cout << "actions: " << std::endl;
+
+//   for (const auto& action : ug.getUmrfNodes())
+//   {
+//     std::cout << " - name: " << action.getName() << std::endl;
+//     std::cout << "   instance_id: " << action.getInstanceId() << std::endl;
+//     std::cout << "   type: " << action.getType() << std::endl;
+
+//     if (!action.getActor().empty())
+//     {
+//       std::cout << "   actor: " << action.getActor() << std::endl;
+//     }
+
+//     if (!action.getDescription().empty())
+//     {
+//       std::cout << "   description: " << action.getDescription() << std::endl;
+//     }
+
+//     if (!action.getParents().empty())
+//     {
+//       std::cout << "   parents: " << std::endl;
+
+//       for (const auto& parent : action.getParents())
+//       {
+//         std::cout << "   - name: " << parent.getName() << std::endl;
+//         std::cout << "     instance_id: " << parent.getInstanceId() << std::endl;
+//         std::cout << "     required: " << parent.getRequired() << std::endl;
+//       }
+//     }
+
+//     if (!action.getChildren().empty())
+//     {
+//       std::cout << "   children: " << std::endl;
+
+//       for (const auto& child : action.getChildren())
+//       {
+//         std::cout << "   - name: " << child.getName() << std::endl;
+//         std::cout << "     instance_id: " << child.getInstanceId() << std::endl;
+//         std::cout << "     condition: " << child.getCondition() << std::endl;
+//       }
+//     }
+
+//     if (!action.getInputParameters().empty())
+//     {
+//       std::cout << "   input_parameters: " << std::endl;
+//       printParameters(action.getInputParameters());
+//     }
+
+//     if (!action.getOutputParameters().empty())
+//     {
+//       std::cout << "   output_parameters: " << std::endl;
+//       printParameters(action.getOutputParameters());
+//     }
+//   }
+
+//   std::cout << std::endl;
+//   std::cout << ug_json_str_new << std::endl;
+// }

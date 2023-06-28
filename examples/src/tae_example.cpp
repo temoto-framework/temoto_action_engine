@@ -86,7 +86,7 @@ try
   std::cout << "Got UMRF graph:\n" << umrf_graph_json_str << std::endl;
 
   // Convert UMRF graph json string to UmrfGraph datastructure
-  UmrfGraph umrf_graph = umrf_json_converter::fromUmrfGraphJsonStr(umrf_graph_json_str);
+  UmrfGraph umrf_graph = umrf_json::fromUmrfGraphJsonStr(umrf_graph_json_str);
 
   // Execute the UMRF graph
   action_engine.executeUmrfGraph(umrf_graph);

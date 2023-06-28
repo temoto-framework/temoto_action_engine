@@ -102,7 +102,7 @@ try
         std::ifstream ifs(umrf_full_path);
         std::string umrf_json_str;
         umrf_json_str.assign(std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>());
-        UmrfNode umrf = umrf_json_converter::fromUmrfJsonStr(umrf_json_str, true);
+        UmrfNode umrf = umrf_json::fromUmrfJsonStr(umrf_json_str);
         
         // Set the library path
         boost::filesystem::path hackdir = *itr;

@@ -310,7 +310,7 @@ std::vector<std::string> ActionEngine::getGraphJsons() const
   {
     for (const auto& umrf_graph_exec : umrf_graph_exec_map_)
     {
-      std::string umrf_graph_json = umrf_json_converter::toUmrfGraphJsonStr(umrf_graph_exec.second->toUmrgGraphCommon()); 
+      std::string umrf_graph_json = umrf_json::toUmrfGraphJsonStr(umrf_graph_exec.second->toUmrgGraphCommon()); 
       umrf_graph_jsons.push_back(umrf_graph_json);     
     }
   }

@@ -49,7 +49,7 @@ UmrfNodeExec::UmrfNodeExec(const UmrfNode& umrf_node)
       return;
     }
 
-     setLatestUmrfJsonStr(umrf_json_converter::toUmrfJsonStr(*this));
+     setLatestUmrfJsonStr(umrf_json::toUmrfJsonStr(*this));
   }
   catch(const std::exception& e)
   {
@@ -74,7 +74,7 @@ UmrfNodeExec::~UmrfNodeExec()
 
 UmrfNode UmrfNodeExec::asUmrfNode() const
 {
-  UmrfNode umrf_node = umrf_json_converter::fromUmrfJsonStr(getLatestUmrfJsonStr());
+  UmrfNode umrf_node = umrf_json::fromUmrfJsonStr(getLatestUmrfJsonStr());
   umrf_node.setState(getState());
   return umrf_node;
   //return UmrfNode(*this);
@@ -216,7 +216,7 @@ void UmrfNodeExec::startNode()
 
     if (!getIsRemoteActor())
     {
-      setLatestUmrfJsonStr(umrf_json_converter::toUmrfJsonStr(action_instance_->getUmrfNodeConst()));
+      setLatestUmrfJsonStr(umrf_json::toUmrfJsonStr(action_instance_->getUmrfNodeConst()));
     }
     setState(State::FINISHED);
   }
