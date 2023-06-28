@@ -9,6 +9,8 @@ if( "$ENV{TEMOTO_COMPILER}" STREQUAL "clang")
   add_compile_options(-Wthread-safety)
 endif()
 
+option(TESTS "Build tests" OFF)
+
 find_package(Boost COMPONENTS filesystem program_options REQUIRED)
 find_package(class_loader REQUIRED)
 find_package(nlohmann_json REQUIRED)
@@ -28,7 +30,7 @@ set(headers
   include
   ${Boost_INCLUDE_DIRS}
   ${class_loader_INCLUDE_DIRS}
-  examples/actions/ta_example_1/include
+  test/actions/ta_example_1/include
 )
 
 set(libraries
@@ -67,9 +69,9 @@ target_link_libraries(${PROJECT_NAME}
 #   nlohmann_json
 # )
 
-# Build the examples
+# Build the test
 add_executable(tae_example
-  examples/src/tae_example.cpp
+  test/src/tae_example.cpp
 )
 target_link_libraries(tae_example
   ${PROJECT_NAME}
@@ -82,8 +84,8 @@ file(MAKE_DIRECTORY
   ${ACTION_LIB_DIR}
 )
 add_library(ta_example_1 SHARED
-  examples/actions/ta_example_1/include/ta_example_1/temoto_action.h
-  examples/actions/ta_example_1/src/ta_example_1.cpp
+  test/actions/ta_example_1/include/ta_example_1/temoto_action.h
+  test/actions/ta_example_1/src/ta_example_1.cpp
 )
 set_target_properties(ta_example_1
   PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${ACTION_LIB_DIR}
@@ -91,10 +93,22 @@ set_target_properties(ta_example_1
 target_link_libraries(ta_example_1
   ${PROJECT_NAME}
 )
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/examples/actions/ta_example_1/ta_example_1.umrf.json
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/test/actions/ta_example_1/ta_example_1.umrf.json
   ${CMAKE_CURRENT_SOURCE_DIR}/build/actions/ta_example_1/ta_example_1.umrf.json COPYONLY
 )
 class_loader_hide_library_symbols(ta_example_1)
+
+
+#
+# TESTS
+#
+if (TESTS)
+  add_subdirectory(test)
+endif()
+
+#
+# INSTALL
+#
 
 # Install the headers and the library
 install(TARGETS ${PROJECT_NAME}
