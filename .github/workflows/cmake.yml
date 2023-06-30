@@ -1,20 +1,19 @@
-name: CMake
+name: CMake, Build, and Tests
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main 
+      - nlohmann-json
   pull_request:
-    branches: [ main ]
+    branches: 
+      - main
 
 env:
-  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
 
 jobs:
   build:
-    # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
-    # You can convert this to a matrix build if you need cross-platform coverage.
-    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
     runs-on: ubuntu-latest
 
     steps:
@@ -32,7 +31,12 @@ jobs:
     - name: mkdir
       run: mkdir build
     - name: cmake build
-      run: cmake -Bbuild -H.
+      run: cmake -Bbuild -H. -DTESTS=ON
     - name: cmake make
       run: cmake --build build/
+
+    # run the tests
+    - name: tests
+      working-directory: ./build/test
+      run: ./tests
       

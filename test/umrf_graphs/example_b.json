@@ -3,23 +3,28 @@
 	"graph_description": "Robot navigates to the valve and observes it",
 	"graph_entry": [
 		{
-			"name": "action_0"
+			"name": "action_0",
+      "instance_id": 0
 		},
 		{
-			"name": "action_1"
+			"name": "action_1",
+      "instance_id": 0
 		},
 		{
-			"name": "action_2"
+			"name": "action_2",
+      "instance_id": 0
 		}
 	],
 	"graph_exit": [
 		{
 			"name": "action_4",
-			"required": true 
+			"required": true,
+      "instance_id": 0 
 		},
 		{
 			"name": "action_5",
-			"required": false
+			"required": false,
+      "instance_id": 0
 		}
 	],
 	"actions": [
@@ -81,17 +86,18 @@
           }
         }
       },
-			"output_parameters": {},
 			"parents": [
 				{
 					"name": "action_3",
-					"instance_id": 0
+					"instance_id": 0,
+          "required":true
 				}
 			],
 			"children": [
 				{
 					"name": "action_3",
-					"instance_id": 0
+					"instance_id": 0,
+          "condition":"always -> run"
 				}
 			]
 		},
@@ -101,12 +107,11 @@
 			"description": "action_1 description",
 			"instance_id": 0,
 			"type": "sync",
-			"input_parameters": {},
-			"output_parameters": {},
 			"children": [
 				{
 					"name": "action_3",
-					"instance_id": 0
+					"instance_id": 0,
+          "condition":"always -> run"
 				}
 			]
 		},
@@ -116,12 +121,11 @@
 			"description": "action_2 description",
 			"instance_id": 0,
 			"type": "sync",
-			"input_parameters": {},
-			"output_parameters": {},
 			"children": [
 				{
 					"name": "action_3",
-					"instance_id": 0
+					"instance_id": 0,
+          "condition":"always -> run"
 				}
 			]
 		},
@@ -130,16 +134,16 @@
 			"description": "action_3 description",
 			"instance_id": 0,
 			"type": "sync",
-			"input_parameters": {},
-			"output_parameters": {},
 			"parents": [
 				{
 					"name": "action_1",
-					"instance_id": 0
+					"instance_id": 0,
+          "required":true
 				},
 				{
 					"name": "action_2",
-					"instance_id": 0
+					"instance_id": 0,
+          "required":true
 				}
 			],
 			"children": [
@@ -165,12 +169,11 @@
 			"description": "action_4 description",
 			"instance_id": 0,
 			"type": "sync",
-			"input_parameters": {},
-			"output_parameters": {},
 			"parents": [
 				{
 					"name": "action_3",
-					"instance_id": 0
+					"instance_id": 0,
+          "required":true
 				}
 			]
 		},
@@ -179,7 +182,6 @@
 			"description": "action_5 description",
 			"instance_id": 0,
 			"type": "sync",
-			"input_parameters": {},
 			"output_parameters": {
         "test_param_3": {
           "pvf_type": "strings"
@@ -191,7 +193,8 @@
 			"parents": [
 				{
 					"name": "action_3",
-					"instance_id": 0
+					"instance_id": 0,
+          "required":true
 				}
 			]
 		}

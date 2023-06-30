@@ -59,7 +59,7 @@ static const struct PvfFields
 static const struct RelationFields
 {
   const char* name = "name";
-  const char* instance_id = "id";
+  const char* instance_id = "instance_id";
   const char* required = "required";
   const char* condition = "condition";
 }RELATION_FIELDS;

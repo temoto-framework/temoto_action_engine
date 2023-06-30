@@ -661,10 +661,15 @@ json toUmrfJson(const UmrfNode& u)
 {
   json action;
   action[UMRF_FIELDS.name] = u.getName();
-  action[UMRF_FIELDS.actor] = u.getActor();
   action[UMRF_FIELDS.instance_id] = u.getInstanceId();
   action[UMRF_FIELDS.description] = u.getDescription();
   action[UMRF_FIELDS.type] = u.getType();
+
+  // parse actor
+  if (!u.getActor().empty())
+  {
+    action[UMRF_FIELDS.actor] = u.getActor();
+  }
 
   // parse input parameters
   if (u.getInputParameters().getParameters().size() != 0)
@@ -731,7 +736,7 @@ std::string toUmrfGraphJsonStr(const UmrfGraph& ug)
   {
     json child_json;
     child_json[RELATION_FIELDS.name] = child.getName();
-    child_json[RELATION_FIELDS.instance_id] = std::to_string(child.getInstanceId());
+    child_json[RELATION_FIELDS.instance_id] = child.getInstanceId();
     ug_json[GRAPH_FIELDS.entry].push_back(child_json);
   }
 
@@ -742,7 +747,7 @@ std::string toUmrfGraphJsonStr(const UmrfGraph& ug)
     json parent_json;
     parent_json[RELATION_FIELDS.name] = parent.getName();
     parent_json[RELATION_FIELDS.required] = parent.getRequired();
-    parent_json[RELATION_FIELDS.instance_id] = std::to_string(parent.getInstanceId());
+    parent_json[RELATION_FIELDS.instance_id] = parent.getInstanceId();
     ug_json[GRAPH_FIELDS.exit].push_back(parent_json);
   }
 

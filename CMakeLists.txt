@@ -60,15 +60,6 @@ target_link_libraries(${PROJECT_NAME}
   ${libraries}
 )
 
-# Build nlohmann json based converter
-# add_executable(nlj_example
-#   src/umrf_json_converter_nlj.cpp
-# )
-# target_link_libraries(nlj_example
-#   ${PROJECT_NAME}
-#   nlohmann_json
-# )
-
 # Build the test
 add_executable(tae_example
   test/src/tae_example.cpp
