@@ -45,22 +45,22 @@ jobs:
       run: sudo cmake --install build/
 
     # run the tests
-    - name: tests install gtest
+    - name: "tests: install gtest"
       run: sudo apt install -yq libgtest-dev
 
-    - name: tests mkdir
+    - name: "tests: mkdir"
       working-directory: ./test
       run: mkdir build
 
-    - name: tests cmake
+    - name: "tests: cmake"
       working-directory: ./test
       run: cmake -Bbuild -H.
 
-    - name: tests build
-      working-directory: ./test
-      run: cmake --build build/
+    - name: "tests: build"
+      working-directory: ./test/build
+      run: cmake --build .
 
-    - name: tests run
+    - name: "tests: run"
       working-directory: ./test/build
       run: ./tests
       

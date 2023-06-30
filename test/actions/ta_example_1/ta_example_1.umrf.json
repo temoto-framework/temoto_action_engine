@@ -1,7 +1,6 @@
 {
     "name": "TaExample1",
-    "package_name": "ta_example_1",
-    "effect": "synchronous",
+    "type": "sync",
     "input_parameters": {
         "distance": {
             "amount": {

@@ -60,35 +60,6 @@ target_link_libraries(${PROJECT_NAME}
   ${libraries}
 )
 
-# Build the examples
-add_executable(tae_example
-  test/src/tae_example.cpp
-)
-target_link_libraries(tae_example
-  ${PROJECT_NAME}
-)
-
-set(ACTION_LIB_DIR
-  ${CMAKE_CURRENT_SOURCE_DIR}/build/actions/ta_example_1/lib/
-)
-file(MAKE_DIRECTORY
-  ${ACTION_LIB_DIR}
-)
-add_library(ta_example_1 SHARED
-  test/actions/ta_example_1/include/ta_example_1/temoto_action.h
-  test/actions/ta_example_1/src/ta_example_1.cpp
-)
-set_target_properties(ta_example_1
-  PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${ACTION_LIB_DIR}
-)
-target_link_libraries(ta_example_1
-  ${PROJECT_NAME}
-)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/test/actions/ta_example_1/ta_example_1.umrf.json
-  ${CMAKE_CURRENT_SOURCE_DIR}/build/actions/ta_example_1/ta_example_1.umrf.json COPYONLY
-)
-class_loader_hide_library_symbols(ta_example_1)
-
 #
 # TESTS
 #
