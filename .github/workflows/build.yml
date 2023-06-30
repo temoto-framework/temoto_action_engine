@@ -1,0 +1,66 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main 
+      - nlohmann-json
+  pull_request:
+    branches: 
+      - main
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
+    # install dependencies
+    - name: install boost
+      run: sudo apt-get update && sudo apt-get install -yq libboost-all-dev
+
+    - name: install class-loader
+      run: sudo apt install -yq libclass-loader-dev
+
+    - name: install nlohmann-json
+      run: sudo apt install -yq nlohmann-json3-dev
+      
+    # build project
+    - name: mkdir
+      run: mkdir build
+
+    - name: cmake build
+      run: cmake -Bbuild -H.
+
+    - name: cmake make
+      run: cmake --build build/
+
+    - name: cmake install
+      run: sudo cmake --install build/
+
+    # run the tests
+    - name: tests install gtest
+      run: sudo apt install -yq libgtest-dev
+
+    - name: tests mkdir
+      working-directory: ./test
+      run: mkdir build
+
+    - name: tests cmake
+      working-directory: ./test
+      run: cmake -Bbuild -H.
+
+    - name: tests build
+      working-directory: ./test
+      run: cmake --build build/
+
+    - name: tests run
+      working-directory: ./test/build
+      run: ./tests
+      

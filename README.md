@@ -8,15 +8,14 @@ This repository contains ROS independent *core C++ implementation* of the TeMoto
 * [UMRF](https://doi.org/10.1145/3522580) (paper published in [THRI](https://dl.acm.org/journal/thri))
 * [TeMoto Framework](https://doi.org/10.1109/ACCESS.2022.3173647) (paper published in [IEEE Access](https://ieeeaccess.ieee.org/))
 
-[![Build Status](https://github.com/temoto-framework/temoto_action_engine/actions/workflows/cmake.yml/badge.svg)](https://github.com/temoto-framework/temoto_action_engine/actions/workflows/cmake.yml)
+[![Build Status](https://github.com/temoto-framework/temoto_action_engine/actions/workflows/build.yml/badge.svg)](https://github.com/temoto-framework/temoto_action_engine/actions/workflows/build.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ## Install Instructions
 
 ```bash
 # Get the dependencies
-sudo apt install libboost-all-dev
-sudo apt install libclass-loader-dev
+sudo apt install libboost-all-dev libclass-loader-dev nlohmann-json3-dev
 
 # Download this repo
 git clone --recursive https://github.com/temoto-framework/temoto_action_engine

@@ -60,7 +60,7 @@ target_link_libraries(${PROJECT_NAME}
   ${libraries}
 )
 
-# Build the test
+# Build the examples
 add_executable(tae_example
   test/src/tae_example.cpp
 )
@@ -89,10 +89,10 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/test/actions/ta_example_1/ta_example_
 )
 class_loader_hide_library_symbols(ta_example_1)
 
-
 #
 # TESTS
 #
+
 if (TESTS)
   add_subdirectory(test)
 endif()
