@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 #include <math.h>
 #include <nlohmann/json.hpp>
-#include <temoto_action_engine/umrf_json_converter.h>
+#include <temoto_action_engine/umrf_json.h>
 #include <temoto_action_engine/umrf_graph_fs.h>
 
 using json = nlohmann::json;

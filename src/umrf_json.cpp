@@ -18,7 +18,7 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
 
-#include "temoto_action_engine/umrf_json_converter.h"
+#include "temoto_action_engine/umrf_json.h"
 #include "temoto_action_engine/umrf_graph_fs.h"
 
 using json = nlohmann::json;
@@ -189,6 +189,28 @@ std::vector<UmrfNode::Relation> parseParentRelations(const json& relations_json)
       throw CREATE_TEMOTO_ERROR_STACK("Invalid 'required':" + std::string(e.what()));
     }
 
+    // GET CONDITION
+    if (relation_json.contains(RELATION_FIELDS.conditions))
+    try
+    {
+      json conditions_json = relations_json.at(RELATION_FIELDS.conditions);
+      if(!conditions_json.is_array())
+      {
+        throw CREATE_TEMOTO_ERROR_STACK("The conditions field must be an array");
+      }
+
+      for (const auto& condition_json : conditions_json)
+      {
+        std::string precondition = condition_json.at(RELATION_FIELDS.precondition);
+        std::string response = condition_json.at(RELATION_FIELDS.response);
+        relation.setCondition(precondition, response);
+      }
+    }
+    catch(const std::exception& e)
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Invalid 'condition':" + std::string(e.what()));
+    }
+
     relations.push_back(relation);
   }
 
@@ -223,17 +245,6 @@ std::vector<UmrfNode::Relation> parseChildRelations(const json& relations_json)
     catch(const std::exception& e)
     {
       throw CREATE_TEMOTO_ERROR_STACK("Invalid 'instance_id': " + std::string(e.what()));
-    }
-
-    // GET CONDITION
-    try
-    {
-      // Default to "always -> run"
-      relation.condition_ = (relation_json.contains(RELATION_FIELDS.condition)) ? relation_json.at(RELATION_FIELDS.condition) : "always -> run";
-    }
-    catch(const std::exception& e)
-    {
-      throw CREATE_TEMOTO_ERROR_STACK("Invalid 'condition':" + std::string(e.what()));
     }
 
     relations.push_back(relation);
@@ -394,7 +405,6 @@ try
   {
     UmrfNode::Relation r_entry, r_exit;
 
-    r_entry.condition_ = "always -> run";
     r_entry.name_ = umrf_actions.front().getName();
     r_entry.instance_id_ = umrf_actions.front().getInstanceId();
     graph_entry.push_back(r_entry);

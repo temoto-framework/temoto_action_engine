@@ -53,7 +53,7 @@ add_library(${PROJECT_NAME} SHARED
   src/action_match_finder.cpp
   src/action_engine.cpp
   src/arg_parser.cpp
-  src/umrf_json_converter.cpp
+  src/umrf_json.cpp
   src/umrf_graph_fs.cpp
 )
 target_link_libraries(${PROJECT_NAME}

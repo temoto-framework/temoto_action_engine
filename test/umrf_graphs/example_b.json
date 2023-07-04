@@ -1,40 +1,40 @@
 {
-	"graph_name": "robot go observe the valve [x=-93.6; y=11.0; yaw=-0.85]",
-	"graph_description": "Robot navigates to the valve and observes it",
-	"graph_entry": [
-		{
-			"name": "action_0",
+  "graph_name": "robot go observe the valve [x=-93.6; y=11.0; yaw=-0.85]",
+  "graph_description": "Robot navigates to the valve and observes it",
+  "graph_entry": [
+    {
+      "name": "action_0",
       "instance_id": 0
-		},
-		{
-			"name": "action_1",
+    },
+    {
+      "name": "action_1",
       "instance_id": 0
-		},
-		{
-			"name": "action_2",
+    },
+    {
+      "name": "action_2",
       "instance_id": 0
-		}
-	],
-	"graph_exit": [
-		{
-			"name": "action_4",
-			"required": true,
+    }
+  ],
+  "graph_exit": [
+    {
+      "name": "action_4",
+      "required": true,
       "instance_id": 0 
-		},
-		{
-			"name": "action_5",
-			"required": false,
+    },
+    {
+      "name": "action_5",
+      "required": false,
       "instance_id": 0
-		}
-	],
-	"actions": [
-		{
-			"name": "action_0",
+    }
+  ],
+  "actions": [
+    {
+      "name": "action_0",
       "actor": "Actor A",
-			"description": "action_0 description",
-			"instance_id": 0,
-			"type": "sync",
-			"input_parameters": {
+      "description": "action_0 description",
+      "instance_id": 0,
+      "type": "sync",
+      "input_parameters": {
         "test_param_1": {
           "pvf_type": "string",
           "pvf_allowed_values": [
@@ -86,103 +86,103 @@
           }
         }
       },
-			"parents": [
-				{
-					"name": "action_3",
-					"instance_id": 0,
+      "parents": [
+        {
+          "name": "action_3",
+          "instance_id": 0,
           "required":true
-				}
-			],
-			"children": [
-				{
-					"name": "action_3",
-					"instance_id": 0,
+        }
+      ],
+      "children": [
+        {
+          "name": "action_3",
+          "instance_id": 0,
           "condition":"always -> run"
-				}
-			]
-		},
-		{
-			"name": "action_1",
+        }
+      ]
+    },
+    {
+      "name": "action_1",
       "actor": "Actor B",
-			"description": "action_1 description",
-			"instance_id": 0,
-			"type": "sync",
-			"children": [
-				{
-					"name": "action_3",
-					"instance_id": 0,
+      "description": "action_1 description",
+      "instance_id": 0,
+      "type": "sync",
+      "children": [
+        {
+          "name": "action_3",
+          "instance_id": 0,
           "condition":"always -> run"
-				}
-			]
-		},
-		{
-			"name": "action_2",
+        }
+      ]
+    },
+    {
+      "name": "action_2",
       "actor": "Actor C",
-			"description": "action_2 description",
-			"instance_id": 0,
-			"type": "sync",
-			"children": [
-				{
-					"name": "action_3",
-					"instance_id": 0,
+      "description": "action_2 description",
+      "instance_id": 0,
+      "type": "sync",
+      "children": [
+        {
+          "name": "action_3",
+          "instance_id": 0,
           "condition":"always -> run"
-				}
-			]
-		},
-		{
-			"name": "action_3",
-			"description": "action_3 description",
-			"instance_id": 0,
-			"type": "sync",
-			"parents": [
-				{
-					"name": "action_1",
-					"instance_id": 0,
+        }
+      ]
+    },
+    {
+      "name": "action_3",
+      "description": "action_3 description",
+      "instance_id": 0,
+      "type": "sync",
+      "parents": [
+        {
+          "name": "action_1",
+          "instance_id": 0,
           "required":true
-				},
-				{
-					"name": "action_2",
-					"instance_id": 0,
+        },
+        {
+          "name": "action_2",
+          "instance_id": 0,
           "required":true
-				}
-			],
-			"children": [
-				{
-					"name": "action_0",
-					"instance_id": 0,
-					"condition": "always -> stop"
-				},
-				{
-					"name": "action_4",
-					"instance_id": 0,
-					"condition": "on_failure -> run"
-				},
-				{
-					"name": "action_5",
-					"instance_id": 0,
-					"condition": "on_success -> run"
-				}
-			]
-		},
-		{
-			"name": "action_4",
-			"description": "action_4 description",
-			"instance_id": 0,
-			"type": "sync",
-			"parents": [
-				{
-					"name": "action_3",
-					"instance_id": 0,
+        }
+      ],
+      "children": [
+        {
+          "name": "action_0",
+          "instance_id": 0,
+          "condition": "always -> stop"
+        },
+        {
+          "name": "action_4",
+          "instance_id": 0,
+          "condition": "on_failure -> run"
+        },
+        {
+          "name": "action_5",
+          "instance_id": 0,
+          "condition": "on_success -> run"
+        }
+      ]
+    },
+    {
+      "name": "action_4",
+      "description": "action_4 description",
+      "instance_id": 0,
+      "type": "sync",
+      "parents": [
+        {
+          "name": "action_3",
+          "instance_id": 0,
           "required":true
-				}
-			]
-		},
-		{
-			"name": "action_5",
-			"description": "action_5 description",
-			"instance_id": 0,
-			"type": "sync",
-			"output_parameters": {
+        }
+      ]
+    },
+    {
+      "name": "action_5",
+      "description": "action_5 description",
+      "instance_id": 0,
+      "type": "sync",
+      "output_parameters": {
         "test_param_3": {
           "pvf_type": "strings"
         },
@@ -190,13 +190,13 @@
           "pvf_type": "numbers"
         }
       },
-			"parents": [
-				{
-					"name": "action_3",
-					"instance_id": 0,
+      "parents": [
+        {
+          "name": "action_3",
+          "instance_id": 0,
           "required":true
-				}
-			]
-		}
-	]
+        }
+      ]
+    }
+  ]
 }

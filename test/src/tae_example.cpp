@@ -18,7 +18,7 @@
 #include <chrono>
 #include <fstream>
 #include "temoto_action_engine/action_engine.h"
-#include "temoto_action_engine/umrf_json_converter.h"
+#include "temoto_action_engine/umrf_json.h"
 #include <boost/program_options.hpp>
 
 namespace po = boost::program_options;

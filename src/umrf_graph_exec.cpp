@@ -338,6 +338,8 @@ try
   
   /*
    * Check which children are required to stop and wich are required to start
+   *
+   * TODO: this is where the new relation/condition magic will happen
    */
   std::vector<std::string> children_to_start;
   std::vector<std::string> children_to_stop;

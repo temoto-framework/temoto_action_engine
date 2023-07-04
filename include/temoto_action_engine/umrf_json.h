@@ -14,8 +14,8 @@
  * limitations under the License.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef TEMOTO_ACTION_ENGINE__UMRF_JSON_CONVERTER
-#define TEMOTO_ACTION_ENGINE__UMRF_JSON_CONVERTER
+#ifndef TEMOTO_ACTION_ENGINE__umrf_json
+#define TEMOTO_ACTION_ENGINE__umrf_json
 
 #include "temoto_action_engine/umrf_node.h"
 #include "temoto_action_engine/umrf_graph.h"
@@ -61,7 +61,9 @@ static const struct RelationFields
   const char* name = "name";
   const char* instance_id = "instance_id";
   const char* required = "required";
-  const char* condition = "condition";
+  const char* conditions = "conditions";
+  const char* precondition = "precondition";
+  const char* response = "response";
 }RELATION_FIELDS;
 
 const std::vector<std::string> NATIVE_JSON_TYPES{

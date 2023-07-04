@@ -56,6 +56,14 @@ public:
    */
   struct Relation
   {
+    // struct Condition
+    // {
+    //   std::string precondition;
+    //   std::string response;
+    // };
+
+    typedef std::map<std::string, std::string> Conditions;
+
     Relation()
     {}
 
@@ -64,8 +72,10 @@ public:
     , instance_id_(instance_id)
     , required_(required)
     , received_(false)
-    , stop_when_received_(false)
-    , condition_("always->run")
+    , conditions_({
+      {"on_true", "run"},
+      {"on_false", "run"},
+      {"on_error", "bypass"}})
     {}
 
     Relation(const Relation& r_in)
@@ -73,8 +83,7 @@ public:
     , instance_id_(r_in.getInstanceId())
     , required_(r_in.getRequired())
     , received_(r_in.getReceived())
-    , stop_when_received_(r_in.stop_when_received_)
-    , condition_(r_in.condition_)
+    , conditions_(r_in.conditions_)
     {}
 
     void operator=(const Relation& r_in)
@@ -83,8 +92,7 @@ public:
       instance_id_ = r_in.getInstanceId();
       required_ = r_in.getRequired();
       received_ = r_in.getReceived();
-      stop_when_received_ = r_in.getStopWhenReceived();
-      condition_ = r_in.getCondition();
+      conditions_ = r_in.getConditions();
     }
 
     bool operator==(const Relation& r_in) const
@@ -112,19 +120,28 @@ public:
       return received_;
     }
 
-    bool getStopWhenReceived() const
-    {
-      return stop_when_received_;
-    }
-
     std::string getFullName() const
     {
       return name_ + "_" + std::to_string(instance_id_);
     }
 
-    std::string getCondition() const
+    const Conditions& getConditions() const
     {
-      return condition_;
+      return conditions_;
+    }
+
+    std::string getResponse(const std::string& precondition) const
+    {
+      return conditions_.at(precondition);
+    }
+
+    void setCondition(const std::string& precondition, const std::string& response)
+    {
+      if (std::find(valid_conditions_responses_.begin(), valid_conditions_responses_.end(), response) == valid_conditions_responses_.end())
+      {
+        throw CREATE_TEMOTO_ERROR_STACK("Invalid 'response':" + response); 
+      }
+      conditions_.at(precondition) = response;
     }
 
     bool empty() const
@@ -133,21 +150,34 @@ public:
     }
 
     const static inline std::vector<std::string> valid_preconditions_{
-      "always",
+      "on_error",
       "on_success", 
       "on_failure"};
-    
-    const static inline std::vector<std::string> valid_condition_responses_{
+
+    /**
+     * @brief List of responses an action can have for given preconditions
+     * 
+     * Run    - Run the action
+     * Pause  - Pause if running, ignore otherwise
+     * Stop   - Stop if running, ignore otherwise
+     * Reset  - Reset if running, ignore otherwise
+     * Bypass - Skip the action and run its children instead by passing the same return value
+     * Ignore - Do nothing
+     * 
+     */
+    const static inline std::vector<std::string> valid_conditions_responses_{
       "run",
       "pause",
-      "stop"};
+      "stop",
+      "reset",
+      "bypass",
+      "ignore"};
 
     std::string name_;
     unsigned int instance_id_;
     bool required_; // Indicates whether the child can only execute once the parent has finished the execution  
     bool received_; // Indicates whether the parent has finished execution. Applies only to parent-type relations
-    bool stop_when_received_; // DEPRECATED, replaced with "condition": Indicates whether the parent should make the child stop. Applies only to parent-type relations
-    std::string condition_; // Outlines the condition of execution
+    std::map<std::string, std::string> conditions_; // Outlines the conditions of execution
   };
 
   UmrfNode();

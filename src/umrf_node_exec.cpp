@@ -17,7 +17,7 @@
 #include "temoto_action_engine/umrf_node_exec.h"
 #include "temoto_action_engine/basic_timer.h"
 #include "temoto_action_engine/messaging.h"
-#include "temoto_action_engine/umrf_json_converter.h"
+#include "temoto_action_engine/umrf_json.h"
 
 UmrfNodeExec::UmrfNodeExec(const UmrfNode& umrf_node)
 : UmrfNode(umrf_node)

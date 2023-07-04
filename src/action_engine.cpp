@@ -16,7 +16,7 @@
 
 #include "temoto_action_engine/action_engine.h"
 #include "temoto_action_engine/messaging.h"
-#include "temoto_action_engine/umrf_json_converter.h"
+#include "temoto_action_engine/umrf_json.h"
 
 ActionEngine::ActionEngine()
 : stop_monitoring_thread_(false)
