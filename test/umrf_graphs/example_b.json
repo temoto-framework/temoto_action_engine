@@ -90,14 +90,18 @@
         {
           "name": "action_3",
           "instance_id": 0,
-          "required":true
+          "required": true,
+          "conditions": [
+            "on_true -> stop",
+            "on_false -> stop",
+            "on_error -> bypass"
+          ]
         }
       ],
       "children": [
         {
           "name": "action_3",
-          "instance_id": 0,
-          "condition":"always -> run"
+          "instance_id": 0
         }
       ]
     },
@@ -110,8 +114,7 @@
       "children": [
         {
           "name": "action_3",
-          "instance_id": 0,
-          "condition":"always -> run"
+          "instance_id": 0
         }
       ]
     },
@@ -124,8 +127,7 @@
       "children": [
         {
           "name": "action_3",
-          "instance_id": 0,
-          "condition":"always -> run"
+          "instance_id": 0
         }
       ]
     },
@@ -138,29 +140,36 @@
         {
           "name": "action_1",
           "instance_id": 0,
-          "required":true
+          "required":true,
+          "conditions": [
+            "on_true -> run",
+            "on_false -> run",
+            "on_error -> bypass"
+          ]
         },
         {
           "name": "action_2",
           "instance_id": 0,
-          "required":true
+          "required": true,
+          "conditions": [
+            "on_true -> run",
+            "on_false -> run",
+            "on_error -> bypass"
+          ]
         }
       ],
       "children": [
         {
           "name": "action_0",
-          "instance_id": 0,
-          "condition": "always -> stop"
+          "instance_id": 0
         },
         {
           "name": "action_4",
-          "instance_id": 0,
-          "condition": "on_failure -> run"
+          "instance_id": 0
         },
         {
           "name": "action_5",
-          "instance_id": 0,
-          "condition": "on_success -> run"
+          "instance_id": 0
         }
       ]
     },
@@ -173,7 +182,12 @@
         {
           "name": "action_3",
           "instance_id": 0,
-          "required":true
+          "required":true,
+          "conditions": [
+            "on_true -> ignore",
+            "on_false -> stop",
+            "on_error -> bypass"
+          ]
         }
       ]
     },
@@ -194,7 +208,12 @@
         {
           "name": "action_3",
           "instance_id": 0,
-          "required":true
+          "required":true,
+          "conditions": [
+            "on_true -> stop",
+            "on_false -> ignore",
+            "on_error -> bypass"
+          ]
         }
       ]
     }

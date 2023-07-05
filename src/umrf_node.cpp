@@ -274,21 +274,6 @@ void UmrfNode::setParentReceived(const UmrfNode::Relation& parent)
   }
 }
 
-bool UmrfNode::getStopWhenReceived(const UmrfNode::Relation& parent) const
-{
-  LOCK_GUARD_TYPE guard_parents(parents_rw_mutex_);
-  auto parent_it = std::find(parents_.begin(), parents_.end(), parent);
-
-  if (parent_it != parents_.end())
-  {
-    return parent_it->getStopWhenReceived();
-  }
-  else
-  {
-    throw CREATE_TEMOTO_ERROR_STACK("The parent does not exist");
-  }
-}
-
 void UmrfNode::setIsRemoteActor(bool is_remote_actor)
 {
   is_remote_actor_ = is_remote_actor;

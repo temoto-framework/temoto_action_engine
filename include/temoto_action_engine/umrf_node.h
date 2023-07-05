@@ -65,6 +65,10 @@ public:
     typedef std::map<std::string, std::string> Conditions;
 
     Relation()
+    : conditions_({
+      {"on_true", "run"},
+      {"on_false", "run"},
+      {"on_error", "bypass"}})
     {}
 
     Relation(const std::string& name, const unsigned int& instance_id, bool required = true)
@@ -137,10 +141,16 @@ public:
 
     void setCondition(const std::string& precondition, const std::string& response)
     {
+      if (std::find(valid_preconditions_.begin(), valid_preconditions_.end(), precondition) == valid_preconditions_.end())
+      {
+        throw CREATE_TEMOTO_ERROR_STACK("Invalid 'precondition': " + precondition); 
+      }
+
       if (std::find(valid_conditions_responses_.begin(), valid_conditions_responses_.end(), response) == valid_conditions_responses_.end())
       {
-        throw CREATE_TEMOTO_ERROR_STACK("Invalid 'response':" + response); 
+        throw CREATE_TEMOTO_ERROR_STACK("Invalid 'response': " + response); 
       }
+
       conditions_.at(precondition) = response;
     }
 
@@ -150,9 +160,9 @@ public:
     }
 
     const static inline std::vector<std::string> valid_preconditions_{
-      "on_error",
-      "on_success", 
-      "on_failure"};
+      "on_true", 
+      "on_false",
+      "on_error"};
 
     /**
      * @brief List of responses an action can have for given preconditions
@@ -236,8 +246,6 @@ public:
   bool requiredParentsFinished() const;
 
   void setParentReceived(const UmrfNode::Relation& parent);
-
-  bool getStopWhenReceived(const UmrfNode::Relation& parent) const;
 
   void setIsRemoteActor(bool is_remote_actor);
   bool getIsRemoteActor() const;

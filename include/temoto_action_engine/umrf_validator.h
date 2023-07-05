@@ -20,6 +20,13 @@
 #include "umrf_node.h"
 #include "umrf_graph.h"
 
+/**
+ * @brief Checks for conflicting configurations, such as
+ * different parents of a child action having conficting execution conditions
+ * TODO
+ * 
+ */
+
 namespace umrf_validator
 {
 

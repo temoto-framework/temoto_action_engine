@@ -14,6 +14,7 @@
  * limitations under the License.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+#include <boost/algorithm/string.hpp>
 #include <fstream>
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -193,7 +194,7 @@ std::vector<UmrfNode::Relation> parseParentRelations(const json& relations_json)
     if (relation_json.contains(RELATION_FIELDS.conditions))
     try
     {
-      json conditions_json = relations_json.at(RELATION_FIELDS.conditions);
+      json conditions_json = relation_json.at(RELATION_FIELDS.conditions);
       if(!conditions_json.is_array())
       {
         throw CREATE_TEMOTO_ERROR_STACK("The conditions field must be an array");
@@ -201,8 +202,14 @@ std::vector<UmrfNode::Relation> parseParentRelations(const json& relations_json)
 
       for (const auto& condition_json : conditions_json)
       {
-        std::string precondition = condition_json.at(RELATION_FIELDS.precondition);
-        std::string response = condition_json.at(RELATION_FIELDS.response);
+        std::string condition_str = condition_json.get<std::string>();
+        boost::erase_all(condition_str, " ");
+
+        std::vector<std::string> tokens;
+        boost::split(tokens, condition_str, boost::is_any_of("->"));
+
+        std::string precondition = tokens.at(0);
+        std::string response = tokens.at(2);
         relation.setCondition(precondition, response);
       }
     }
@@ -704,6 +711,13 @@ json toUmrfJson(const UmrfNode& u)
       parent_j[RELATION_FIELDS.instance_id] = parent.getInstanceId();
       parent_j[RELATION_FIELDS.required] = parent.getRequired();
 
+      json conditions_j = json::array();
+      for (const auto& precondition : UmrfNode::Relation::valid_preconditions_)
+      {
+        conditions_j.push_back(precondition + " -> " + parent.getResponse(precondition));
+      }
+
+      parent_j[RELATION_FIELDS.conditions] = conditions_j;
       action[UMRF_FIELDS.parents].push_back(parent_j);
     }
   }
@@ -717,7 +731,6 @@ json toUmrfJson(const UmrfNode& u)
       json child_j;
       child_j[RELATION_FIELDS.name] = child.getName();
       child_j[RELATION_FIELDS.instance_id] = child.getInstanceId();
-      child_j[RELATION_FIELDS.condition] = child.getCondition();
 
       action[UMRF_FIELDS.children].push_back(child_j);
     }

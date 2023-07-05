@@ -346,15 +346,16 @@ try
 
   for (const auto& child_node_name : child_node_names)
   {
-    if (graph_nodes_map_.at(child_node_name)->getStopWhenReceived(parent_node->asRelation()))
-    {
-      children_to_stop.push_back(child_node_name);
-    }
-    else
-    {
-      children_to_start.push_back(child_node_name);
-      graph_nodes_map_.at(child_node_name)->setParentReceived(parent_node->asRelation());
-    }
+    // TODO
+    // if (graph_nodes_map_.at(child_node_name)->getStopWhenReceived(parent_node->asRelation()))
+    // {
+    //   children_to_stop.push_back(child_node_name);
+    // }
+    // else
+    // {
+    //   children_to_start.push_back(child_node_name);
+    //   graph_nodes_map_.at(child_node_name)->setParentReceived(parent_node->asRelation());
+    // }
   }
 
   // If the parent has output parameters then pass them to the children
