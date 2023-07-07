@@ -63,7 +63,9 @@ public:
    */
   void startNodes(const std::vector<std::string> umrf_node_names, bool all_ready_requrired);
 
-  void startChildNodes(const std::string& parent_node_name, const ActionParameters& parent_action_parameters);
+  void startChildNodes(const std::string& parent_node_name
+  , const ActionParameters& parent_action_parameters
+  , bool result);
 
   void notifyFinished(const std::string& node_name);
 

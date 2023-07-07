@@ -30,30 +30,6 @@ public:
     return getUmrfNodeConst().getFullName();
   }
 
-  /**
-   * @brief Wraps the executeTemotoAction and converts TeMoto specific errors to action engine errors.
-   * 
-   */
-  void executeAction()
-  {
-    try
-    {
-      executeTemotoAction();
-    }
-    catch(TemotoErrorStack e)
-    {
-      throw FORWARD_TEMOTO_ERROR_STACK(e);
-    }
-    catch(const std::exception& e)
-    {
-      throw CREATE_TEMOTO_ERROR_STACK(e.what());
-    }
-    catch(...)
-    {
-      throw CREATE_TEMOTO_ERROR_STACK("Caught an unhandled exception");
-    }
-  }
-
   virtual void updateParameters(const ActionParameters& parameters_in)
   {
     for (const auto& p_in : parameters_in)
@@ -81,12 +57,6 @@ public:
       getUmrfNode().getInputParametersNc().setParameterData(p_in.getName(), param_data);
     }
   }
-
-  /**
-   * @brief Has to be implemented by an action.
-   * 
-   */
-  virtual void executeTemotoAction() = 0;
 };
 
 #endif

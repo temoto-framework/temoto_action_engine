@@ -308,12 +308,14 @@ void UmrfGraphExec::startNodes(const std::vector<std::string> umrf_node_names, b
   }
 }
 
-void UmrfGraphExec::startChildNodes(const std::string& parent_node_name, const ActionParameters& parent_action_parameters)
+void UmrfGraphExec::startChildNodes(const std::string& parent_node_name
+, const ActionParameters& parent_action_parameters
+, bool result)
 try
 {
   /*
-    * Pass the output parameters of the parent action to child actions
-    */
+   * Pass the output parameters of the parent action to child actions
+   */
 
   if (getState() == State::STOP_REQUESTED)
   {
@@ -356,6 +358,13 @@ try
     //   children_to_start.push_back(child_node_name);
     //   graph_nodes_map_.at(child_node_name)->setParentReceived(parent_node->asRelation());
     // }
+
+    // "run",
+    // "pause",
+    // "stop",
+    // "reset",
+    // "bypass",
+    // "ignore"};
   }
 
   // If the parent has output parameters then pass them to the children

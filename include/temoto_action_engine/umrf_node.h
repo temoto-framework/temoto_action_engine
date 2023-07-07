@@ -24,6 +24,14 @@ class UmrfNode : public Umrf
 {
 public:
 
+  /// Defines what the underlying implementation for this umrf is
+  enum class ActorExecTraits
+  {
+    LOCAL,  // A locally executable action 
+    REMOTE, // An action that is executed on a remote system
+    GRAPH   // A sub-graph
+  };
+
   /// Defines all possible states for the action handle
   enum class State
   {
@@ -178,8 +186,8 @@ public:
     const static inline std::vector<std::string> valid_conditions_responses_{
       "run",
       "pause",
+      "restart",
       "stop",
-      "reset",
       "bypass",
       "ignore"};
 
@@ -201,7 +209,6 @@ public:
   void operator=(const UmrfNode& un)
   {
     this->Umrf::operator=(un);
-    package_name_ = un.package_name_;
     instance_id_ = un.instance_id_;
     library_path_ = un.library_path_;
     parents_ = un.parents_;
@@ -209,11 +216,8 @@ public:
     full_name_ = un.full_name_;
     execute_first_ = un.execute_first_;
     state_ = un.state_;
-    is_remote_actor_ = un.is_remote_actor_;
+    actor_exec_traits_ = un.actor_exec_traits_;
   }
-
-  const std::string& getPackageName() const;
-  bool setPackageName(const std::string& name);
 
   const unsigned int& getInstanceId() const;
   bool setInstanceId(const unsigned int& instance_id);
@@ -247,8 +251,8 @@ public:
 
   void setParentReceived(const UmrfNode::Relation& parent);
 
-  void setIsRemoteActor(bool is_remote_actor);
-  bool getIsRemoteActor() const;
+  void setActorExecTraits(ActorExecTraits traits);
+  bool getActorExecTraits() const;
 
 protected:
 
@@ -257,9 +261,6 @@ protected:
 
   mutable MUTEX_TYPE children_rw_mutex_;
   GUARDED_VARIABLE(std::vector<Relation> children_, children_rw_mutex_);
-
-  mutable MUTEX_TYPE package_name_rw_mutex_;
-  GUARDED_VARIABLE(std::string package_name_, package_name_rw_mutex_);
 
   mutable MUTEX_TYPE instance_id_rw_mutex_;
   GUARDED_VARIABLE(unsigned int instance_id_, instance_id_rw_mutex_);
@@ -276,7 +277,7 @@ protected:
   mutable MUTEX_TYPE execute_first_rw_mutex_;
   GUARDED_VARIABLE(bool execute_first_, execute_first_rw_mutex_);
 
-  bool is_remote_actor_;
+  ActorExecTraits actor_exec_traits_;
 };
 
 #endif

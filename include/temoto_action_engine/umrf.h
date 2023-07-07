@@ -99,9 +99,6 @@ protected:
   mutable MUTEX_TYPE_R actor_rw_mutex_;
   GUARDED_VARIABLE(std::string actor_, actor_rw_mutex_);
 
-  mutable MUTEX_TYPE_R notation_rw_mutex_;
-  GUARDED_VARIABLE(std::string notation_, notation_rw_mutex_);
-
   mutable MUTEX_TYPE_R type_rw_mutex_;
   GUARDED_VARIABLE(std::string type_, type_rw_mutex_);
 

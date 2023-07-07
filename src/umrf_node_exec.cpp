@@ -22,6 +22,7 @@
 UmrfNodeExec::UmrfNodeExec(const UmrfNode& umrf_node)
 : UmrfNode(umrf_node)
 {
+  if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
   try
   {
     LOCK_GUARD_TYPE guard_class_loader(class_loader_rw_mutex_);
@@ -29,18 +30,14 @@ UmrfNodeExec::UmrfNodeExec(const UmrfNode& umrf_node)
 
     // Check if the classloader actually contains the required action
     std::vector<std::string> classes_in_classloader = class_loader_->getAvailableClasses<ActionBase>();
-    bool class_found = false;
+    bool class_found = [&]{
     for (const auto& class_in_classloader : classes_in_classloader)
     {
-      // TODO: If it is actually a remotely executed action, then get the name of actor
-      // synchronizer class name, which is embedded into the description. Why todo? It's ugly
-      // to obfuscate info like this
-      if (class_in_classloader == getName() || class_in_classloader == getDescription())
+      if (class_in_classloader == getName())
       {
-        class_found = true;
-        break;
+        return true;
       }
-    }
+    }}();
 
     if (!class_found)
     {
@@ -49,12 +46,20 @@ UmrfNodeExec::UmrfNodeExec(const UmrfNode& umrf_node)
       return;
     }
 
-     setLatestUmrfJsonStr(umrf_json::toUmrfJsonStr(*this));
+    setLatestUmrfJsonStr(umrf_json::toUmrfJsonStr(*this));
   }
   catch(const std::exception& e)
   {
     setState(State::ERROR);
     std::cerr << "Failed to initialize the Action Handle because: " << e.what() << '\n';
+  }
+  else if (getActorExecTraits() == UmrfNode::ActorExecTraits::REMOTE)
+  {
+    // TODO
+  }
+  else if (getActorExecTraits() == UmrfNode::ActorExecTraits::GRAPH)
+  {
+    // TODO
   }
 }
 
@@ -183,7 +188,7 @@ try
   {
     throw CREATE_TEMOTO_ERROR_STACK("Cannot execute the action because it's not in READY state");
   }
-  action_instance_->initializeAction();
+  action_instance_->onInit();
 }
 catch(TemotoErrorStack e)
 {
@@ -203,15 +208,17 @@ void UmrfNodeExec::startNode()
     error_messages_ = CREATE_TEMOTO_ERROR_STACK("Cannot execute the action because it's not in READY or FINISHED state");
     return;
   }
+
+  std::string result;
   try
   {
     setState(State::RUNNING);
-    action_instance_->executeActionWrapped(); // Blocking call, returns when finished
+    result = (action_instance_->executeActionWrapped()) ? "on_true" : "on_false"; // Blocking call, returns when finished
 
     // If the action finished without external interruption (stop request) then start the child nodes
     if (getState() == State::RUNNING)
     {
-      start_child_nodes_cb_(getFullName(), action_instance_->getUmrfNodeConst().getOutputParameters());
+      start_child_nodes_cb_(getFullName(), action_instance_->getUmrfNodeConst().getOutputParameters(), result);
     }
 
     if (!getIsRemoteActor())
@@ -222,6 +229,7 @@ void UmrfNodeExec::startNode()
   }
   catch(TemotoErrorStack e)
   {
+    // TODO: implement the behavior for "on_error" result
     setState(State::ERROR);
     error_messages_ = FORWARD_TEMOTO_ERROR_STACK(e);
   }
@@ -333,4 +341,149 @@ void UmrfNodeExec::setLatestUmrfJsonStr(const std::string& latest_umrf_json_str)
 {
   LOCK_GUARD_TYPE guard_latest_umrf_json_string(latest_umrf_json_str_rw_mutex_);
   latest_umrf_json_str_ = latest_umrf_json_str;
+}
+
+
+// WIP: NEW IMPLEMENTATION
+
+
+void UmrfNodeExec::run()
+{
+  // TODO: If the action is running (blocking), and the action instance is guarded
+  // with a mutex at the same time, then the action cannot be stopped because the mutex is locked
+  // while the action is running
+  //LOCK_GUARD_TYPE guard_action_instance(action_instance_rw_mutex_);
+
+  if (getState() != State::READY && getState() != State::FINISHED)
+  {
+    error_messages_ = CREATE_TEMOTO_ERROR_STACK("Cannot execute the action because it's not in READY or FINISHED state");
+    return;
+  }
+
+  std::string result;
+  try
+  {
+    setState(State::RUNNING);
+    result = (action_instance_->executeActionWrapped()) ? "on_true" : "on_false"; // Blocking call, returns when finished
+
+    // If the action finished without external interruption (stop request) then start the child nodes
+    if (getState() == State::RUNNING)
+    {
+      start_child_nodes_cb_(getFullName(), action_instance_->getUmrfNodeConst().getOutputParameters(), result);
+    }
+
+    if (!getIsRemoteActor())
+    {
+      setLatestUmrfJsonStr(umrf_json::toUmrfJsonStr(action_instance_->getUmrfNodeConst()));
+    }
+    setState(State::FINISHED);
+  }
+  catch(TemotoErrorStack e)
+  {
+    // TODO: implement the behavior for "on_error" result
+    setState(State::ERROR);
+    error_messages_ = FORWARD_TEMOTO_ERROR_STACK(e);
+  }
+}
+
+void UmrfNodeExec::run()
+{
+  switch (getActorExecTraits())
+  {
+  case UmrfNode::ActorExecTraits::LOCAL:
+    run_thread_ = std::thread(
+    [&](){
+    try
+    {
+      run_thread_running_ = true;
+      if (getState() != State::READY && getState() != State::FINISHED)
+      {
+        error_messages_ = CREATE_TEMOTO_ERROR_STACK("Cannot execute the action because it's not in READY or FINISHED state");
+        return;
+      }
+    
+      setState(State::RUNNING);
+      std::string result = (action_instance_->executeActionWrapped()) ? "on_true" : "on_false"; // Blocking call, returns when finished
+
+      // If the action finished without external interruption (stop request) then start the child nodes
+      if (getState() == State::RUNNING)
+      {
+        start_child_nodes_cb_(getFullName(), action_instance_->getUmrfNodeConst().getOutputParameters(), result);
+      }
+
+      setState(State::FINISHED);
+    }
+    catch(TemotoErrorStack e)
+    {
+      setState(State::ERROR);
+      error_messages_.appendError(FORWARD_TEMOTO_ERROR_STACK(e));
+    }
+    catch(const std::exception& e)
+    {
+      setState(State::ERROR);
+      error_messages_ = CREATE_TEMOTO_ERROR_STACK(std::string(e.what()));
+    }
+    catch(...)
+    {
+      setState(State::ERROR);
+      error_messages_ = CREATE_TEMOTO_ERROR_STACK("Caught an unhandled error.");
+    }
+
+    /*
+    * Notify the graph that the action has finished, regardless whether the action finished
+    * with an error or not
+    */
+    notify_finished_cb_(getFullName());
+    run_thread_running_ = false; });
+    
+    break;
+
+  case UmrfNode::ActorExecTraits::REMOTE:
+    run_thread_ = std::thread(
+    [&](){
+      run_thread_running_ = true;
+      // TODO
+      run_thread_running_ = false;
+    });
+    break;
+
+  case UmrfNode::ActorExecTraits::GRAPH:
+    run_thread_ = std::thread(
+    [&](){
+      run_thread_running_ = true;
+      // TODO
+      run_thread_running_ = false;
+    });
+    break;
+  } // switch
+}
+
+void UmrfNodeExec::pause()
+{
+
+}
+
+void UmrfNodeExec::pauseInThread()
+{
+
+}
+
+void UmrfNodeExec::restart()
+{
+
+}
+
+void UmrfNodeExec::restartInThread()
+{
+
+}
+
+void UmrfNodeExec::stop()
+{
+
+}
+
+void UmrfNodeExec::stopInThread()
+{
+
 }

@@ -20,20 +20,19 @@ UmrfNode::UmrfNode()
 : state_(State::UNINITIALIZED)
 , instance_id_(0)
 , execute_first_(false)
-, is_remote_actor_(false)
+, actor_exec_traits_(UmrfNode::ActorExecTraits::LOCAL)
 {}
 
 UmrfNode::UmrfNode(const UmrfNode& un)
 : Umrf(un)
 , state_(un.state_)
-, package_name_(un.package_name_)
 , instance_id_(un.instance_id_)
 , library_path_(un.library_path_)
 , parents_(un.parents_)
 , children_(un.children_)
 , full_name_(un.full_name_)
 , execute_first_(un.execute_first_)
-, is_remote_actor_(un.is_remote_actor_)
+, actor_exec_traits_(un.actor_exec_traits_)
 {}
 
 UmrfNode UmrfNode::asUmrfNode() const
@@ -43,26 +42,6 @@ UmrfNode UmrfNode::asUmrfNode() const
 
 UmrfNode::~UmrfNode()
 {}
-
-const std::string& UmrfNode::getPackageName() const
-{
-  LOCK_GUARD_TYPE guard_package_name(package_name_rw_mutex_);
-  return package_name_;
-}
-
-bool UmrfNode::setPackageName(const std::string& package_name)
-{
-  LOCK_GUARD_TYPE guard_package_name(package_name_rw_mutex_);
-  if (!package_name.empty())
-  {
-    package_name_ = package_name;
-    return true;  
-  }
-  else
-  {
-    return false;
-  }
-}
 
 const std::string& UmrfNode::getFullName() const
 {
@@ -274,12 +253,12 @@ void UmrfNode::setParentReceived(const UmrfNode::Relation& parent)
   }
 }
 
-void UmrfNode::setIsRemoteActor(bool is_remote_actor)
+void UmrfNode::setActorExecTraits(UmrfNode::ActorExecTraits traits)
 {
-  is_remote_actor_ = is_remote_actor;
+  actor_exec_traits_ = traits;
 }
 
-bool UmrfNode::getIsRemoteActor() const
+bool UmrfNode::getActorExecTraits() const
 {
-  return is_remote_actor_;
+  return actor_exec_traits_;
 }

@@ -25,7 +25,6 @@ Umrf::Umrf(const Umrf& uj)
 : name_(uj.name_)
 , actor_(uj.actor_)
 , description_(uj.description_)
-, notation_(uj.notation_)
 , type_(uj.type_)
 , input_parameters_(uj.input_parameters_)
 , output_parameters_(uj.output_parameters_)
@@ -95,25 +94,6 @@ bool Umrf::setType(const std::string& type)
   if (!type.empty())
   {
     type_ = type;
-    return true;  
-  }
-  else
-  {
-    return false;
-  }
-}
-
-const std::string& Umrf::getNotation() const
-{
-  return notation_;
-}
-
-bool Umrf::setNotation(const std::string& notation)
-{
-  LOCK_GUARD_TYPE_R guard_notation(notation_rw_mutex_);
-  if (!notation.empty())
-  {
-    notation_ = notation;
     return true;  
   }
   else
@@ -291,7 +271,6 @@ bool Umrf::isEqual(const Umrf& umrf_in, bool check_updatable) const
    * Compare the general parameters
    */
   if ((name_ != umrf_in.name_) ||
-      (notation_ != umrf_in.notation_) ||
       (type_ != umrf_in.type_))
   {
     return false;

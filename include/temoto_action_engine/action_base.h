@@ -46,6 +46,7 @@ public:
   bool stopAction()
   {
     STOP_REQUESTED_ = true;
+    onStop();
     return true;
   }
 
@@ -72,14 +73,35 @@ protected:
    * inherits this class.
    * 
    */
-  virtual void initializeAction(){}
+  virtual void onInit(){}
 
   /**
    * @brief Method that is invoked when action is executed. Has to be implemented by an action that
    * inherits this class.
    * 
    */
-  virtual void executeAction() = 0;
+  virtual bool onRun() = 0;
+
+  /**
+   * @brief Method that is invoked when action is paused. Has to be implemented by an action that
+   * inherits this class.
+   * 
+   */
+  virtual void onPause() = 0;
+
+  /**
+   * @brief Method that is invoked when action is continued. Has to be implemented by an action that
+   * inherits this class.
+   * 
+   */
+  virtual void onContinue() = 0;
+
+  /**
+   * @brief Method that is invoked when action is stopped. Has to be implemented by an action that
+   * inherits this class.
+   * 
+   */
+  virtual void onStop() = 0;
 
   /**
    * @brief A method that inheriting actions must use to determine if the action is required to stop or not.
@@ -107,7 +129,7 @@ private:
   void initializeActionWrapped()
   try
   {
-    initializeAction();
+    onInit();
   }
   catch(TemotoErrorStack& e)
   {
@@ -126,7 +148,7 @@ private:
    * @brief Wraps the virtual executeAction() method with common catch blocks and checks if the invoked action is initialized.
    * 
    */
-  void executeActionWrapped()
+  bool executeActionWrapped()
   {
     if (!isInitialized())
     {
@@ -135,7 +157,7 @@ private:
     
     try
     {
-      executeAction();
+      return onRun();
     }
     catch(TemotoErrorStack& e)
     {

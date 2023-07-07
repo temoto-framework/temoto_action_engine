@@ -30,8 +30,17 @@
 
 class UmrfNodeExec : public UmrfNode
 {
-typedef std::function<void(const std::string&, const ActionParameters&)> StartChildNodesCb;
+struct ThreadWrapper
+{
+  std::shared_ptr<std::thread> thread;
+  bool is_running;
+  TemotoErrorStack error_messages;
+};
+
+typedef std::map<std::string, ThreadWrapper> ActionThreads;
+typedef std::function<void(const std::string&, const ActionParameters&, const std::string&)> StartChildNodesCb;
 typedef std::function<void(const std::string&)> NotifyFinishedCb;
+
 
 public:
 
@@ -67,6 +76,18 @@ public:
    * 
    */
   void umrfNodeExecThread();
+
+
+
+  void run();
+
+  void pause();
+
+  void restart();
+
+  void stop();
+
+
 
   /**
    * @brief Creates an instance of the underlying action
@@ -111,6 +132,23 @@ private:
 
   mutable MUTEX_TYPE action_instance_rw_mutex_;
   GUARDED_VARIABLE(boost::shared_ptr<ActionBase> action_instance_, action_instance_rw_mutex_);
+
+  mutable MUTEX_TYPE action_threads_rw_mutex_;
+  GUARDED_VARIABLE(ActionThreads action_threads_, action_threads_rw_mutex_);
+
+  ThreadWrapper monitoring_thread_;
+
+  // std::thread run_thread_;
+  // bool run_thread_running_;
+
+  // std::thread pause_thread_;
+  // bool pause_thread_running_;
+
+  // std::thread restart_thread_;
+  // bool restart_thread_running_;
+
+  // std::thread stop_thread_;
+  // bool stop_thread_running_;
 
   std::thread umrf_node_exec_thread_;
 
