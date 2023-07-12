@@ -33,18 +33,30 @@ public:
   };
 
   /// Defines all possible states for the action handle
+  // enum class State
+  // {
+  //   NOT_SET,
+  //   UNINITIALIZED,      // Action library is not loaded or input parameters not received
+  //   INSTANTIATED,
+  //   READY,              // Action instance is loaded and input parameters received
+  //   RUNNING,            // Action instance is running
+  //   PAUSED,
+  //   STOP_REQUESTED,     // A request to stop has been registered
+  //   FINISHED,           // Action instance has finished execution
+  //   ERROR,              // Problems with any critical component of the action
+  // };
+
   enum class State
   {
-    NOT_SET,
-    UNINITIALIZED,      // Action library is not loaded or input parameters not received
-    INSTANTIATED,
-    READY,              // Action instance is loaded and input parameters received
-    RUNNING,            // Action instance is running
+    NOT_SET,      // TODO: Rename to something more meaningful 
+    INITIALIZED,
+    RUNNING,
     PAUSED,
-    STOP_REQUESTED,     // A request to stop has been registered
-    FINISHED,           // Action instance has finished execution
-    ERROR,              // Problems with any critical component of the action
+    STOPPING,
+    FINISHED,
+    ERROR
   };
+
 
   /// A convenience datastructure which helps to convert state names to std::string
   const static inline std::map<State, std::string> state_to_str_map_{

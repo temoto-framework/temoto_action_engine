@@ -343,147 +343,145 @@ void UmrfNodeExec::setLatestUmrfJsonStr(const std::string& latest_umrf_json_str)
   latest_umrf_json_str_ = latest_umrf_json_str;
 }
 
-
-// WIP: NEW IMPLEMENTATION
-
-
 void UmrfNodeExec::run()
 {
-  // TODO: If the action is running (blocking), and the action instance is guarded
-  // with a mutex at the same time, then the action cannot be stopped because the mutex is locked
-  // while the action is running
-  //LOCK_GUARD_TYPE guard_action_instance(action_instance_rw_mutex_);
-
-  if (getState() != State::READY && getState() != State::FINISHED)
+  // Check if the action is already running state
+  if (getState() == UmrfNode::State::RUNNING)
   {
-    error_messages_ = CREATE_TEMOTO_ERROR_STACK("Cannot execute the action because it's not in READY or FINISHED state");
     return;
   }
 
+  // Move to the error state if the action is not in the following states
+  if (getState() != UmrfNode::State::NOT_SET && 
+      getState() != UmrfNode::State::INITIALIZED &&
+      getState() != UmrfNode::State::PAUSED &&
+      getState() != UmrfNode::State::FINISHED)
+  {
+    setToError();
+    return;
+  }
+
+  clearThread(UmrfNode::State::RUNNING);
+  LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
+
+  /*
+   * Run the action in a thread
+   */
+  action_threads_[UmrfNode::State::RUNNING] = UmrfNodeExec::ThreadWrapper();
+  action_threads_[UmrfNode::State::RUNNING].thread = std::make_shared<std::thread>([&]()
+  {
+  {
+    LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
+    action_threads_[UmrfNode::State::RUNNING].is_running = true;
+  }
+
+  setState(State::RUNNING);
   std::string result;
+
   try
   {
-    setState(State::RUNNING);
-    result = (action_instance_->executeActionWrapped()) ? "on_true" : "on_false"; // Blocking call, returns when finished
-
-    // If the action finished without external interruption (stop request) then start the child nodes
-    if (getState() == State::RUNNING)
+    /*
+     * EXECUTE ACTION AS LOCAL
+     */
+    if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
     {
-      start_child_nodes_cb_(getFullName(), action_instance_->getUmrfNodeConst().getOutputParameters(), result);
-    }
-
-    if (!getIsRemoteActor())
-    {
-      setLatestUmrfJsonStr(umrf_json::toUmrfJsonStr(action_instance_->getUmrfNodeConst()));
-    }
-    setState(State::FINISHED);
-  }
-  catch(TemotoErrorStack e)
-  {
-    // TODO: implement the behavior for "on_error" result
-    setState(State::ERROR);
-    error_messages_ = FORWARD_TEMOTO_ERROR_STACK(e);
-  }
-}
-
-void UmrfNodeExec::run()
-{
-  switch (getActorExecTraits())
-  {
-  case UmrfNode::ActorExecTraits::LOCAL:
-    run_thread_ = std::thread(
-    [&](){
-    try
-    {
-      run_thread_running_ = true;
-      if (getState() != State::READY && getState() != State::FINISHED)
-      {
-        error_messages_ = CREATE_TEMOTO_ERROR_STACK("Cannot execute the action because it's not in READY or FINISHED state");
-        return;
-      }
-    
-      setState(State::RUNNING);
-      std::string result = (action_instance_->executeActionWrapped()) ? "on_true" : "on_false"; // Blocking call, returns when finished
-
-      // If the action finished without external interruption (stop request) then start the child nodes
-      if (getState() == State::RUNNING)
-      {
-        start_child_nodes_cb_(getFullName(), action_instance_->getUmrfNodeConst().getOutputParameters(), result);
-      }
-
-      setState(State::FINISHED);
-    }
-    catch(TemotoErrorStack e)
-    {
-      setState(State::ERROR);
-      error_messages_.appendError(FORWARD_TEMOTO_ERROR_STACK(e));
-    }
-    catch(const std::exception& e)
-    {
-      setState(State::ERROR);
-      error_messages_ = CREATE_TEMOTO_ERROR_STACK(std::string(e.what()));
-    }
-    catch(...)
-    {
-      setState(State::ERROR);
-      error_messages_ = CREATE_TEMOTO_ERROR_STACK("Caught an unhandled error.");
+      result = (action_instance_->executeActionWrapped()) ? "on_true" : "on_false"; // Blocking call, returns when finished
     }
 
     /*
-    * Notify the graph that the action has finished, regardless whether the action finished
-    * with an error or not
+     * EXECUTE ACTION AS REMOTE
+     */
+    else if (getActorExecTraits() == UmrfNode::ActorExecTraits::REMOTE)
+    {
+      // TODO: 1) wait for state change notification. get the result
+      // result = get_remote_result_();
+
+      // TODO: 2) send acknowledgement via syncer::acknowledge(std::string action_name) std::function
+      //          blocks until consensus is reached among all actors 
+    }
+
+    /*
+    * EXECUTE ACTION AS GRAPH
     */
-    notify_finished_cb_(getFullName());
-    run_thread_running_ = false; });
-    
-    break;
-
-  case UmrfNode::ActorExecTraits::REMOTE:
-    run_thread_ = std::thread(
-    [&](){
-      run_thread_running_ = true;
+    else if (getActorExecTraits() == UmrfNode::ActorExecTraits::GRAPH)
+    {
       // TODO
-      run_thread_running_ = false;
-    });
-    break;
+      // result = get_sub_graph_result();
+    }
 
-  case UmrfNode::ActorExecTraits::GRAPH:
-    run_thread_ = std::thread(
-    [&](){
-      run_thread_running_ = true;
-      // TODO
-      run_thread_running_ = false;
-    });
-    break;
-  } // switch
+  } // try end
+  catch(TemotoErrorStack e)
+  {
+    LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
+    action_threads_[UmrfNode::State::RUNNING].error_messages.appendError(FORWARD_TEMOTO_ERROR_STACK(e));
+    setState(State::ERROR);
+  }
+  catch(const std::exception& e)
+  {
+    LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
+    action_threads_[UmrfNode::State::RUNNING].error_messages = CREATE_TEMOTO_ERROR_STACK(std::string(e.what()));
+    setState(State::ERROR);
+  }
+  catch(...)
+  {
+    LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
+    action_threads_[UmrfNode::State::RUNNING].error_messages = CREATE_TEMOTO_ERROR_STACK("Caught an unhandled error.");
+    setState(State::ERROR);
+  }
+
+  if (getState() == UmrfNode::State::RUNNING)
+  {
+    start_child_nodes_cb_(getFullName(), action_instance_->getUmrfNodeConst().getOutputParameters(), result);
+    setState(State::FINISHED);
+  }
+  else if (getState() == UmrfNode::State::ERROR)
+  {
+    start_child_nodes_cb_(getFullName(), action_instance_->getUmrfNodeConst().getOutputParameters(), "on_error");
+  }
+
+  {
+    LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
+    action_threads_[UmrfNode::State::RUNNING].is_running = false;
+  }
+  });
 }
 
-void UmrfNodeExec::pause()
+void UmrfNodeExec::setToError()
 {
+  if (getState() == State::ERROR)
+  {
+    return;
+  }
+
+  clearThread(UmrfNode::State::ERROR);
+  setState(UmrfNode::State::ERROR);
+
+  LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
+
+  action_threads_["error"] = UmrfNodeExec::ThreadWrapper();
+  action_threads_["error"].thread = stdstd::thread
 
 }
 
-void UmrfNodeExec::pauseInThread()
+void UmrfNodeExec::clearThread(const UmrfNode::State state_name)
 {
+  LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
 
-}
+  auto& it = action_threads_.find(state_name);
+  if (it == action_threads_.end())
+  {
+    return;
+  }
 
-void UmrfNodeExec::restart()
-{
+  if (it->is_running)
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("Cannot clear thread '" + std::to_string(state_name) + "' because it's running");
+  }
 
-}
+  if (it->thread.joinable())
+  {
+    it->thread.join();
+  }
 
-void UmrfNodeExec::restartInThread()
-{
-
-}
-
-void UmrfNodeExec::stop()
-{
-
-}
-
-void UmrfNodeExec::stopInThread()
-{
-
+  action_threads_.erase(it);
 }

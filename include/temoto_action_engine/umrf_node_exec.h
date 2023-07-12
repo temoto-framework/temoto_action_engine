@@ -37,7 +37,7 @@ struct ThreadWrapper
   TemotoErrorStack error_messages;
 };
 
-typedef std::map<std::string, ThreadWrapper> ActionThreads;
+typedef std::map<State, ThreadWrapper> ActionThreads;
 typedef std::function<void(const std::string&, const ActionParameters&, const std::string&)> StartChildNodesCb;
 typedef std::function<void(const std::string&)> NotifyFinishedCb;
 
@@ -138,17 +138,7 @@ private:
 
   ThreadWrapper monitoring_thread_;
 
-  // std::thread run_thread_;
-  // bool run_thread_running_;
 
-  // std::thread pause_thread_;
-  // bool pause_thread_running_;
-
-  // std::thread restart_thread_;
-  // bool restart_thread_running_;
-
-  // std::thread stop_thread_;
-  // bool stop_thread_running_;
 
   std::thread umrf_node_exec_thread_;
 
@@ -164,6 +154,10 @@ private:
   
   mutable MUTEX_TYPE latest_umrf_json_str_rw_mutex_;
   GUARDED_VARIABLE(std::string latest_umrf_json_str_, latest_umrf_json_str_rw_mutex_);
+
+  void setToError();
+
+  void clearThread(const UmrfNode::State state_name);
 };
 
 #endif
