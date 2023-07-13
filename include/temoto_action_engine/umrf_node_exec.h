@@ -58,32 +58,13 @@ public:
    */
   void initializeNode();
 
-  /**
-   * @brief Executes the action
-   * 
-   */
-  void startNode();
-
-  /**
-   * @brief Executes the action in a new thread
-   * 
-   */
-  void startNodeThread();
-
-  /**
-   * @brief Wraps the UmrfNodeExec::startNode() and notifies the graph via condition variable
-   * when finished 
-   * 
-   */
-  void umrfNodeExecThread();
-
 
 
   void run();
 
   void pause();
 
-  void restart();
+  // void restart();
 
   void stop();
 
@@ -97,24 +78,10 @@ public:
   , StartChildNodesCb start_child_nodes_cb);
 
   /**
-   * @brief Sets the stop request flag via BaseAction::stopRequested and waits for the specified timeout period for
-   * the action to finish. If timeout is reached, then the action is set to ERROR state.
-   * 
-   * @param timeout period in seconds.
-   */
-  bool stopNode(float timeout);
-
-  /**
    * @brief Stops the action (UmrfNodeExec::stopNode) and destroys the action instance object.
    * 
    */
   void clearNode();
-
-  bool threadRunning() const;
-
-  bool threadJoinable() const;
-
-  void joinUmrfNodeExecThread();
 
   void updateInstanceParams(const ActionParameters& ap_in);
 
@@ -140,15 +107,9 @@ private:
 
 
 
-  std::thread umrf_node_exec_thread_;
-
-  bool umrf_node_exec_thread_running_ = false; 
-
   float default_stopping_timeout_ = 5;
 
   TemotoErrorStack error_messages_;
-
-  NotifyFinishedCb notify_finished_cb_ = NULL;
 
   StartChildNodesCb start_child_nodes_cb_ = NULL;
   

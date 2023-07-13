@@ -90,13 +90,6 @@ protected:
   virtual void onPause() = 0;
 
   /**
-   * @brief Method that is invoked when action is continued. Has to be implemented by an action that
-   * inherits this class.
-   * 
-   */
-  virtual void onContinue() = 0;
-
-  /**
    * @brief Method that is invoked when action is stopped. Has to be implemented by an action that
    * inherits this class.
    * 

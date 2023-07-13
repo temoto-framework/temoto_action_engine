@@ -84,30 +84,6 @@ UmrfNode UmrfNodeExec::asUmrfNode() const
   //return UmrfNode(*this);
 }
 
-bool UmrfNodeExec::stopNode(float timeout)
-{
-  LOCK_GUARD_TYPE guard_action_instance(action_instance_rw_mutex_);
-  if (getState() == State::RUNNING)
-  {
-    setState(State::STOP_REQUESTED);
-    action_instance_->stopAction();
-
-    // Wait until the action is finished
-    Timer timeout_timer;
-    while(getState() == State::STOP_REQUESTED)
-    {
-      if (timeout_timer.elapsed() >= timeout)
-      {
-        setState(State::ERROR);
-        throw CREATE_TEMOTO_ERROR_STACK("Reached the timeout of " + std::to_string(timeout) + " seconds.");
-      }
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
-    setState(State::FINISHED);
-  }
-  return true;
-}
-
 const TemotoErrorStack& UmrfNodeExec::getErrorMessages() const
 {
   return error_messages_;
@@ -145,9 +121,9 @@ try
   LOCK_GUARD_TYPE guard_action_instance(action_instance_rw_mutex_);
   LOCK_GUARD_TYPE guard_class_loader(class_loader_rw_mutex_);
 
-  if (getState() != State::UNINITIALIZED)
+  if (getState() != State::NOT_SET)
   {
-    throw CREATE_TEMOTO_ERROR_STACK("Cannot instantiate the action because it's not in UNINITIALIZED state");
+    throw CREATE_TEMOTO_ERROR_STACK("Cannot instantiate the action because it's not in NOT_SET state");
   }
 
   action_instance_ = class_loader_->createInstance<ActionBase>(getName());
@@ -157,82 +133,6 @@ catch(const std::exception& e)
 {
   setState(State::ERROR);
   throw CREATE_TEMOTO_ERROR_STACK("Failed to create an instance of the action: " + std::string(e.what()));
-}
-
-void UmrfNodeExec::startNode()
-{
-  // TODO: If the action is running (blocking), and the action instance is guarded
-  // with a mutex at the same time, then the action cannot be stopped because the mutex is locked
-  // while the action is running
-  //LOCK_GUARD_TYPE guard_action_instance(action_instance_rw_mutex_);
-
-  if (getState() != State::READY && getState() != State::FINISHED)
-  {
-    error_messages_ = CREATE_TEMOTO_ERROR_STACK("Cannot execute the action because it's not in READY or FINISHED state");
-    return;
-  }
-
-  std::string result;
-  try
-  {
-    setState(State::RUNNING);
-    result = (action_instance_->executeActionWrapped()) ? "on_true" : "on_false"; // Blocking call, returns when finished
-
-    // If the action finished without external interruption (stop request) then start the child nodes
-    if (getState() == State::RUNNING)
-    {
-      start_child_nodes_cb_(getFullName(), action_instance_->getUmrfNodeConst().getOutputParameters(), result);
-    }
-
-    if (!getIsRemoteActor())
-    {
-      setLatestUmrfJsonStr(umrf_json::toUmrfJsonStr(action_instance_->getUmrfNodeConst()));
-    }
-    setState(State::FINISHED);
-  }
-  catch(TemotoErrorStack e)
-  {
-    // TODO: implement the behavior for "on_error" result
-    setState(State::ERROR);
-    error_messages_ = FORWARD_TEMOTO_ERROR_STACK(e);
-  }
-}
-
-void UmrfNodeExec::startNodeThread()
-{
-  umrf_node_exec_thread_ = std::thread(&UmrfNodeExec::umrfNodeExecThread, this);
-}
-
-void UmrfNodeExec::umrfNodeExecThread()
-{
-  if (getState() != State::READY && getState() != State::FINISHED)
-  {
-    throw CREATE_TEMOTO_ERROR_STACK("Cannot execute the action because it's not in READY or FINISHED state");
-  }
-  try
-  {
-    umrf_node_exec_thread_running_ = true;
-    startNode();
-  }
-  catch(TemotoErrorStack e)
-  {
-    error_messages_.appendError(FORWARD_TEMOTO_ERROR_STACK(e));
-  }
-  catch(const std::exception& e)
-  {
-    error_messages_ = CREATE_TEMOTO_ERROR_STACK(std::string(e.what()));
-  }
-  catch(...)
-  {  
-    error_messages_ = CREATE_TEMOTO_ERROR_STACK("Caught an unhandled error.");
-  }
-
-  /*
-   * Notify the graph that the action has finished, regardless whether the action finished
-   * with an error or not
-   */
-  notify_finished_cb_(getFullName());
-  umrf_node_exec_thread_running_ = false;
 }
 
 void UmrfNodeExec::updateInstanceParams(const ActionParameters& ap_in)
@@ -335,6 +235,7 @@ void UmrfNodeExec::run()
       setState(State::INITIALIZED);
     }
 
+    auto previous_state = getState();
     setState(State::RUNNING);
 
     /*
@@ -388,13 +289,13 @@ void UmrfNodeExec::run()
     result = "on_error";
   }
 
+  if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
+  {
+    // TODO: sync_handle.syncResult(getFullName(), result);
+  }
+
   if (getState() == UmrfNode::State::RUNNING)
   {
-    if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
-    {
-      // TODO: sync_handle.syncResult(getFullName(), result);
-    }
-
     start_child_nodes_cb_(getFullName(), action_instance_->getUmrfNodeConst().getOutputParameters(), result);
     setState(State::FINISHED);
   }
@@ -438,7 +339,7 @@ void UmrfNode::stop()
     if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
     {
       LOCK_GUARD_TYPE_R guard_action_instance(action_instance_rw_mutex_);
-      action_instance_->onStop() // Blocking call, returns when finished
+      action_instance_->onStop(); // Blocking call, returns when finished
     }
 
     /*
@@ -481,10 +382,7 @@ void UmrfNode::stop()
 
   if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
   {
-    LOCK_GUARD_TYPE guard_action_instance(action_instance_rw_mutex_);
-    // TODO: sync_handle.notify(getFullName(), getState());
-    action_instance_.reset();
-    setState(State::NOT_SET);
+    // TODO: sync_handle.syncState(getFullName(), getState());
   }
 
   if (getState() == UmrfNode::State::ERROR)
@@ -495,6 +393,94 @@ void UmrfNode::stop()
   {
     LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
     action_threads_[UmrfNode::State::STOPPING].is_running = false;
+  }
+  });
+}
+
+void UmrfNode::pause()
+{
+  if (getState() == UmrfNode::State::PAUSED)
+  {
+    return;
+  }
+
+  clearThread(UmrfNode::State::PAUSED);
+  LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
+
+  /*
+   * Run the stopping procedure in a thread
+   */
+  action_threads_[UmrfNode::State::PAUSED] = UmrfNodeExec::ThreadWrapper();
+  action_threads_[UmrfNode::State::PAUSED].thread = std::make_shared<std::thread>([&]()
+  {
+  try
+  {
+    // Move to the error state if the action is not in the following states
+    if (getState() != UmrfNode::State::RUNNING)
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Action has to be in the following states to be paused: RUNNING.");
+    }
+
+    setState(State::PAUSED);
+
+    /*
+     * LOCALLY STOPPED
+     */
+    if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
+    {
+      LOCK_GUARD_TYPE_R guard_action_instance(action_instance_rw_mutex_);
+      action_instance_->onPause(); // Blocking call, returns when finished
+    }
+
+    /*
+     * REMOTELY_STOPPED
+     */
+    else if (getActorExecTraits() == UmrfNode::ActorExecTraits::REMOTE)
+    {
+      // TODO: sync_handle.waitForPause(getFullName())
+    }
+
+    /*
+     * STOP THE SUBGRAPH
+     */
+    else if (getActorExecTraits() == UmrfNode::ActorExecTraits::GRAPH)
+    {
+      // TODO: engine_handle.pauseGraph( TODO )
+    }
+
+  } // try end
+  catch(TemotoErrorStack e)
+  {
+    LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
+    action_threads_[UmrfNode::State::PAUSED].error_messages.appendError(FORWARD_TEMOTO_ERROR_STACK(e));
+    setState(State::ERROR);
+  }
+  catch(const std::exception& e)
+  {
+    LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
+    action_threads_[UmrfNode::State::PAUSED].error_messages = CREATE_TEMOTO_ERROR_STACK(std::string(e.what()));
+    setState(State::ERROR);
+  }
+  catch(...)
+  {
+    LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
+    action_threads_[UmrfNode::State::PAUSED].error_messages = CREATE_TEMOTO_ERROR_STACK("Caught an unhandled error.");
+    setState(State::ERROR);
+  }
+
+  if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
+  {
+    // TODO: sync_handle.syncState(getFullName(), getState());
+  }
+
+  if (getState() == UmrfNode::State::ERROR)
+  {
+    start_child_nodes_cb_(getFullName(), action_instance_->getUmrfNodeConst().getOutputParameters(), "on_error");
+  }
+
+  {
+    LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
+    action_threads_[UmrfNode::State::PAUSED].is_running = false;
   }
   });
 }
