@@ -60,7 +60,6 @@ public:
   , state_(ugc.state_)
   , umrf_nodes_vec_(ugc.umrf_nodes_vec_)
   , graph_description_(ugc.graph_description_)
-  , root_node_names_(ugc.root_node_names_)
   {}
 
   void setName(const std::string& name)
@@ -100,12 +99,6 @@ public:
     return state_;
   }
 
-  std::vector<std::string> getRootNodeNames() const
-  {
-    LOCK_GUARD_TYPE_R guard_root_node_names(root_node_names_rw_mutex_);
-    return root_node_names_;
-  }
-
 protected:
 
   mutable MUTEX_TYPE_R graph_name_rw_mutex_;
@@ -119,9 +112,6 @@ protected:
 
   mutable MUTEX_TYPE_R graph_description_rw_mutex_;
   GUARDED_VARIABLE(std::string graph_description_, graph_description_rw_mutex_);
-
-  mutable MUTEX_TYPE_R root_node_names_rw_mutex_;
-  GUARDED_VARIABLE(std::vector<std::string> root_node_names_, root_node_names_rw_mutex_);
 
 };
 
@@ -328,46 +318,12 @@ protected:
       }
     }
 
-    if (!findRootNodes())
-    {
-      std::cout << "Could not find root nodes. UMRF graph must have at least one acyclic root node." << std::endl;
-      return false;
-    }
-
     /*
      * TODO: Check that parents are pointing to existing children and vice versa
      */
 
     setState(State::INITIALIZED);
     return true;
-  }
-
-  /*
-   * TODO: Remove when graph_entry and graph_exit actions are implemented  
-   */
-  bool findRootNodes()
-  {
-    LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);
-    LOCK_GUARD_TYPE_R guard_root_node_names(root_node_names_rw_mutex_);
-    root_node_names_.clear();
-    try
-    {
-      for (const auto& graph_node_pair : graph_nodes_map_)
-      {
-        // A node is considered root if it does not have parents
-        if (graph_node_pair.second->getParents().empty() || graph_node_pair.second->getExecuteFirst())
-        {
-          root_node_names_.push_back(graph_node_pair.first);
-        }
-      }
-    }
-    catch(const std::exception& e)
-    {
-      std::cerr << e.what() << '\n';
-      return false;
-    }
-    
-    return !root_node_names_.empty();
   }
 
   void updateUmrfNodes() const

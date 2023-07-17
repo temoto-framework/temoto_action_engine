@@ -250,6 +250,7 @@ public:
   void clearParents();
   bool addParent(const Relation& parent);
   bool removeParent(const Relation& parent);
+  std::optional<Relation> getParentRelation(const std::string parent_name) const;
 
   const std::vector<Relation>& getChildren() const;
   bool setChildren(const std::vector<Relation>& children);

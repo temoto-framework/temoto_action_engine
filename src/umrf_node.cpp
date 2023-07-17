@@ -164,6 +164,22 @@ bool UmrfNode::removeParent(const UmrfNode::Relation& parent)
   }
 }
 
+std::optional<UmrfNode::Relation> UmrfNode::getParentRelation(const std::string parent_name) const
+{
+  const auto it = std::find_if(getParents().begin(), getParents().end(),
+  [&](const UmrfNode::Relation& parent_relation)
+  {
+    return parent_relation.name == parent_name;
+  })
+
+  if (it == getParents().end())
+  {
+    return std::optional<UmrfNode::Relation>();
+  }
+
+  return *it;
+}
+
 const std::vector<UmrfNode::Relation>& UmrfNode::getChildren() const
 {
   LOCK_GUARD_TYPE guard_children(children_rw_mutex_);

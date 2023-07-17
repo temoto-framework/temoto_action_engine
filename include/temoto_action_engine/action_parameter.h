@@ -42,14 +42,12 @@ public:
 
   ActionParameter( std::string name
                  , std::string type
-                 , std::string example = ""
                  , int64_t source_id = UNDEFINED_SOURCE
                  , bool required = true
                  , bool quaranteed = false
                  , bool updatable = false)
   : name_(name)
   , type_(type)
-  , example_(example)
   , source_id_(source_id)
   , required_(required)
   , quaranteed_(quaranteed)
@@ -59,7 +57,6 @@ public:
   ActionParameter(const ActionParameter<T>& ap)
   : name_(ap.name_)
   , type_(ap.type_)
-  , example_(ap.example_)
   , source_id_(ap.source_id_)
   , timestamp_(ap.timestamp_)
   , required_(ap.required_)
@@ -73,7 +70,6 @@ public:
   // {
   //   name_ = ap.name_;
   //   type_ = ap.type_;
-  //   example_ = ap.example_;
   //   source_id_ = ap.source_id_;
   //   timestamp_ = ap.timestamp_;
   //   required_ = ap.required_;
@@ -209,16 +205,6 @@ public:
     type_ = type;
   }
 
-  const std::string& getExample() const
-  {
-    return example_;
-  }
-
-  void setExample(const std::string& example) const
-  {
-    example_ = example;
-  }
-
   /**
    * @brief Operator for maining parameters in std::set. The comparison operator must stay in this form, i.e.
    * only the names should be compared.
@@ -296,7 +282,6 @@ public:
 private:
   std::string name_;
   mutable std::string type_;
-  mutable std::string example_;
   mutable int64_t source_id_;
   mutable int64_t timestamp_;
   mutable bool required_;

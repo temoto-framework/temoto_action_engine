@@ -40,7 +40,7 @@ UmrfGraphExec::~UmrfGraphExec()
   clearGraph();
 }
 
-void UmrfGraphExec::startGraph(NotifyFinishedCb notify_graph_finished_cb)
+void UmrfGraphExec::startGraph(NotifyFinishedCb notify_graph_finished_cb, const std::string& result)
 {
   LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
   notify_graph_finished_cb_ = notify_graph_finished_cb;
@@ -51,7 +51,7 @@ void UmrfGraphExec::startGraph(NotifyFinishedCb notify_graph_finished_cb)
   monitoring_thread_ = std::thread(&UmrfGraphExec::monitoringLoop, this);
 
   // Start the root nodes
-  startNodes(getRootNodeNames(), true);
+  startChildNodes("graph_entry", result);
 }
 
 void UmrfGraphExec::stopGraph()
@@ -192,125 +192,7 @@ void UmrfGraphExec::monitoringLoop()
   monitoring_thread_running_ = false;
 }
 
-void UmrfGraphExec::startNodes(const std::vector<std::string> umrf_node_names, bool all_ready_requrired)
-{
-  LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
-
-  if (getState() == State::STOP_REQUESTED)
-  {
-    return;
-  }
-
-  std::set<std::string> action_rollback_list;
-  std::set<std::string> umrf_node_names_exec(umrf_node_names.begin(), umrf_node_names.end());
-  try
-  {
-    /*
-     * Check if the actions have received all required parameters and parent signals
-     */
-    for (const auto& umrf_node_name : umrf_node_names)
-    {
-      std::shared_ptr<UmrfNodeExec> umrf_node = graph_nodes_map_.at(umrf_node_name);
-      if (umrf_node->getState() == UmrfNode::State::UNINITIALIZED)
-      {
-        if (!umrf_node->inputParametersReceived() || !umrf_node->requiredParentsFinished())
-        {
-          umrf_node_names_exec.erase(umrf_node_name);
-        }
-      }
-      else if (umrf_node->getState() == UmrfNode::State::INSTANTIATED)
-      {
-        if (!umrf_node->getInstanceInputParametersReceived() || !umrf_node->requiredParentsFinished())
-        {
-          umrf_node_names_exec.erase(umrf_node_name);
-        }
-      }
-    }
-
-    if (all_ready_requrired && umrf_node_names_exec.size() != umrf_node_names.size())
-    {
-      throw CREATE_TEMOTO_ERROR_STACK("Cannot execute the actions because all actions were not fully initialized.");
-    }
-
-    /*
-     * Load/Instantiate the actions. If there are any problems with instantiating
-     * the graph, then the whole graph is rolled back (uninitialized)
-     */
-    for (const auto& umrf_node_name : umrf_node_names_exec)
-    try
-    {
-      if (graph_nodes_map_.at(umrf_node_name)->getState() == UmrfNode::State::UNINITIALIZED)
-      {
-        action_rollback_list.insert(umrf_node_name);
-        graph_nodes_map_.at(umrf_node_name)->instantiate(
-          std::bind(&UmrfGraphExec::notifyFinished, this, std::placeholders::_1)
-        , std::bind(&UmrfGraphExec::startChildNodes, this, std::placeholders::_1, std::placeholders::_2));
-      }
-    }
-    catch(TemotoErrorStack e)
-    {
-      throw FORWARD_TEMOTO_ERROR_STACK(e);
-    } 
-    catch(const std::exception& e)
-    {
-      throw CREATE_TEMOTO_ERROR_STACK("Cannot initialize the actions because: " + std::string(e.what()));
-    }
-
-    /*
-     * Initialize the actions. If the action is asynchronous and has already been invoked before, then
-     * it's not initialized (denoted via its state equal to State::FINISHED)
-     */
-    for (const auto& umrf_node_name : umrf_node_names_exec)
-    try
-    {
-      if (graph_nodes_map_.at(umrf_node_name)->getState() == UmrfNode::State::READY)
-      {
-        action_rollback_list.insert(umrf_node_name);
-        graph_nodes_map_.at(umrf_node_name)->initializeNode();
-      }
-    }
-    catch(TemotoErrorStack e)
-    {
-      throw FORWARD_TEMOTO_ERROR_STACK(e);
-    } 
-    catch(const std::exception& e)
-    {
-      throw CREATE_TEMOTO_ERROR_STACK("Cannot execute the actions because: " + std::string(e.what()));
-    }
-
-    /*
-     * Execute the actions. If there are any problems with executing
-     * the graph, then the whole graph is rolled back
-     */
-    for (const auto& umrf_node_name : umrf_node_names_exec)
-    try
-    {
-      action_rollback_list.insert(umrf_node_name);
-      graph_nodes_map_.at(umrf_node_name)->startNodeThread();
-    }
-    catch(TemotoErrorStack e)
-    {
-      throw FORWARD_TEMOTO_ERROR_STACK(e);
-    } 
-    catch(const std::exception& e)
-    {
-      throw CREATE_TEMOTO_ERROR_STACK("Cannot execute the actions because: " + std::string(e.what()));
-    }
-  }
-  catch(TemotoErrorStack e)
-  {
-    std::cout << "Rollbacking actions" << std::endl;
-    for (const auto& umrf_node_name : action_rollback_list)
-    {
-      graph_nodes_map_.at(umrf_node_name)->clearNode();
-    }
-    throw FORWARD_TEMOTO_ERROR_STACK(e);
-  }
-}
-
-void UmrfGraphExec::startChildNodes(const std::string& parent_node_name
-, const ActionParameters& parent_action_parameters
-, bool result)
+void UmrfGraphExec::startChildNodes(const std::string& parent_node_name, const std::string& result)
 try
 {
   /*
@@ -337,83 +219,59 @@ try
       child_node_names.push_back(child_node_relation.getFullName());
     }
   }
-  
-  /*
-   * Check which children are required to stop and wich are required to start
-   *
-   * TODO: this is where the new relation/condition magic will happen
-   */
-  std::vector<std::string> children_to_start;
-  std::vector<std::string> children_to_stop;
 
+  std::set<std::string> child_node_names_exec(child_node_names.begin(), child_node_names.end());
+
+  /*
+   * Update the child nodes and check which children are ready
+   */
   for (const auto& child_node_name : child_node_names)
   {
-    // TODO
-    // if (graph_nodes_map_.at(child_node_name)->getStopWhenReceived(parent_node->asRelation()))
-    // {
-    //   children_to_stop.push_back(child_node_name);
-    // }
-    // else
-    // {
-    //   children_to_start.push_back(child_node_name);
-    //   graph_nodes_map_.at(child_node_name)->setParentReceived(parent_node->asRelation());
-    // }
+    std::shared_ptr<UmrfNodeExec> child_node = graph_nodes_map_.at(child_node_name);
 
-    // "run",
-    // "pause",
-    // "stop",
-    // "reset",
-    // "bypass",
-    // "ignore"};
-  }
+    // Mark that the parent has finished
+    child_node->setParentReceived(parent_node->asRelation());
 
-  // If the parent has output parameters then pass them to the children
-  if (!parent_action_parameters.empty())
-  {
-    for (const auto& child_node_name : children_to_start)
+    // Check if the parent should be ignored or not
+    const auto child_response = child_node->getParentRelation(parent_node_name)->getResponse(result);
+
+    if (child_response == "ignore")
     {
-      std::shared_ptr<UmrfNodeExec> child_node = graph_nodes_map_.at(child_node_name);
-      std::set<std::string> transferable_param_names = child_node->getInputParameters().getTransferableParams(parent_action_parameters);
+      continue;
+    }
 
-      if (transferable_param_names.empty())
-      {
-        continue;
-      }
-      /*
-        * Parameters are directly passed to the child action instance in the loaded shared library,
-        * because only the child action instance knows how to exactly copy the parameters without
-        * depending on the virtual deleter that resides in the parent action. Hence first the child
-        * action is instantiated and then the parameters are passed over.
-        */
-      if (child_node->getState() == UmrfNode::State::UNINITIALIZED)
-      {
-        child_node->instantiate(
-          std::bind(&UmrfGraphExec::notifyFinished, this, std::placeholders::_1)
-        , std::bind(&UmrfGraphExec::startChildNodes, this, std::placeholders::_1, std::placeholders::_2));
-      }
+    // Transfer parent's output paramas to the child
+    ActionParameters transferable_params;
+    const auto& parent_parameters = parent_node->getOutputParameters();
 
-      ActionParameters transferable_params;
-      for (const auto& transf_param_name : transferable_param_names)
-      {
-        transferable_params.setParameter(parent_action_parameters.getParameter(transf_param_name));
-      }
-      
-      child_node->updateInstanceParams(transferable_params);
+    for (const auto& transf_param_name: child_node->getInputParameters().getTransferableParams(parent_parameters))
+    {
+      transferable_params.setParameter(parent_parameters.getParameter(transf_param_name));
+    }
+    child_node->updateInputParams(transferable_params);
+
+    // Check if child node is ready
+    if (!child_node->inputParametersReceived() || !child_node->requiredParentsFinished())
+    {
+      // child_node_names_exec.erase(child_node_name);
+      continue;
+    }
+
+    // Execute the child action
+    if (child_response == "run")
+    {
+      child_node->run();
+    }
+    else if (child_response == "stop")
+    {
+      child_node->stop();
+    }
+    else if (child_response == "pause")
+    {
+      child_node->pause();
     }
   }
 
-  /*
-   * Stop the children_to_stop actions
-   */
-  for (const auto& child_node_name : children_to_stop)
-  {
-    stopNode(child_node_name);
-  } 
-
-  /*
-   * Run the children_to_start actions
-   */
-  startNodes(children_to_start, false);
   return;
 }
 catch(TemotoErrorStack e)

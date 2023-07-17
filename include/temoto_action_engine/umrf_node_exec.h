@@ -74,8 +74,7 @@ public:
    * @brief Creates an instance of the underlying action
    * 
    */
-  void instantiate(NotifyFinishedCb notify_finished_cb
-  , StartChildNodesCb start_child_nodes_cb);
+  void instantiate();
 
   /**
    * @brief Stops the action (UmrfNodeExec::stopNode) and destroys the action instance object.
@@ -84,8 +83,6 @@ public:
   void clearNode();
 
   void updateInstanceParams(const ActionParameters& ap_in);
-
-  bool getInstanceInputParametersReceived() const;
 
   const TemotoErrorStack& getErrorMessages() const;
 

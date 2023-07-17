@@ -81,7 +81,7 @@ void ActionEngine::addUmrfGraph(const std::string& graph_name, const std::vector
   umrf_graph_exec_map_.emplace(graph_name, std::make_shared<UmrfGraphExec>(graph_name, umrf_nodes));
 }
 
-void ActionEngine::executeUmrfGraph(UmrfGraph umrf_graph, bool name_match_required)
+void ActionEngine::executeUmrfGraph(UmrfGraph umrf_graph, std::string result, bool name_match_required)
 {
   std::vector<UmrfNode> umrf_nodes_local = umrf_graph.getUmrfNodes();
 
@@ -89,16 +89,16 @@ void ActionEngine::executeUmrfGraph(UmrfGraph umrf_graph, bool name_match_requir
   for (auto& umrf_node : umrf_nodes_local)
   {
     // Find a matching action for this UMRF
-    bool result;
+    bool match_found;
     try
     {
-      result = amf_.findMatchingAction(umrf_node, ai_.getUmrfs(), name_match_required);
+      match_found = amf_.findMatchingAction(umrf_node, ai_.getUmrfs(), name_match_required);
     }
     catch(TemotoErrorStack e)
     {
       throw FORWARD_TEMOTO_ERROR_STACK(e);
     }
-    if (!result)
+    if (!match_found)
     {
       throw CREATE_TEMOTO_ERROR_STACK("Could not find a matching action for UMRF named " + umrf_node.getName());
     }
@@ -117,7 +117,7 @@ void ActionEngine::executeUmrfGraph(UmrfGraph umrf_graph, bool name_match_requir
     addUmrfGraph(umrf_graph.getName(), umrf_nodes_local);
     TEMOTO_PRINT("UMRF graph '" + umrf_graph.getName() + "' initialized.");
 
-    executeUmrfGraph(umrf_graph.getName());
+    executeUmrfGraph(umrf_graph.getName(), "result");
     TEMOTO_PRINT("UMRF graph '" + umrf_graph.getName() + "' invoked successfully.");
   }
 }

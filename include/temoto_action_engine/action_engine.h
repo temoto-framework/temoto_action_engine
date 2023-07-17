@@ -38,7 +38,9 @@ public:
   // TODO: this method is prolly deprecated and should be removed
   void start();
 
-  void executeUmrfGraph(UmrfGraph umrf_graph, bool name_match_required = false);
+  void executeUmrfGraph(UmrfGraph umrf_graph
+  , std::string result = "on_true"
+  , bool name_match_required = false);
 
   /**
    * @brief Modifies a UMRF graph according to the graph_diffs
@@ -71,7 +73,7 @@ private:
 
   void addUmrfGraph(const std::string& graph_name, const std::vector<UmrfNode>& umrf_nodes);
 
-  void executeUmrfGraph(const std::string& graph_name);
+  void executeUmrfGraph(const std::string& graph_name, std::string result);
 
   void monitoringLoop();
 

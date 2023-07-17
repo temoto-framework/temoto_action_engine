@@ -169,16 +169,6 @@ void UmrfNodeExec::updateInstanceParams(const ActionParameters& ap_in)
   }
 }
 
-bool UmrfNodeExec::getInstanceInputParametersReceived() const
-{
-  LOCK_GUARD_TYPE guard_action_instance(action_instance_rw_mutex_);
-  if (getState() != State::INSTANTIATED)
-  {
-    throw CREATE_TEMOTO_ERROR_STACK("The action is not instantiated");
-  }
-  return action_instance_->getUmrfNodeConst().inputParametersReceived();
-}
-
 std::string UmrfNodeExec::getLatestUmrfJsonStr() const
 {
   LOCK_GUARD_TYPE guard_latest_umrf_json_string(latest_umrf_json_str_rw_mutex_);

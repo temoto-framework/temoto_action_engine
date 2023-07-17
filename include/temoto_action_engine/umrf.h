@@ -83,7 +83,7 @@ public:
   ActionParameters& getOutputParametersNc();
   bool setOutputParameters(const ActionParameters& params);
 
-  bool updateInputParams(const Umrf& umrf_in);
+  bool updateInputParams(const ActionParameters& params_other);
   
   ~Umrf()
   {

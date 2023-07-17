@@ -49,10 +49,6 @@ public:
   ActionParameters& operator = (const ActionParameters& ap)
   {
     parameters_ = ap.parameters_;
-    // for (const auto& p : ap)
-    // {
-    //   parameters_.insert(p);
-    // }
     return *this;
   }
 
@@ -65,55 +61,52 @@ public:
    * @return false 
    */
   bool setParameter(const ParameterContainer& parameter_in, bool merge_new = false)
+  try
   {
-    try
+    auto local_parameter_it = parameters_.find(parameter_in);
+    if (local_parameter_it == parameters_.end())
     {
-      auto local_parameter_it = parameters_.find(parameter_in);
-      if (local_parameter_it == parameters_.end())
-      {
-        return parameters_.insert(parameter_in).second;
-      }
-      else
-      {
-        /*
-         * Modify the existing parameter. First check if the types match
-         */
-        if (local_parameter_it->getType() != parameter_in.getType())
-        {
-          return false;
-        }
-
-        if (merge_new)
-        {
-          // Insert the new param without keeping any info about the old param
-          parameters_.erase(local_parameter_it);
-          parameters_.insert(parameter_in);
-        }
-        else
-        {
-          // Check if the "parameter-to-be-set" is restricted to certain data values
-          if (!checkParamAllowedData(*local_parameter_it, parameter_in))
-          {
-            return false;
-          }
-
-          // Create copy of the old parameter and assign it new params data
-          ParameterContainer param = *parameters_.find(parameter_in);
-          if (parameter_in.getDataSize() != 0)
-          {
-            param.setData(parameter_in.getData());
-          }
-          parameters_.erase(parameters_.find(parameter_in));          
-          parameters_.insert(param);
-        }
-      }
-      return true;
+      return parameters_.insert(parameter_in).second;
     }
-    catch(TemotoErrorStack& e)
+
+    /*
+     * Modify the existing parameter. First check if the types match
+     */
+    if (local_parameter_it->getType() != parameter_in.getType())
     {
-      throw FORWARD_TEMOTO_ERROR_STACK(e);
+      return false;
     }
+
+    if (merge_new)
+    {
+      // Insert the new param without keeping any info about the old param
+      parameters_.erase(local_parameter_it);
+      parameters_.insert(parameter_in);
+    }
+    else
+    {
+      // Check if the "parameter-to-be-set" is restricted to certain data values
+      if (!checkParamAllowedData(*local_parameter_it, parameter_in))
+      {
+        return false;
+      }
+
+      // Create copy of the old parameter and assign it new params data
+      ParameterContainer param = *parameters_.find(parameter_in);
+      if (parameter_in.getDataSize() != 0)
+      {
+        param.setData(parameter_in.getData());
+      }
+      parameters_.erase(parameters_.find(parameter_in));          
+      parameters_.insert(param);
+    }
+    return true;
   }
+  catch(TemotoErrorStack& e)
+  {
+    throw FORWARD_TEMOTO_ERROR_STACK(e);
+  }
+
 
   bool setParameter(const std::string& param_name, const std::string& param_type, const Payload& pl)
   {
@@ -163,6 +156,13 @@ public:
       else if (param_dest.getType() == "number")
       {
         if (boost::any_cast<double>(allowed_dest_data) == boost::any_cast<double>(param_source_data))
+        {
+          return true;
+        }
+      }
+      else if (param_dest.getType() == "bool")
+      {
+        if (boost::any_cast<bool>(allowed_dest_data) == boost::any_cast<bool>(param_source_data))
         {
           return true;
         }

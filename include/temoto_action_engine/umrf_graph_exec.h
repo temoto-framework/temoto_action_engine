@@ -43,7 +43,7 @@ public:
 
   virtual ~UmrfGraphExec();
 
-  void startGraph(NotifyFinishedCb notify_graph_finished_cb);
+  void startGraph(NotifyFinishedCb notify_graph_finished_cb, const std::string& result);
 
   void stopGraph();
 
@@ -53,19 +53,7 @@ public:
 
   void clearNode(const std::string& umrf_name);
 
-  /**
-   * @brief Executes actions in a graph specified its' unique name.
-   * 
-   * @param umrf_node_names the actions to be executed
-   * @param all_ready_requrired If true then none of the actions are executed if some action is still in
-   * uninitialized state (required input parameters not received). This is a required state when root nodes
-   * of the action graph are executed.
-   */
-  void startNodes(const std::vector<std::string> umrf_node_names, bool all_ready_requrired);
-
-  void startChildNodes(const std::string& parent_node_name
-  , const ActionParameters& parent_action_parameters
-  , bool result);
+  void startChildNodes(const std::string& parent_node_name, const std::string& result);
 
   void notifyFinished(const std::string& node_name);
 
