@@ -17,7 +17,7 @@
 #include "temoto_action_engine/umrf_node.h"
 
 UmrfNode::UmrfNode()
-: state_(State::UNINITIALIZED)
+: state_(State::NOT_SET)
 , instance_id_(0)
 , execute_first_(false)
 , actor_exec_traits_(UmrfNode::ActorExecTraits::LOCAL)
@@ -27,7 +27,6 @@ UmrfNode::UmrfNode(const UmrfNode& un)
 : Umrf(un)
 , state_(un.state_)
 , instance_id_(un.instance_id_)
-, library_path_(un.library_path_)
 , parents_(un.parents_)
 , children_(un.children_)
 , full_name_(un.full_name_)
@@ -72,26 +71,6 @@ void UmrfNode::setExecuteFirst(bool execute_first)
 {
   LOCK_GUARD_TYPE guard_execute_first(execute_first_rw_mutex_);
   execute_first_ = execute_first;
-}
-
-const std::string& UmrfNode::getLibraryPath() const
-{
-  LOCK_GUARD_TYPE guard_library_path(library_path_rw_mutex_);
-  return library_path_;
-}
-
-bool UmrfNode::setLibraryPath(const std::string& library_path)
-{
-  LOCK_GUARD_TYPE guard_library_path(library_path_rw_mutex_);
-  if (!library_path.empty())
-  {
-    library_path_ = library_path;
-    return true;  
-  }
-  else
-  {
-    return false;
-  }
 }
 
 const unsigned int& UmrfNode::getInstanceId() const
@@ -169,8 +148,8 @@ std::optional<UmrfNode::Relation> UmrfNode::getParentRelation(const std::string 
   const auto it = std::find_if(getParents().begin(), getParents().end(),
   [&](const UmrfNode::Relation& parent_relation)
   {
-    return parent_relation.name == parent_name;
-  })
+    return parent_relation.name_ == parent_name;
+  });
 
   if (it == getParents().end())
   {
@@ -274,7 +253,7 @@ void UmrfNode::setActorExecTraits(UmrfNode::ActorExecTraits traits)
   actor_exec_traits_ = traits;
 }
 
-bool UmrfNode::getActorExecTraits() const
+UmrfNode::ActorExecTraits UmrfNode::getActorExecTraits() const
 {
   return actor_exec_traits_;
 }

@@ -1,5 +1,5 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * Copyright 2019 TeMoto Telerobotics
+ * Copyright 2023 TeMoto Framework
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,10 @@
 
 ActionEngine::ActionEngine()
 : stop_monitoring_thread_(false)
-{}
+{
+  ENGINE_HANDLE.execute_graph_fptr_ = std::bind(&ActionEngine::executeUmrfGraph, this
+  , std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+}
 
 void ActionEngine::start()
 {
@@ -81,28 +84,20 @@ void ActionEngine::addUmrfGraph(const std::string& graph_name, const std::vector
   umrf_graph_exec_map_.emplace(graph_name, std::make_shared<UmrfGraphExec>(graph_name, umrf_nodes));
 }
 
-void ActionEngine::executeUmrfGraph(UmrfGraph umrf_graph, std::string result, bool name_match_required)
+void ActionEngine::executeUmrfGraphA(UmrfGraph umrf_graph, const std::string& result, bool name_match_required)
+try
 {
   std::vector<UmrfNode> umrf_nodes_local = umrf_graph.getUmrfNodes();
 
   // Find a matching action for this UMRF
   for (auto& umrf_node : umrf_nodes_local)
   {
-    // Find a matching action for this UMRF
-    bool match_found;
-    try
-    {
-      match_found = amf_.findMatchingAction(umrf_node, ai_.getUmrfs(), name_match_required);
-    }
-    catch(TemotoErrorStack e)
-    {
-      throw FORWARD_TEMOTO_ERROR_STACK(e);
-    }
-    if (!match_found)
+    if (!amf_.findMatchingAction(umrf_node, ai_.getUmrfs(), name_match_required))
     {
       throw CREATE_TEMOTO_ERROR_STACK("Could not find a matching action for UMRF named " + umrf_node.getName());
     }
   }
+  
   TEMOTO_PRINT("All actions in graph '" + umrf_graph.getName() + "' found.");
 
   /*
@@ -117,39 +112,55 @@ void ActionEngine::executeUmrfGraph(UmrfGraph umrf_graph, std::string result, bo
     addUmrfGraph(umrf_graph.getName(), umrf_nodes_local);
     TEMOTO_PRINT("UMRF graph '" + umrf_graph.getName() + "' initialized.");
 
-    executeUmrfGraph(umrf_graph.getName(), "result");
+    executeUmrfGraph(umrf_graph.getName(), ActionParameters{}, result);
     TEMOTO_PRINT("UMRF graph '" + umrf_graph.getName() + "' invoked successfully.");
   }
 }
+catch(TemotoErrorStack e)
+{
+  throw FORWARD_TEMOTO_ERROR_STACK(e);
+}
 
-void ActionEngine::executeUmrfGraph(const std::string& graph_name)
+void ActionEngine::executeUmrfGraph(const std::string& graph_name, const ActionParameters& params, const std::string& result)
+try
 {
   LOCK_GUARD_TYPE_R guard_graph_nodes_map_(umrf_graph_map_rw_mutex_);
-  try
+
+  // Check if the requested graph exists
+  if (!graphExists(graph_name))
   {
-    // Check if the requested graph exists
-    if (!graphExists(graph_name))
+    const auto& indexed_graphs = ai_.getGraphs();
+    const auto known_graph = std::find_if(indexed_graphs.begin(), indexed_graphs.end(),
+    [&](const UmrfGraph& ug)
+    {
+      return ug.getName() == graph_name;
+    });
+
+    if (known_graph == indexed_graphs.end())
     {
       throw CREATE_TEMOTO_ERROR_STACK("Cannot execute UMRF graph '" + graph_name + "' because it doesn't exist.");
     }
 
-    // Check if the graph is in initialized state
-    if (umrf_graph_exec_map_.at(graph_name)->getState() != UmrfGraphExec::State::INITIALIZED)
-    {
-      throw CREATE_TEMOTO_ERROR_STACK("Cannot execute UMRF graph '" + graph_name + "' because it's not in initialized state.");
-    }
-    else
-    {
-      umrf_graph_exec_map_.at(graph_name)->startGraph(
-        std::bind(&ActionEngine::notifyGraphFinished, this, std::placeholders::_1));
-    }
+    umrf_graph_exec_map_.emplace(graph_name, std::make_shared<UmrfGraphExec>(*known_graph));
   }
-  catch(TemotoErrorStack e)
+
+  // Check if the graph is in initialized state
+  if (umrf_graph_exec_map_.at(graph_name)->getState() != UmrfGraphExec::State::INITIALIZED)
   {
-    stopUmrfGraph(graph_name);
-    throw FORWARD_TEMOTO_ERROR_STACK(e);
+    throw CREATE_TEMOTO_ERROR_STACK("Cannot execute UMRF graph '" + graph_name + "' because it's not in initialized state.");
+  }
+  else
+  {
+    umrf_graph_exec_map_.at(graph_name)->startGraph(
+      std::bind(&ActionEngine::notifyGraphFinished, this, std::placeholders::_1), result, params);
   }
 }
+catch(TemotoErrorStack e)
+{
+  stopUmrfGraph(graph_name);
+  throw FORWARD_TEMOTO_ERROR_STACK(e);
+}
+
 
 void ActionEngine::modifyGraph(const std::string& graph_name, const UmrfGraphDiffs& graph_diffs)
 {

@@ -1,5 +1,5 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * Copyright 2019 TeMoto Telerobotics
+ * Copyright 2023 TeMoto Framework
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,6 @@ public:
   {
     name_ = umrf.name_;
     actor_ = umrf.actor_;
-    notation_ = umrf.notation_;
     type_ = umrf.type_;
     description_ = umrf.description_;
     input_parameters_ = umrf.input_parameters_;
@@ -59,9 +58,6 @@ public:
 
   const std::string& getActor() const;
   bool setActor(const std::string& actor);
-
-  const std::string& getNotation() const;
-  bool setNotation(const std::string& notation);
 
   const std::string& getDescription() const;
   bool setDescription(const std::string& description);

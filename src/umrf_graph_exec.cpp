@@ -40,17 +40,31 @@ UmrfGraphExec::~UmrfGraphExec()
   clearGraph();
 }
 
-void UmrfGraphExec::startGraph(NotifyFinishedCb notify_graph_finished_cb, const std::string& result)
+void UmrfGraphExec::startGraph(NotifyFinishedCb notify_graph_finished_cb, const std::string& result
+, const ActionParameters& params)
 {
   LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
   notify_graph_finished_cb_ = notify_graph_finished_cb;
 
+  // Transfer the parameters
+  ActionParameters transferable_params;
+  std::shared_ptr<UmrfNodeExec> root_node = graph_nodes_map_.at("graph_entry");
+
+  for (const auto& transf_param_name: root_node->getInputParameters().getTransferableParams(params))
+  {
+    transferable_params.setParameter(params.getParameter(transf_param_name));
+  }
+  root_node->updateInputParams(transferable_params);
+
+  // Check if all required parameters are received
+  if (!root_node->inputParametersReceived())
+  {
+    return;
+  }
+
   setState(State::ACTIVE);
-
-  // First start the monitoring loop in a separate thread
+  root_node->setOutputParameters(root_node->getInputParameters());
   monitoring_thread_ = std::thread(&UmrfGraphExec::monitoringLoop, this);
-
-  // Start the root nodes
   startChildNodes("graph_entry", result);
 }
 
@@ -69,7 +83,7 @@ void UmrfGraphExec::stopGraph()
 
   for (auto& graph_node : graph_nodes_map_)
   {
-    graph_node.second->stopNode(15);
+    graph_node.second->stop();
   }
 }
 
@@ -93,102 +107,102 @@ void UmrfGraphExec::clearGraph()
 void UmrfGraphExec::stopNode(const std::string& umrf_name)
 {
   LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
-  graph_nodes_map_.at(umrf_name)->stopNode(10);
+  graph_nodes_map_.at(umrf_name)->stop();
 }
 
 void UmrfGraphExec::monitoringLoop()
 {
-  monitoring_thread_running_ = true;
-  while(getState() != State::STOP_REQUESTED)
-  {
-    // Wait until a thread is finished
-    std::unique_lock<std::mutex> notify_cv_lock(*notify_cv_mutex_);
-    notify_cv_->wait(notify_cv_lock
-    , [&]{return !finished_nodes_.empty() || getState() == State::STOP_REQUESTED;});
+  // monitoring_thread_running_ = true;
+  // while(getState() != State::STOP_REQUESTED)
+  // {
+  //   // Wait until a thread is finished
+  //   std::unique_lock<std::mutex> notify_cv_lock(*notify_cv_mutex_);
+  //   notify_cv_->wait(notify_cv_lock
+  //   , [&]{return !finished_nodes_.empty() || getState() == State::STOP_REQUESTED;});
 
-    // If the graph is requested to stop then go throug all actions and join all running threads
-    if (getState() == State::STOP_REQUESTED)
-    {
-      notify_cv_lock.unlock();
-      bool all_threads_finished = true;
-      do
-      {
-        {
-          LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
-          all_threads_finished = true;
-          for (auto& graph_node : graph_nodes_map_)
-          {
-            if (graph_node.second->threadRunning())
-            {
-              all_threads_finished = false;
-            }
-            else if (graph_node.second->threadJoinable())
-            {
-              graph_node.second->joinUmrfNodeExecThread();
-            }
-          }
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
-      }
-      while (!all_threads_finished);
-      break;
-    }
+  //   // If the graph is requested to stop then go throug all actions and join all running threads
+  //   if (getState() == State::STOP_REQUESTED)
+  //   {
+  //     notify_cv_lock.unlock();
+  //     bool all_threads_finished = true;
+  //     do
+  //     {
+  //       {
+  //         LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
+  //         all_threads_finished = true;
+  //         for (auto& graph_node : graph_nodes_map_)
+  //         {
+  //           if (graph_node.second->threadRunning())
+  //           {
+  //             all_threads_finished = false;
+  //           }
+  //           else if (graph_node.second->threadJoinable())
+  //           {
+  //             graph_node.second->joinUmrfNodeExecThread();
+  //           }
+  //         }
+  //       }
+  //       std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  //     }
+  //     while (!all_threads_finished);
+  //     break;
+  //   }
 
-    LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
-    for (const auto& finished_node : finished_nodes_)
-    {
-      try
-      {
-        auto graph_node = graph_nodes_map_.at(finished_node);
-        graph_node->joinUmrfNodeExecThread();
+  //   LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
+  //   for (const auto& finished_node : finished_nodes_)
+  //   {
+  //     try
+  //     {
+  //       auto graph_node = graph_nodes_map_.at(finished_node);
+  //       graph_node->joinUmrfNodeExecThread();
 
-        // Print the error messages if any
-        std::string error_messages = graph_node->getErrorMessages().getMessage();
-        if (!error_messages.empty())
-        {
-          std::cout << graph_node->getErrorMessages().getMessage() << std::endl;
-        }
+  //       // Print the error messages if any
+  //       std::string error_messages = graph_node->getErrorMessages().getMessage();
+  //       if (!error_messages.empty())
+  //       {
+  //         std::cout << graph_node->getErrorMessages().getMessage() << std::endl;
+  //       }
 
-        // Clear the umrf node if it's synchronous
-        if (graph_node->getType() == "synchronous")
-        {
-          graph_node->clearNode();
-        }
-      }
-      catch(TemotoErrorStack e)
-      {
-        std::cout << e.what() << '\n';
-      }
-      catch(const std::exception& e)
-      {
-        std::cerr << e.what() << '\n';
-      }
-      catch(...)
-      {
-        std::cerr << "[" << __func__ << "] caught an unhandled exception" << '\n';
-      }
-    }
+  //       // Clear the umrf node if it's synchronous
+  //       if (graph_node->getType() == "synchronous")
+  //       {
+  //         graph_node->clearNode();
+  //       }
+  //     }
+  //     catch(TemotoErrorStack e)
+  //     {
+  //       std::cout << e.what() << '\n';
+  //     }
+  //     catch(const std::exception& e)
+  //     {
+  //       std::cerr << e.what() << '\n';
+  //     }
+  //     catch(...)
+  //     {
+  //       std::cerr << "[" << __func__ << "] caught an unhandled exception" << '\n';
+  //     }
+  //   }
 
-    finished_nodes_.clear();
+  //   finished_nodes_.clear();
 
-    // If all actions in the graph are synchronous and have finished, then stop the graph
-    bool all_actions_finished = true;
-    for (const auto& graph_node : graph_nodes_map_)
-    {
-      if (graph_node.second->getType() != "synchronous" || 
-          graph_node.second->getState() != UmrfNode::State::UNINITIALIZED)
-      {
-        all_actions_finished = false;
-        break;
-      }
-    }
+  //   // If all actions in the graph are synchronous and have finished, then stop the graph
+  //   bool all_actions_finished = true;
+  //   for (const auto& graph_node : graph_nodes_map_)
+  //   {
+  //     if (graph_node.second->getType() != "synchronous" || 
+  //         graph_node.second->getState() != UmrfNode::State::UNINITIALIZED)
+  //     {
+  //       all_actions_finished = false;
+  //       break;
+  //     }
+  //   }
 
-    if (all_actions_finished)
-    {
-      notify_graph_finished_cb_(graph_name_);
-      break;
-    }
-  }
+  //   if (all_actions_finished)
+  //   {
+  //     notify_graph_finished_cb_(graph_name_);
+  //     break;
+  //   }
+  // }
   monitoring_thread_running_ = false;
 }
 

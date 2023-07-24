@@ -1,5 +1,5 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * Copyright 2019 TeMoto Telerobotics
+ * Copyright 2023 TeMoto Framework
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@
 #include <utility>
 #include "boost/filesystem.hpp"
 #include "temoto_action_engine/umrf_node.h"
+#include "temoto_action_engine/umrf_graph.h"
 
 /**
  * @brief Responsible for finding action packages from the filesystem.
@@ -62,6 +63,8 @@ public:
    */
   const std::vector<UmrfNode>& getUmrfs() const;
 
+  const std::vector<UmrfGraph>& getGraphs() const;
+
 private:
 
   /**
@@ -75,17 +78,16 @@ private:
   , boost::filesystem::directory_entry base_path
   , int search_depth) const;
 
-  /// Vector of timestamped semantic frames
-  std::vector<UmrfNode> indexed_umrfs_;
+  std::vector<UmrfGraph> findGraphs(boost::filesystem::directory_entry base_path, int search_depth) const;
 
-  /// Vector of action paths
-  std::vector<std::string> action_paths_;
+  mutable MUTEX_TYPE graphs_mutex_;
+  GUARDED_VARIABLE(std::vector<UmrfGraph> indexed_graphs_, graphs_mutex_);
 
-  /// Mutex for protecting indexed action semantic frames from data races
-  mutable std::mutex action_sfs_mutex_;
+  mutable MUTEX_TYPE action_sfs_mutex_;
+  GUARDED_VARIABLE(std::vector<UmrfNode> indexed_umrfs_, action_sfs_mutex_);
 
-  /// Mutex for protecting action paths from data races
-  mutable std::mutex action_paths_mutex_;
+  mutable MUTEX_TYPE action_paths_mutex_;
+  GUARDED_VARIABLE(std::vector<std::string> action_paths_, action_paths_mutex_);
 
   const std::string umrf_file_extension_ = "umrf.json";
 };

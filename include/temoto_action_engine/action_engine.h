@@ -1,5 +1,5 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * Copyright 2019 TeMoto Telerobotics
+ * Copyright 2023 TeMoto Framework
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 #ifndef TEMOTO_ACTION_ENGINE__ACTION_ENGINE_H
 #define TEMOTO_ACTION_ENGINE__ACTION_ENGINE_H
 
+#include "temoto_action_engine/action_engine_handle.h"
 #include "temoto_action_engine/action_indexer.h"
 #include "temoto_action_engine/action_match_finder.h"
 #include "temoto_action_engine/temoto_error.h"
@@ -38,9 +39,11 @@ public:
   // TODO: this method is prolly deprecated and should be removed
   void start();
 
-  void executeUmrfGraph(UmrfGraph umrf_graph
-  , std::string result = "on_true"
+  void executeUmrfGraphA(UmrfGraph umrf_graph, const std::string& result = "on_true"
   , bool name_match_required = false);
+
+  void executeUmrfGraph(const std::string& graph_name, const ActionParameters& params
+  , const std::string& result = "on_true");
 
   /**
    * @brief Modifies a UMRF graph according to the graph_diffs
@@ -72,8 +75,6 @@ private:
   bool graphExists(const std::string& graph_name) const;
 
   void addUmrfGraph(const std::string& graph_name, const std::vector<UmrfNode>& umrf_nodes);
-
-  void executeUmrfGraph(const std::string& graph_name, std::string result);
 
   void monitoringLoop();
 

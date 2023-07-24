@@ -1,5 +1,5 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * Copyright 2019 TeMoto Telerobotics
+ * Copyright 2023 TeMoto Framework
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,15 +29,14 @@ try
   /*
    * First check if this UMRF is executed locally or remotely by checking the name of the actor
    */
-  if (!actor_synchronizer_umrf_.getActor().empty()
-   && !umrf_node_in.getActor().empty()
-   && actor_synchronizer_umrf_.getActor() != umrf_node_in.getActor())
-  {
-    umrf_node_in.setLibraryPath(actor_synchronizer_umrf_.getLibraryPath());
-    umrf_node_in.setDescription(actor_synchronizer_umrf_.getName());
-    umrf_node_in.setIsRemoteActor(true);
-    return true;
-  }
+  // if (!actor_synchronizer_umrf_.getActor().empty()
+  //  && !umrf_node_in.getActor().empty()
+  //  && actor_synchronizer_umrf_.getActor() != umrf_node_in.getActor())
+  // {
+  //   umrf_node_in.setDescription(actor_synchronizer_umrf_.getName());
+  //   umrf_node_in.setIsRemoteActor(true);
+  //   return true;
+  // }
 
   for (const auto& known_umrf : known_umrfs)
   {
@@ -103,7 +102,7 @@ try
     /*
      * Get the library path of the matching action
      */
-    umrf_node_in.setLibraryPath(known_umrf.getLibraryPath());
+    // umrf_node_in.setLibraryPath(known_umrf.getLibraryPath());
     umrf_node_in.setName(known_umrf.getName());
 
     /*

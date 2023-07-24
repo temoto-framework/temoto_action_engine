@@ -1,5 +1,5 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * Copyright 2019 TeMoto Telerobotics
+ * Copyright 2023 TeMoto Framework
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,8 @@ public:
 
   virtual ~UmrfGraphExec();
 
-  void startGraph(NotifyFinishedCb notify_graph_finished_cb, const std::string& result);
+  void startGraph(NotifyFinishedCb notify_graph_finished_cb, const std::string& result
+  , const ActionParameters& params);
 
   void stopGraph();
 

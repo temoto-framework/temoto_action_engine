@@ -61,14 +61,12 @@ public:
   /// A convenience datastructure which helps to convert state names to std::string
   const static inline std::map<State, std::string> state_to_str_map_{
     {State::NOT_SET, "NOT_SET"},
-    {State::UNINITIALIZED, "UNINITIALIZED"},
-    {State::INSTANTIATED, "INSTANTIATED"},
-    {State::READY, "READY"},
+    {State::INITIALIZED, "INITIALIZED"},
     {State::RUNNING, "RUNNING"},
     {State::PAUSED, "PAUSED"},
-    {State::STOP_REQUESTED, "STOP_REQUESTED"},
+    {State::STOPPING, "STOPPING"},
     {State::FINISHED, "FINISHED"},
-    {State::ERROR, "ERROR"},};
+    {State::ERROR, "ERROR"}};
 
   /**
    * @brief Embeds infromation about a parent/child connection
@@ -220,9 +218,8 @@ public:
 
   void operator=(const UmrfNode& un)
   {
-    this->Umrf::operator=(un);
+    Umrf::operator=(un);
     instance_id_ = un.instance_id_;
-    library_path_ = un.library_path_;
     parents_ = un.parents_;
     children_ = un.children_;
     full_name_ = un.full_name_;
@@ -235,9 +232,6 @@ public:
   bool setInstanceId(const unsigned int& instance_id);
 
   const std::string& getFullName() const;
-
-  const std::string& getLibraryPath() const;
-  bool setLibraryPath(const std::string& library_path);
 
   State getState() const;
   void setState(UmrfNode::State state);
@@ -265,7 +259,7 @@ public:
   void setParentReceived(const UmrfNode::Relation& parent);
 
   void setActorExecTraits(ActorExecTraits traits);
-  bool getActorExecTraits() const;
+  ActorExecTraits getActorExecTraits() const;
 
 protected:
 
@@ -280,9 +274,6 @@ protected:
 
   mutable MUTEX_TYPE full_name_rw_mutex_;
   GUARDED_VARIABLE(mutable std::string full_name_, full_name_rw_mutex_);
-
-  mutable MUTEX_TYPE library_path_rw_mutex_;
-  GUARDED_VARIABLE(std::string library_path_, library_path_rw_mutex_);
 
   mutable MUTEX_TYPE state_rw_mutex_;
   GUARDED_VARIABLE(State state_, state_rw_mutex_);

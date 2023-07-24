@@ -1,5 +1,5 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * Copyright 2019 TeMoto Telerobotics
+ * Copyright 2023 TeMoto Framework
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,14 @@ public:
   , umrf_nodes_vec_(ugc.umrf_nodes_vec_)
   , graph_description_(ugc.graph_description_)
   {}
+
+  void operator=(const UmrfGraphCommon& ug)
+  {
+    graph_name_ = ug.graph_name_;
+    state_ = ug.state_;
+    umrf_nodes_vec_ = ug.umrf_nodes_vec_;
+    graph_description_ = ug.graph_description_;
+  }
 
   void setName(const std::string& name)
   {
@@ -143,6 +151,12 @@ public:
   : UmrfGraphCommon(graph_name, umrf_nodes_vec)
   {
     initialize();
+  }
+
+  void operator=(const UmrfGraphBase& ug)
+  {
+    UmrfGraphCommon::operator= (ug);
+    graph_nodes_map_ = ug.graph_nodes_map_;
   }
 
   virtual ~UmrfGraphBase()

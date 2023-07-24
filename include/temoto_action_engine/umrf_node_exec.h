@@ -66,7 +66,7 @@ public:
 
   // void restart();
 
-  void stop();
+  void stop(/*TODO: maybe add a timeout*/);
 
 
 
@@ -82,8 +82,6 @@ public:
    */
   void clearNode();
 
-  void updateInstanceParams(const ActionParameters& ap_in);
-
   const TemotoErrorStack& getErrorMessages() const;
 
   std::string getLatestUmrfJsonStr() const;
@@ -94,10 +92,10 @@ private:
   mutable MUTEX_TYPE class_loader_rw_mutex_;
   GUARDED_VARIABLE(std::shared_ptr<class_loader::ClassLoader> class_loader_, class_loader_rw_mutex_);
 
-  mutable MUTEX_TYPE action_instance_rw_mutex_;
+  mutable MUTEX_TYPE_R action_instance_rw_mutex_;
   GUARDED_VARIABLE(boost::shared_ptr<ActionBase> action_instance_, action_instance_rw_mutex_);
 
-  mutable MUTEX_TYPE action_threads_rw_mutex_;
+  mutable MUTEX_TYPE_R action_threads_rw_mutex_;
   GUARDED_VARIABLE(ActionThreads action_threads_, action_threads_rw_mutex_);
 
   ThreadWrapper monitoring_thread_;
