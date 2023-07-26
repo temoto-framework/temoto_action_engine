@@ -20,6 +20,7 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <condition_variable>
 #include <class_loader/class_loader.hpp>
 #include <boost/shared_ptr.hpp>
 #include <functional>
@@ -68,6 +69,8 @@ public:
 
   void stop(/*TODO: maybe add a timeout*/);
 
+  void bypass();
+
 
 
   /**
@@ -87,6 +90,12 @@ public:
   std::string getLatestUmrfJsonStr() const;
   void setLatestUmrfJsonStr(const std::string& latest_umrf_json_str);
 
+  void setGraphName(const std::string& parent_graph_name);
+
+  void notifyFinished();
+
+  void setRemoteResult(const std::string& remote_result);
+
 private:
 
   mutable MUTEX_TYPE class_loader_rw_mutex_;
@@ -98,18 +107,23 @@ private:
   mutable MUTEX_TYPE_R action_threads_rw_mutex_;
   GUARDED_VARIABLE(ActionThreads action_threads_, action_threads_rw_mutex_);
 
-  ThreadWrapper monitoring_thread_;
+  mutable MUTEX_TYPE latest_umrf_json_str_rw_mutex_;
+  GUARDED_VARIABLE(std::string latest_umrf_json_str_, latest_umrf_json_str_rw_mutex_);
 
-
+  std::string parent_graph_name_;
 
   float default_stopping_timeout_ = 5;
 
   TemotoErrorStack error_messages_;
 
   StartChildNodesCb start_child_nodes_cb_ = NULL;
-  
-  mutable MUTEX_TYPE latest_umrf_json_str_rw_mutex_;
-  GUARDED_VARIABLE(std::string latest_umrf_json_str_, latest_umrf_json_str_rw_mutex_);
+
+  std::condition_variable wait_cv_;
+  std::mutex wait_cv_mutex_;
+  bool wait_ = false;
+  std::string remote_result_;
+
+  std::string waitUntilFinished(const Waitable& waitable);
 
   void setToError();
 

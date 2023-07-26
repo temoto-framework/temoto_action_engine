@@ -72,6 +72,9 @@ public:
   bool stop();
 
 private:
+
+  void addWaiter(const Waitable& waitable, const Waiter& waiter);
+
   bool graphExists(const std::string& graph_name) const;
 
   void addUmrfGraph(const std::string& graph_name, const std::vector<UmrfNode>& umrf_nodes);
@@ -87,6 +90,10 @@ private:
   typedef std::map<std::string, std::shared_ptr<UmrfGraphExec>> UmrfGraphExecMap;
   mutable MUTEX_TYPE_R umrf_graph_map_rw_mutex_;
   GUARDED_VARIABLE(UmrfGraphExecMap umrf_graph_exec_map_, umrf_graph_map_rw_mutex_);
+
+  typedef std::map<Waitable, std::vector<Waiter>> SyncMap;
+  mutable MUTEX_TYPE sync_map_rw_mutex_;
+  GUARDED_VARIABLE(SyncMap sync_map_, sync_map_rw_mutex_);
 
   mutable MUTEX_TYPE notify_cv_mutex_;
   GUARDED_VARIABLE(std::condition_variable notify_cv_, notify_cv_mutex_);

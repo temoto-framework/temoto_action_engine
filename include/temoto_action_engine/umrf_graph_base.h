@@ -37,9 +37,9 @@ public:
   {
     UNINITIALIZED,
     INITIALIZED,
-    ACTIVE,
-    STOP_REQUESTED,
-    PREEMTIVELY_STOPPED,
+    RUNNING,
+    STOPPING,
+    STOPPED,
     FINISHED,
     ERROR
   };

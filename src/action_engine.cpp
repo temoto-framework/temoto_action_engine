@@ -47,6 +47,8 @@ void ActionEngine::monitoringLoop()
     for (const auto& finished_graph : finished_graphs_)
     try
     {
+      /* TODO: notify*/
+
       TEMOTO_PRINT("Clearing umrf graph '" + finished_graph + "'");
       umrf_graph_exec_map_.erase(finished_graph);
     }
@@ -342,13 +344,35 @@ void ActionEngine::notifyGraphFinished(const std::string& graph_name)
 }
 
 ActionEngine::~ActionEngine()
+try
 {
-  try
+  stop();
+}
+catch(const std::exception& e)
+{
+  std::cerr << e.what() << '\n';
+}
+
+void ActionEngine::addWaiter(const Waitable& waitable, const Waiter& waiter)
+{
+  LOCK_GUARD_TYPE l(sync_map_rw_mutex_);
+
+  if (sync_map_.find(waitable) == sync_map_.end())
   {
-    stop();
+    sync_map_.insert({waitable, std::vector<Waiter>{waiter}});
+    return;
   }
-  catch(const std::exception& e)
+
+  // Make sure that it's not a duplicate entry
+  for (const auto& other_waiter : sync_map_.at(waitable))
   {
-    std::cerr << e.what() << '\n';
+    if (waiter == other_waiter)
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Attempted to add a duplicate entry to the wait list: waitable=['" 
+      + waitable.action_name + "' in '" + waitable.graph_name + "'], waiter=['" 
+      + waiter.action_name + "' in '" + waiter.graph_name + "']");
+    }
   }
+
+  sync_map_.at(waitable).push_back(waiter);
 }

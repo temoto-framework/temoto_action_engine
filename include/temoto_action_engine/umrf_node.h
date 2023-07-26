@@ -54,6 +54,7 @@ public:
     PAUSED,
     STOPPING,
     FINISHED,
+    BYPASSED,
     ERROR
   };
 
@@ -66,6 +67,7 @@ public:
     {State::PAUSED, "PAUSED"},
     {State::STOPPING, "STOPPING"},
     {State::FINISHED, "FINISHED"},
+    {State::BYPASSED, "BYPASSED"},
     {State::ERROR, "ERROR"}};
 
   /**
