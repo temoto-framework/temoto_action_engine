@@ -14,7 +14,6 @@
  * limitations under the License.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#include "temoto_action_engine/action_engine_handle.h"
 #include "temoto_action_engine/basic_timer.h"
 #include "temoto_action_engine/messaging.h"
 #include "temoto_action_engine/umrf_json.h"
@@ -39,7 +38,9 @@ UmrfNodeExec::UmrfNodeExec(const UmrfNode& umrf_node)
       {
         return true;
       }
-    }}();
+    }
+    return false;
+    }();
 
     if (!class_found)
     {
@@ -200,11 +201,7 @@ void UmrfNodeExec::run()
      */
     else if (getActorExecTraits() == UmrfNode::ActorExecTraits::REMOTE)
     {
-      // TODO: 1) wait for state change notification. get the result
-      // result = sync_handle.getResult(getFullName());
-
-      // TODO: 2) send acknowledgement via syncer::acknowledge(std::string action_name) std::function
-      //          blocks until consensus is reached among all actors 
+      result = waitUntilFinished(Waitable{.action_name = "TODO_ACTION_NAME", .graph_name = "TODO_GRAPH_NAME"});
     }
 
     /*
@@ -212,8 +209,8 @@ void UmrfNodeExec::run()
     */
     else if (getActorExecTraits() == UmrfNode::ActorExecTraits::GRAPH)
     {
-      // ENGINE_HANDLE.executeUmrfGraph("");
-      // TODO: result = action_handle.waitGraphResult();
+      ENGINE_HANDLE.executeUmrfGraph("TODO_GRAPH_NAME", getInputParameters());
+      result = waitUntilFinished(Waitable{.action_name = "graph_exit", .graph_name = "TODO_GRAPH_NAME"});
     }
 
   } // try end
@@ -241,7 +238,7 @@ void UmrfNodeExec::run()
 
   if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
   {
-    // TODO: sync_handle.syncResult(getFullName(), result);
+    ENGINE_HANDLE.notifyFinished(Waitable{.action_name = getFullName(), .graph_name = parent_graph_name_}, result);
   }
 
   if (getState() == UmrfNode::State::RUNNING)
@@ -435,6 +432,13 @@ void UmrfNodeExec::pause()
   });
 }
 
+void UmrfNodeExec::bypass()
+{
+  /* TODO */
+  // clearThread(UmrfNode::State::BYPASSED);
+  // LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
+}
+
 void UmrfNodeExec::clearThread(const UmrfNode::State state_name)
 {
   LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
@@ -456,4 +460,35 @@ void UmrfNodeExec::clearThread(const UmrfNode::State state_name)
   }
 
   action_threads_.erase(it);
+}
+
+void UmrfNodeExec::setGraphName(const std::string& parent_graph_name)
+{
+  parent_graph_name_ = parent_graph_name;
+}
+
+std::string UmrfNodeExec::waitUntilFinished(const Waitable& waitable)
+{
+  Waiter waiter{.action_name = getFullName(), .graph_name = parent_graph_name_};
+  ENGINE_HANDLE.addWaiter(waitable, waiter);
+
+  wait_ = true;
+  std::unique_lock<std::mutex> lock(wait_cv_mutex_);
+  wait_cv_.wait(lock, [&]{return !wait_;});
+
+  // send acknowledgement, blocks until consensus is reached among all actors
+  ENGINE_HANDLE.acknowledge(waitable, waiter);
+
+  return remote_result_;
+}
+
+void UmrfNodeExec::notifyFinished()
+{
+  wait_ = false;
+  wait_cv_.notify_all();
+}
+
+void UmrfNodeExec::setRemoteResult(const std::string& remote_result)
+{
+  remote_result_ = remote_result;
 }
