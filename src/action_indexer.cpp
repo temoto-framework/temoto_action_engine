@@ -50,6 +50,7 @@ try
 {
   // Lock the mutex
   LOCK_GUARD_TYPE l_actions(action_sfs_mutex_);
+  LOCK_GUARD_TYPE l_graphs(graphs_mutex_);
   LOCK_GUARD_TYPE l_paths(action_paths_mutex_);
 
   // Clear the old indexed umrfs frames
@@ -57,8 +58,12 @@ try
   for (const std::string action_path : action_paths_)
   {
     boost::filesystem::directory_entry full_path_b = boost::filesystem::directory_entry(action_path);
+
     std::vector<UmrfNode> indexed_umrfs_local = findActionFilesys("", full_path_b, 2);
     indexed_umrfs_.insert(indexed_umrfs_.end(), indexed_umrfs_local.begin(), indexed_umrfs_local.end());
+
+    std::vector<UmrfGraph> indexed_graphs_local = findGraphs(full_path_b, 2);
+    indexed_graphs_.insert(indexed_graphs_.end(), indexed_graphs_local.begin(), indexed_graphs_local.end());
   }
   return indexed_umrfs_.size();
 }

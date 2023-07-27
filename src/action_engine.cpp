@@ -18,8 +18,9 @@
 #include "temoto_action_engine/messaging.h"
 #include "temoto_action_engine/umrf_json.h"
 
-ActionEngine::ActionEngine()
-: stop_monitoring_thread_(false)
+ActionEngine::ActionEngine(const std::string& actor_name)
+: actor_name_(actor_name)
+, stop_monitoring_thread_(false)
 {
   ENGINE_HANDLE.execute_graph_fptr_ = std::bind(&ActionEngine::executeUmrfGraph, this
   , std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
@@ -95,20 +96,13 @@ try
     return;
   }
 
-  std::vector<UmrfNode> umrf_nodes_local = umrf_graph.getUmrfNodes();
-
-  // Find a matching action for this UMRF
-  for (auto& umrf_node : umrf_nodes_local)
+  if (!matchGraph(umrf_graph, {umrf_graph.getName()}))
   {
-    if (!amf_.findMatchingAction(umrf_node, ai_.getUmrfs(), name_match_required))
-    {
-      throw CREATE_TEMOTO_ERROR_STACK("Could not find a matching action for UMRF named " + umrf_node.getName());
-    }
+    throw CREATE_TEMOTO_ERROR_STACK("Could not resolve graph '" + umrf_graph.getName() + "'");
   }
-  
   TEMOTO_PRINT("All actions in graph '" + umrf_graph.getName() + "' found.");
 
-  addUmrfGraph(umrf_graph.getName(), umrf_nodes_local);
+  umrf_graph_exec_map_.emplace(umrf_graph.getName(), std::make_shared<UmrfGraphExec>(umrf_graph));
   TEMOTO_PRINT("UMRF graph '" + umrf_graph.getName() + "' initialized.");
 
   executeUmrfGraph(umrf_graph.getName(), ActionParameters{}, result);
@@ -139,7 +133,14 @@ try
       throw CREATE_TEMOTO_ERROR_STACK("Cannot execute UMRF graph '" + graph_name + "' because it doesn't exist.");
     }
 
-    umrf_graph_exec_map_.emplace(graph_name, std::make_shared<UmrfGraphExec>(*known_graph));
+    // Find a matching action for this UMRF
+    UmrfGraph known_graph_cpy = *known_graph;
+    if (!matchGraph(known_graph_cpy, {known_graph_cpy.getName()}))
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Could not resolve graph '" + known_graph_cpy.getName() + "'");
+    }
+
+    umrf_graph_exec_map_.emplace(graph_name, std::make_shared<UmrfGraphExec>(known_graph_cpy));
   }
 
   // Check if the graph is in initialized state
@@ -263,21 +264,15 @@ try
   {
     ai_.addActionPath(action_packages_path);
     ai_.indexActions();
+
+    // amf_.matchGraphs()
     return true;
   }
-  else
-  {
-    return false;
-  }
+  return false;
 }
 catch(TemotoErrorStack e)
 {
   throw FORWARD_TEMOTO_ERROR_STACK(e);
-}
-
-void ActionEngine::setActorSynchronizerUmrf(const UmrfNode& actor_synchronizer_umrf)
-{
-  amf_.setActorSynchronizerUmrf(actor_synchronizer_umrf);
 }
 
 bool ActionEngine::stop()
@@ -371,4 +366,59 @@ void ActionEngine::addWaiter(const Waitable& waitable, const Waiter& waiter)
   }
 
   sync_map_.at(waitable).push_back(waiter);
+}
+
+bool ActionEngine::matchGraph(UmrfGraph& g, std::set<std::string> g_blacklist)
+{
+  auto graph_nodes = g.getUmrfNodes();
+  return [&]{
+  for (auto& a : graph_nodes)
+  {
+    // check if the action is local
+    if (!a.getActor().empty() && a.getActor() != actor_name_)
+    {
+      a.setActorExecTraits(UmrfNode::ActorExecTraits::REMOTE);
+      continue;
+    }
+
+    // look from atomic actions
+    if (amf_.findMatchingAction(a, ai_.getUmrfs(), true))
+    {
+      continue;
+    }
+
+    bool is_subgraph = [&]
+    {
+      for (auto sub_g : ai_.getGraphs())
+      {
+        if (g_blacklist.count(sub_g.getName()) != 0)
+          continue;
+
+        if (sub_g.getName() != a.getName())
+          continue;
+
+        UmrfNode node_signature;
+        node_signature.setInputParameters(sub_g.getUmrfNode("graph_entry")->getInputParameters());
+        node_signature.setOutputParameters(sub_g.getUmrfNode("graph_exit")->getOutputParameters());
+
+        if (!amf_.findMatchingAction(a, node_signature))
+          continue;
+
+        g_blacklist.insert(sub_g.getName());
+        if (matchGraph(sub_g, g_blacklist))
+          return true;
+      }
+      return false;
+    }();
+
+    if (!is_subgraph)
+    {
+      return false;
+    }
+    a.setActorExecTraits(UmrfNode::ActorExecTraits::GRAPH);
+  }
+
+  g = UmrfGraph(g.getName(), graph_nodes);
+  return true;
+  }();
 }
