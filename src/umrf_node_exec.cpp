@@ -19,6 +19,8 @@
 #include "temoto_action_engine/umrf_json.h"
 #include "temoto_action_engine/umrf_node_exec.h"
 
+#include <chrono>
+
 UmrfNodeExec::UmrfNodeExec(const UmrfNode& umrf_node)
 : UmrfNode(umrf_node)
 {
@@ -87,14 +89,20 @@ const TemotoErrorStack& UmrfNodeExec::getErrorMessages() const
 void UmrfNodeExec::clearNode()
 try
 {
-  // TODO
-  // if (getState() != State::NOT_SET)
-  // {
-  //   stopNode(10);
-  //   LOCK_GUARD_TYPE guard_action_instance(action_instance_rw_mutex_);
-  //   action_instance_.reset();
-  //   setState(State::NOT_SET);
-  // }
+  if (getState() == State::INITIALIZED || getState() == State::RUNNING)
+  {
+    stop(true);
+  }
+
+  LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
+  for (auto& action_thread : action_threads_)
+  {
+    while (action_thread.second.is_running || !action_thread.second.thread->joinable())
+    {
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    action_thread.second.thread->join();
+  }
 }
 catch(TemotoErrorStack e)
 {
@@ -201,7 +209,7 @@ void UmrfNodeExec::run()
      */
     else if (getActorExecTraits() == UmrfNode::ActorExecTraits::REMOTE)
     {
-      result = waitUntilFinished(Waitable{.action_name = "TODO_ACTION_NAME", .graph_name = "TODO_GRAPH_NAME"});
+      result = waitUntilFinished(Waitable{.action_name = getFullName(), .graph_name = parent_graph_name_});
     }
 
     /*
@@ -209,8 +217,8 @@ void UmrfNodeExec::run()
     */
     else if (getActorExecTraits() == UmrfNode::ActorExecTraits::GRAPH)
     {
-      ENGINE_HANDLE.executeUmrfGraph("TODO_GRAPH_NAME", getInputParameters());
-      result = waitUntilFinished(Waitable{.action_name = "graph_exit", .graph_name = "TODO_GRAPH_NAME"});
+      ENGINE_HANDLE.executeUmrfGraph(getName(), getInputParameters());
+      result = waitUntilFinished(Waitable{.action_name = "graph_exit", .graph_name = parent_graph_name_});
     }
 
   } // try end
@@ -236,6 +244,9 @@ void UmrfNodeExec::run()
     result = "on_error";
   }
 
+  // Delete any input data due to std::any virtual deleter
+  getInputParametersNc().clearData();
+
   if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
   {
     ENGINE_HANDLE.notifyFinished(Waitable{.action_name = getFullName(), .graph_name = parent_graph_name_}, result);
@@ -258,7 +269,7 @@ void UmrfNodeExec::run()
   });
 }
 
-void UmrfNodeExec::stop()
+void UmrfNodeExec::stop(bool ignore_result)
 {
   if (getState() == UmrfNode::State::STOPPING ||
       getState() == UmrfNode::State::FINISHED ||
@@ -332,7 +343,7 @@ void UmrfNodeExec::stop()
     // TODO: sync_handle.syncState(getFullName(), getState());
   }
 
-  if (getState() == UmrfNode::State::ERROR)
+  if (getState() == UmrfNode::State::ERROR && !ignore_result)
   {
     start_child_nodes_cb_(getFullName(), action_instance_->getUmrfNodeConst().getOutputParameters(), "on_error");
   }

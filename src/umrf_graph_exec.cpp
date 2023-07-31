@@ -18,20 +18,14 @@
 
 UmrfGraphExec::UmrfGraphExec(const std::string& graph_name)
 : UmrfGraphBase(graph_name)
-, notify_cv_(std::make_shared<std::condition_variable>())
-, notify_cv_mutex_(std::make_shared<std::mutex>())
 {}
 
 UmrfGraphExec::UmrfGraphExec(const UmrfGraphCommon& ugc)
 : UmrfGraphBase(ugc)
-, notify_cv_(std::make_shared<std::condition_variable>())
-, notify_cv_mutex_(std::make_shared<std::mutex>())
 {}
 
 UmrfGraphExec::UmrfGraphExec(const std::string& graph_name, const std::vector<UmrfNode>& umrf_nodes_vec)
 : UmrfGraphBase(graph_name, umrf_nodes_vec)
-, notify_cv_(std::make_shared<std::condition_variable>())
-, notify_cv_mutex_(std::make_shared<std::mutex>())
 {}
 
 UmrfGraphExec::~UmrfGraphExec()
@@ -40,11 +34,9 @@ UmrfGraphExec::~UmrfGraphExec()
   clearGraph();
 }
 
-void UmrfGraphExec::startGraph(NotifyFinishedCb notify_graph_finished_cb, const std::string& result
-, const ActionParameters& params)
+void UmrfGraphExec::startGraph(const std::string& result, const ActionParameters& params)
 {
   LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
-  notify_graph_finished_cb_ = notify_graph_finished_cb;
 
   // Tell each action the name of the graph they're part of. Needed for synchronization procedures
   for (const auto& node : graph_nodes_map_)
@@ -73,22 +65,48 @@ void UmrfGraphExec::startGraph(NotifyFinishedCb notify_graph_finished_cb, const 
   startChildNodes("graph_entry", result);
 }
 
-void UmrfGraphExec::stopGraph()
+std::string UmrfGraphExec::stopGraph()
 {
-  if (getState() == State::UNINITIALIZED)
+  if (getState() == State::UNINITIALIZED ||
+      getState() == State::STOPPING ||  
+      getState() == State::STOPPED ||
+      getState() == State::ERROR)
   {
-    return;
-  }
-  else
-  {
-    setState(State::STOPPING);
+    return (getState() == State::ERROR ? "on_error" : "on_true");
   }
 
+  setState(State::STOPPING);
   LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
 
   for (auto& graph_node : graph_nodes_map_)
   {
-    graph_node.second->stop();
+    graph_node.second->stop(true);
+  }
+
+  bool had_error = false;
+  for (auto& graph_node : graph_nodes_map_)
+  {
+    while (graph_node.second->getState() != UmrfNode::State::FINISHED &&
+      graph_node.second->getState() != UmrfNode::State::ERROR)
+    {
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    if (graph_node.second->getState() == UmrfNode::State::ERROR)
+    {
+      had_error = true;
+    }
+  }
+
+  if (had_error)
+  {
+    setState(State::ERROR);
+    return "on_error";
+  }
+  else
+  {
+    setState(State::STOPPED);
+    return "on_true";
   }
 }
 
@@ -185,7 +203,7 @@ try
     if (child_node_name == "graph_exit")
     {
       setState(State::FINISHED);
-      notify_graph_finished_cb_(getName());
+      ENGINE_HANDLE.notifyFinished(Waitable{.action_name = "graph_exit", .graph_name = getName()}, result);
       return;
     }
 

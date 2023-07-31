@@ -274,6 +274,11 @@ public:
     required_ = required;
   }
 
+  void clearData()
+  {
+    data_.clear();
+  }
+
   ~ActionParameter()
   {
     data_.clear();

@@ -331,6 +331,15 @@ public:
     parameters_.clear();
   }
 
+  void clearData()
+  {
+    for (const ParameterContainer& p : parameters_)
+    {
+      ParameterContainer& p_nc = const_cast<ParameterContainer&>(p);
+      p_nc.clearData();
+    }
+  }
+
   std::string toString() const
   {
     std::string out;

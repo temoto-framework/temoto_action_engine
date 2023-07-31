@@ -24,6 +24,9 @@ ActionEngine::ActionEngine(const std::string& actor_name)
 {
   ENGINE_HANDLE.execute_graph_fptr_ = std::bind(&ActionEngine::executeUmrfGraph, this
   , std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+
+  ENGINE_HANDLE.notify_finished_fptr_ = std::bind(&ActionEngine::notifyFinished, this
+  , std::placeholders::_1, std::placeholders::_2);
 }
 
 void ActionEngine::start()
@@ -150,8 +153,7 @@ try
   }
   else
   {
-    umrf_graph_exec_map_.at(graph_name)->startGraph(
-      std::bind(&ActionEngine::notifyGraphFinished, this, std::placeholders::_1), result, params);
+    umrf_graph_exec_map_.at(graph_name)->startGraph(result, params);
   }
 }
 catch(TemotoErrorStack e)
@@ -325,13 +327,29 @@ std::vector<std::string> ActionEngine::getGraphJsons() const
   return umrf_graph_jsons;
 }
 
-void ActionEngine::notifyGraphFinished(const std::string& graph_name)
+void ActionEngine::notifyFinished(const Waitable& waitable, const std::string& result)
 {
+  LOCK_GUARD_TYPE l_sync(sync_map_rw_mutex_);
+  if (sync_map_.find(waitable) == sync_map_.end())
   {
-    LOCK_GUARD_TYPE notify_cv_lock(notify_cv_mutex_);
-    finished_graphs_.push_back(graph_name);
+    return;
   }
-  notify_cv_.notify_all();
+
+  LOCK_GUARD_TYPE_R l_graph(umrf_graph_map_rw_mutex_);
+  for (const auto& waiter : sync_map_.at(waitable))
+  {
+    auto& waiting_action = umrf_graph_exec_map_.at(waiter.graph_name)->graph_nodes_map_.at(waiter.action_name);
+    waiting_action->setRemoteResult(result);
+    waiting_action->notifyFinished();
+  }
+
+  if (waitable.action_name == "graph_exit")
+  {
+    finished_graphs_.push_back(waitable.graph_name);  
+    notify_cv_.notify_all();  
+  }
+
+  sync_map_.erase(waitable);
 }
 
 ActionEngine::~ActionEngine()
@@ -391,12 +409,15 @@ bool ActionEngine::matchGraph(UmrfGraph& g, std::set<std::string> g_blacklist)
     {
       for (auto sub_g : ai_.getGraphs())
       {
+        // Avoid self reference / self dependency
         if (g_blacklist.count(sub_g.getName()) != 0)
           continue;
 
+        // Name of the subgraph must match the name of the desired action
         if (sub_g.getName() != a.getName())
           continue;
 
+        // Get the signature of the subgraph (the configuration of input and output parameters)
         UmrfNode node_signature;
         node_signature.setInputParameters(sub_g.getUmrfNode("graph_entry")->getInputParameters());
         node_signature.setOutputParameters(sub_g.getUmrfNode("graph_exit")->getOutputParameters());
@@ -404,6 +425,7 @@ bool ActionEngine::matchGraph(UmrfGraph& g, std::set<std::string> g_blacklist)
         if (!amf_.findMatchingAction(a, node_signature))
           continue;
 
+        // Find matching actions/graphs for the sub-graph
         g_blacklist.insert(sub_g.getName());
         if (matchGraph(sub_g, g_blacklist))
           return true;

@@ -69,7 +69,7 @@ public:
 
   // void restart();
 
-  void stop(/*TODO: maybe add a timeout*/);
+  void stop(bool ignore_result = false);
 
   void bypass();
 

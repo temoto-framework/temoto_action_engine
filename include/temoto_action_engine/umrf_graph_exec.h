@@ -30,7 +30,7 @@
  */
 class UmrfGraphExec : public UmrfGraphBase<UmrfNodeExec>
 {
-typedef std::function<void(const std::string&)> NotifyFinishedCb;
+friend class ActionEngine;
 public:
 
   UmrfGraphExec(const UmrfGraphExec& ug) = delete;
@@ -43,10 +43,9 @@ public:
 
   virtual ~UmrfGraphExec();
 
-  void startGraph(NotifyFinishedCb notify_graph_finished_cb, const std::string& result
-  , const ActionParameters& params);
+  void startGraph(const std::string& result, const ActionParameters& params);
 
-  void stopGraph();
+  std::string stopGraph();
 
   void clearGraph();
 
@@ -55,17 +54,6 @@ public:
   void clearNode(const std::string& umrf_name);
 
   void startChildNodes(const std::string& parent_node_name, const std::string& result);
-
-  void notifyFinished(const std::string& node_name);
-
-private:
-
-  std::shared_ptr<std::condition_variable> notify_cv_;
-
-  std::shared_ptr<std::mutex> notify_cv_mutex_; 
-
-  NotifyFinishedCb notify_graph_finished_cb_ = NULL;
-  
 };
 
 #endif
