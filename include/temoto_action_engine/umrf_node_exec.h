@@ -24,6 +24,8 @@
 #include <class_loader/class_loader.hpp>
 #include <boost/shared_ptr.hpp>
 #include <functional>
+
+#include "temoto_action_engine/action_engine_handle.h"
 #include "temoto_action_engine/compiler_macros.h"
 #include "temoto_action_engine/temoto_error.h"
 #include "temoto_action_engine/umrf_node.h"

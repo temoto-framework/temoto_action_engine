@@ -42,16 +42,22 @@ struct WaitlistItem
   }
 };
 
-struct Waiter : WaitlistItem {};
-struct Waitable : WaitlistItem {};
+typedef WaitlistItem Waiter;
+typedef WaitlistItem Waitable;
 
 class EngineHandle
 {
 friend class ActionEngine;
-typedef std::function<void(const std::string&, const ActionParameters&, const std::string&)> ExecuteGraphT;
 typedef std::function<void(const Waitable&, const Waiter&)> AddWaiterT;
+typedef std::function<void(const std::string&, const ActionParameters&, const std::string&)> ExecuteGraphT;
+typedef std::function<void(const Waitable&, const std::string&)> NotifyFinishedT;
 
 public:
+
+  void acknowledge(const Waitable& waitable, const Waiter& waiter)
+  {
+    // TODO
+  }
 
   void addWaiter(const Waitable& waitable, const Waiter& waiter)
   {
@@ -65,9 +71,15 @@ public:
     execute_graph_fptr_(graph_name, params, result);
   }
 
+  void notifyFinished(const Waitable& waitable, const std::string& result)
+  {
+    notify_finished_fptr_(waitable, result);
+  }
+
 private:
-  ExecuteGraphT execute_graph_fptr_;
   AddWaiterT add_waiter_fptr_;
+  ExecuteGraphT execute_graph_fptr_;
+  NotifyFinishedT notify_finished_fptr_;
 };
 
 inline EngineHandle ENGINE_HANDLE;

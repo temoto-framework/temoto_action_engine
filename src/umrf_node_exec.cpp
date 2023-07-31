@@ -14,7 +14,6 @@
  * limitations under the License.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#include "temoto_action_engine/action_engine_handle.h"
 #include "temoto_action_engine/basic_timer.h"
 #include "temoto_action_engine/messaging.h"
 #include "temoto_action_engine/umrf_json.h"
@@ -203,10 +202,6 @@ void UmrfNodeExec::run()
     else if (getActorExecTraits() == UmrfNode::ActorExecTraits::REMOTE)
     {
       result = waitUntilFinished(Waitable{.action_name = "TODO_ACTION_NAME", .graph_name = "TODO_GRAPH_NAME"});
-
-      // TODO: 2) send acknowledgement via syncer::acknowledge(std::string action_name) std::function
-      //          blocks until consensus is reached among all actors
-      // ENGINE_HANDLE.acknowledge("TODO_ACTION_NAME"); 
     }
 
     /*
@@ -243,7 +238,7 @@ void UmrfNodeExec::run()
 
   if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
   {
-    // TODO: sync_handle.syncResult(getFullName(), result);
+    ENGINE_HANDLE.notifyFinished(Waitable{.action_name = getFullName(), .graph_name = parent_graph_name_}, result);
   }
 
   if (getState() == UmrfNode::State::RUNNING)
@@ -474,11 +469,15 @@ void UmrfNodeExec::setGraphName(const std::string& parent_graph_name)
 
 std::string UmrfNodeExec::waitUntilFinished(const Waitable& waitable)
 {
-  ENGINE_HANDLE.addWaiter(waitable, {.graph_name = parent_graph_name_, .action_name = getFullName()});
+  Waiter waiter{.action_name = getFullName(), .graph_name = parent_graph_name_};
+  ENGINE_HANDLE.addWaiter(waitable, waiter);
 
   wait_ = true;
   std::unique_lock<std::mutex> lock(wait_cv_mutex_);
   wait_cv_.wait(lock, [&]{return !wait_;});
+
+  // send acknowledgement, blocks until consensus is reached among all actors
+  ENGINE_HANDLE.acknowledge(waitable, waiter);
 
   return remote_result_;
 }
