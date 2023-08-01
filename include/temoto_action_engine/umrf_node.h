@@ -212,7 +212,6 @@ public:
     parents_ = un.parents_;
     children_ = un.children_;
     full_name_ = un.full_name_;
-    execute_first_ = un.execute_first_;
     state_ = un.state_;
     actor_exec_traits_ = un.actor_exec_traits_;
   }
@@ -225,15 +224,12 @@ public:
   State getState() const;
   void setState(UmrfNode::State state);
 
-  bool getExecuteFirst() const;
-  void setExecuteFirst(bool execute_first);
-
   const std::vector<Relation>& getParents() const;
   bool setParents(const std::vector<Relation>& parents);
   void clearParents();
   bool addParent(const Relation& parent);
   bool removeParent(const Relation& parent);
-  std::optional<Relation> getParentRelation(const std::string parent_name) const;
+  std::optional<Relation> getParentRelation(const UmrfNode::Relation& parent) const;
 
   const std::vector<Relation>& getChildren() const;
   bool setChildren(const std::vector<Relation>& children);
@@ -267,10 +263,10 @@ protected:
   mutable MUTEX_TYPE state_rw_mutex_;
   GUARDED_VARIABLE(State state_, state_rw_mutex_);
 
-  mutable MUTEX_TYPE execute_first_rw_mutex_;
-  GUARDED_VARIABLE(bool execute_first_, execute_first_rw_mutex_);
-
   ActorExecTraits actor_exec_traits_;
 };
+
+inline const UmrfNode::Relation GRAPH_ENTRY = UmrfNode::Relation("graph_entry", 0);
+inline const UmrfNode::Relation GRAPH_EXIT = UmrfNode::Relation("graph_exit", 0);
 
 #endif

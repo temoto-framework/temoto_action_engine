@@ -45,7 +45,7 @@ void ActionIndexer::addActionPath(const std::vector<std::string>& paths)
   }
 }
 
-unsigned int ActionIndexer::indexActions()
+ActionIndexer::Summary ActionIndexer::indexActions()
 try
 {
   // Lock the mutex
@@ -65,7 +65,7 @@ try
     std::vector<UmrfGraph> indexed_graphs_local = findGraphs(full_path_b, 2);
     indexed_graphs_.insert(indexed_graphs_.end(), indexed_graphs_local.begin(), indexed_graphs_local.end());
   }
-  return indexed_umrfs_.size();
+  return {.actions = indexed_umrfs_.size(), .graphs = indexed_graphs_.size()};
 }
 catch(TemotoErrorStack e)
 {

@@ -448,6 +448,7 @@ try
       throw CREATE_TEMOTO_ERROR_STACK("Graph entry '" + a.getFullName() + "' not found in the list of actions");
     }
     graph_entry_action.setInputParameters(it->getInputParameters());
+    it->addParent(graph_entry_action.asRelation());
   }
 
   umrf_actions.push_back(graph_entry_action);
@@ -473,6 +474,7 @@ try
       throw CREATE_TEMOTO_ERROR_STACK("Graph exit '" + a.getFullName() + "' not found in the list of actions");
     }
     graph_exit_action.setOutputParameters(it->getOutputParameters());
+    it->addChild(graph_exit_action.asRelation());
   }
 
   umrf_actions.push_back(graph_exit_action);
@@ -706,6 +708,9 @@ json toUmrfJson(const UmrfNode& u)
     action[UMRF_FIELDS.parents] = json::array();
     for (const auto& parent : u.getParents())
     {
+      if (parent.getName() == "graph_entry")
+        continue;
+
       json parent_j;
       parent_j[RELATION_FIELDS.name] = parent.getName();
       parent_j[RELATION_FIELDS.instance_id] = parent.getInstanceId();
@@ -728,6 +733,9 @@ json toUmrfJson(const UmrfNode& u)
     action[UMRF_FIELDS.children] = json::array();
     for (const auto& child : u.getChildren())
     {
+      if (child.getName() == "graph_exit")
+        continue;
+
       json child_j;
       child_j[RELATION_FIELDS.name] = child.getName();
       child_j[RELATION_FIELDS.instance_id] = child.getInstanceId();

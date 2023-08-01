@@ -1,0 +1,38 @@
+{
+  "graph_name": "engine_test_1",
+  "graph_description": "tests the functionality to pass parameters",
+  "graph_entry": [
+    {
+      "name": "TaAppendStrA",
+      "instance_id": 0
+    }
+  ],
+  "graph_exit": [
+    {
+      "name": "TaAppendStrA",
+      "instance_id": 0
+    }
+  ],
+  "actions": [
+    {
+      "name": "TaAppendStrA",
+      "instance_id": 0,
+      "type": "sync",
+      "input_parameters": {
+        "str_a": {
+          "pvf_type": "string",
+          "pvf_value": "Input A"
+        },
+        "str_b": {
+          "pvf_type": "string",
+          "pvf_value": "Input B"
+        }
+      },
+      "output_parameters": {
+        "str_a": {
+          "pvf_type": "string"
+        }
+      }
+    }
+  ]
+}

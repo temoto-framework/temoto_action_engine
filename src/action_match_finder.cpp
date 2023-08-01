@@ -23,7 +23,7 @@ try
 {
   for (const auto& known_umrf : known_umrfs)
   {
-    if (findMatchingAction(umrf_node_in, known_umrfs, name_match))
+    if (findMatchingAction(umrf_node_in, known_umrf, name_match))
     {
       return true;
     }

@@ -53,7 +53,7 @@ public:
 
   void clearNode(const std::string& umrf_name);
 
-  void startChildNodes(const std::string& parent_node_name, const std::string& result);
+  void startChildNodes(const UmrfNode::Relation& parent_node_relation, const std::string& result);
 };
 
 #endif

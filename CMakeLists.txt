@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.1)
 project(temoto_action_engine)
 
-add_compile_options(-std=c++17)
+add_compile_options(-std=c++17 -g)
 
 # Check which compiler is required
 if( "$ENV{TEMOTO_COMPILER}" STREQUAL "clang")
@@ -67,6 +67,19 @@ target_link_libraries(${PROJECT_NAME}
 if (TESTS)
   add_subdirectory(test)
 endif()
+
+add_executable(engine_test
+  src/engine_test.cpp
+)
+
+add_dependencies(engine_test
+  ${PROJECT_NAME}
+)
+
+target_link_libraries(engine_test
+  ${PROJECT_NAME}
+)
+
 
 #
 # INSTALL

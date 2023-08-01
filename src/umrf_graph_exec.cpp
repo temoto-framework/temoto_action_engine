@@ -22,7 +22,10 @@ UmrfGraphExec::UmrfGraphExec(const std::string& graph_name)
 
 UmrfGraphExec::UmrfGraphExec(const UmrfGraphCommon& ugc)
 : UmrfGraphBase(ugc)
-{}
+{
+  setState(UmrfGraphCommon::State::UNINITIALIZED);
+  initialize();
+}
 
 UmrfGraphExec::UmrfGraphExec(const std::string& graph_name, const std::vector<UmrfNode>& umrf_nodes_vec)
 : UmrfGraphBase(graph_name, umrf_nodes_vec)
@@ -44,15 +47,18 @@ void UmrfGraphExec::startGraph(const std::string& result, const ActionParameters
     node.second->setGraphName(getName());
   }
 
-  // Transfer the parameters
-  ActionParameters transferable_params;
-  std::shared_ptr<UmrfNodeExec> root_node = graph_nodes_map_.at("graph_entry");
+  std::shared_ptr<UmrfNodeExec> root_node = graph_nodes_map_.at(GRAPH_ENTRY.getFullName());
 
-  for (const auto& transf_param_name: root_node->getInputParameters().getTransferableParams(params))
+  if (!params.empty())
   {
-    transferable_params.setParameter(params.getParameter(transf_param_name));
+    // Transfer the parameters
+    ActionParameters transferable_params;
+    for (const auto& transf_param_name: root_node->getInputParameters().getTransferableParams(params))
+    {
+      transferable_params.setParameter(params.getParameter(transf_param_name));
+    }
+    root_node->updateInputParams(transferable_params);
   }
-  root_node->updateInputParams(transferable_params);
 
   // Check if all required parameters are received
   if (!root_node->inputParametersReceived())
@@ -62,7 +68,7 @@ void UmrfGraphExec::startGraph(const std::string& result, const ActionParameters
 
   setState(State::RUNNING);
   root_node->setOutputParameters(root_node->getInputParameters());
-  startChildNodes("graph_entry", result);
+  startChildNodes(GRAPH_ENTRY, result);
 }
 
 std::string UmrfGraphExec::stopGraph()
@@ -70,6 +76,7 @@ std::string UmrfGraphExec::stopGraph()
   if (getState() == State::UNINITIALIZED ||
       getState() == State::STOPPING ||  
       getState() == State::STOPPED ||
+      getState() == State::FINISHED ||
       getState() == State::ERROR)
   {
     return (getState() == State::ERROR ? "on_error" : "on_true");
@@ -129,7 +136,7 @@ void UmrfGraphExec::stopNode(const std::string& umrf_name)
   graph_nodes_map_.at(umrf_name)->stop();
 }
 
-void UmrfGraphExec::startChildNodes(const std::string& parent_node_name, const std::string& result)
+void UmrfGraphExec::startChildNodes(const UmrfNode::Relation& parent_node_relation, const std::string& result)
 try
 {
   /*
@@ -142,35 +149,25 @@ try
   }
 
   LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
-  std::shared_ptr<UmrfNodeExec> parent_node = graph_nodes_map_.at(parent_node_name);
-  std::vector<std::string> child_node_names;
+  std::shared_ptr<UmrfNodeExec> parent_node = graph_nodes_map_.at(parent_node_relation.getFullName());
 
-  if (parent_node->getChildren().empty())
-  {
-    return;
-  }
-  else
-  {
-    for (const auto& child_node_relation : parent_node->getChildren())
-    {
-      child_node_names.push_back(child_node_relation.getFullName());
-    }
-  }
-
-  std::set<std::string> child_node_names_exec(child_node_names.begin(), child_node_names.end());
+  std::cout << "D1\n";
 
   /*
    * Update the child nodes and check which children are ready
    */
-  for (const auto& child_node_name : child_node_names)
+  for (const auto& child_node_relation : parent_node->getChildren())
   {
-    std::shared_ptr<UmrfNodeExec> child_node = graph_nodes_map_.at(child_node_name);
-
+    std::cout << "D1_1a\n";
+    std::shared_ptr<UmrfNodeExec> child_node = graph_nodes_map_.at(child_node_relation.getFullName());
+    std::cout << "D1_1b\n";
     // Mark that the parent has finished
-    child_node->setParentReceived(parent_node->asRelation());
-
+    child_node->setParentReceived(parent_node_relation);
+    std::cout << "D1_1c\n";
     // Check if the parent should be ignored or not
-    const auto child_response = child_node->getParentRelation(parent_node_name)->getResponse(result);
+    const auto child_response = child_node->getParentRelation(parent_node_relation)->getResponse(result);
+
+    std::cout << "D1_2\n";
 
     if (child_response == "ignore")
     {
@@ -182,6 +179,8 @@ try
       child_node->bypass();
       continue;
     }
+
+    std::cout << "D1_3\n";
 
     // Transfer parent's output paramas to the child
     ActionParameters transferable_params;
@@ -196,16 +195,23 @@ try
     // Check if child node is ready
     if (!child_node->inputParametersReceived() || !child_node->requiredParentsFinished())
     {
-      // child_node_names_exec.erase(child_node_name);
+      std::cout << "D1_3a\n";
       continue;
     }
 
-    if (child_node_name == "graph_exit")
+    std::cout << "D1_4\n";
+
+    if (child_node->getName() == GRAPH_EXIT.getName())
     {
       setState(State::FINISHED);
-      ENGINE_HANDLE.notifyFinished(Waitable{.action_name = "graph_exit", .graph_name = getName()}, result);
+      ENGINE_HANDLE.notifyFinished(Waitable{.action_name = GRAPH_EXIT.getFullName(), .graph_name = getName()}, result);
       return;
     }
+
+    std::cout << "D1_5\n";
+
+    child_node->start_child_nodes_cb_ = std::bind(&UmrfGraphExec::startChildNodes, this
+    , std::placeholders::_1, std::placeholders::_2);
 
     // Execute the child action
     if (child_response == "run")

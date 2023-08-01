@@ -134,12 +134,14 @@ class UmrfGraphBase : public UmrfGraphCommon
 public:
   UmrfGraphBase(const std::string& graph_name)
   : UmrfGraphCommon(graph_name)
-  {}
+  {
+  }
 
   UmrfGraphBase(const UmrfGraphBase& ugb)
   : UmrfGraphCommon(ugb)
   , graph_nodes_map_(ugb.graph_nodes_map_)
-  {}
+  {
+  }
 
   UmrfGraphBase(const UmrfGraphCommon& ugc)
   : UmrfGraphCommon(ugc)
@@ -317,19 +319,17 @@ protected:
 
     // Initialize the umrf_node nodes map
     for (const auto& umrf_node : umrf_nodes_vec_)
+    try
     {
-      try
+      if (!graph_nodes_map_.emplace(umrf_node.getFullName(), std::make_shared<UMRF_NODE_T>(umrf_node)).second)
       {
-        if (!graph_nodes_map_.emplace(umrf_node.getFullName(), std::make_shared<UMRF_NODE_T>(umrf_node)).second)
-        {
-          return false;
-        }
-      }
-      catch(const std::exception& e)
-      {
-        std::cerr << e.what() << '\n';
         return false;
       }
+    }
+    catch(const std::exception& e)
+    {
+      std::cerr << e.what() << '\n';
+      return false;
     }
 
     /*

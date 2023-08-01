@@ -16,10 +16,12 @@
 
 #include "temoto_action_engine/umrf_node.h"
 
+// const UmrfNode::Relation GRAPH_ENTRY = UmrfNode::Relation("graph_entry", 0);
+// const UmrfNode::Relation GRAPH_EXIT = UmrfNode::Relation("graph_exit", 0);
+
 UmrfNode::UmrfNode()
 : state_(State::NOT_SET)
 , instance_id_(0)
-, execute_first_(false)
 , actor_exec_traits_(UmrfNode::ActorExecTraits::LOCAL)
 {}
 
@@ -30,7 +32,6 @@ UmrfNode::UmrfNode(const UmrfNode& un)
 , parents_(un.parents_)
 , children_(un.children_)
 , full_name_(un.full_name_)
-, execute_first_(un.execute_first_)
 , actor_exec_traits_(un.actor_exec_traits_)
 {}
 
@@ -59,18 +60,6 @@ void UmrfNode::setState(UmrfNode::State state)
 {
   LOCK_GUARD_TYPE guard_state(state_rw_mutex_);
   state_ = state;
-}
-
-bool UmrfNode::getExecuteFirst() const
-{
-  LOCK_GUARD_TYPE guard_execute_first(execute_first_rw_mutex_);
-  return execute_first_;
-}
-
-void UmrfNode::setExecuteFirst(bool execute_first)
-{
-  LOCK_GUARD_TYPE guard_execute_first(execute_first_rw_mutex_);
-  execute_first_ = execute_first;
 }
 
 const unsigned int& UmrfNode::getInstanceId() const
@@ -143,13 +132,9 @@ bool UmrfNode::removeParent(const UmrfNode::Relation& parent)
   }
 }
 
-std::optional<UmrfNode::Relation> UmrfNode::getParentRelation(const std::string parent_name) const
+std::optional<UmrfNode::Relation> UmrfNode::getParentRelation(const UmrfNode::Relation& parent) const
 {
-  const auto it = std::find_if(getParents().begin(), getParents().end(),
-  [&](const UmrfNode::Relation& parent_relation)
-  {
-    return parent_relation.name_ == parent_name;
-  });
+  const auto it = std::find(getParents().begin(), getParents().end(), parent);
 
   if (it == getParents().end())
   {
@@ -244,7 +229,7 @@ void UmrfNode::setParentReceived(const UmrfNode::Relation& parent)
   }
   else
   {
-    throw CREATE_TEMOTO_ERROR_STACK("The parent does not exist");
+    throw CREATE_TEMOTO_ERROR_STACK("Action '" + getFullName() + "' does not have a parent '" + parent.getFullName() + "'");
   }
 }
 

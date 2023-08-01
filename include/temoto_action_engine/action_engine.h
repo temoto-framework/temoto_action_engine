@@ -42,7 +42,7 @@ public:
   void executeUmrfGraphA(UmrfGraph umrf_graph, const std::string& result = "on_true"
   , bool name_match_required = false);
 
-  void executeUmrfGraph(const std::string& graph_name, const ActionParameters& params
+  void executeUmrfGraph(const std::string& graph_name, const ActionParameters& params = ActionParameters()
   , const std::string& result = "on_true");
 
   /**
@@ -58,6 +58,8 @@ public:
   bool addActionsPath(const std::string& action_packages_path);
 
   std::vector<std::string> getGraphJsons() const;
+
+  std::string waitForGraph(const std::string& graph_name);
 
   ~ActionEngine();
 
@@ -100,7 +102,7 @@ private:
 
   std::string actor_name_;
 
-  std::vector<std::string> finished_graphs_;
+  std::map<std::string, std::string> finished_graphs_;
 
   std::thread monitoring_thread_;
 

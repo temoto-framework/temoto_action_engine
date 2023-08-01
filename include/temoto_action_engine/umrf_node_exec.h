@@ -33,6 +33,8 @@
 
 class UmrfNodeExec : public UmrfNode
 {
+friend class UmrfGraphExec;
+
 struct ThreadWrapper
 {
   std::shared_ptr<std::thread> thread;
@@ -41,9 +43,7 @@ struct ThreadWrapper
 };
 
 typedef std::map<State, ThreadWrapper> ActionThreads;
-typedef std::function<void(const std::string&, const ActionParameters&, const std::string&)> StartChildNodesCb;
-typedef std::function<void(const std::string&)> NotifyFinishedCb;
-
+typedef std::function<void(const UmrfNode::Relation&, const std::string&)> StartChildNodesCb;
 
 public:
 

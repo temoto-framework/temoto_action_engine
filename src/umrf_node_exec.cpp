@@ -21,14 +21,40 @@
 
 #include <chrono>
 
+using namespace std;
+  
+string camelToSnake(string str_camel_case)
+{
+  string str_snake_case = "";
+  char c = tolower(str_camel_case[0]);
+  str_snake_case+=(char(c));
+
+  for (int i = 1; i < str_camel_case.length(); i++) 
+  {
+    char ch = str_camel_case[i];
+    if (isupper(ch)) 
+    {
+      str_snake_case = str_snake_case + '_';
+      str_snake_case+=char(tolower(ch));
+    }
+    else 
+    {
+      str_snake_case = str_snake_case + ch;
+    }
+  }
+  return str_snake_case;
+}
+
 UmrfNodeExec::UmrfNodeExec(const UmrfNode& umrf_node)
 : UmrfNode(umrf_node)
 {
-  if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
+  if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL && 
+      getName() != "graph_entry" &&
+      getName() != "graph_exit")
   try
   {
     LOCK_GUARD_TYPE guard_class_loader(class_loader_rw_mutex_);
-    std::string library_name = "lib" + getName() + ".so";
+    std::string library_name = "lib" + camelToSnake(getName()) + ".so";
     class_loader_ = std::make_shared<class_loader::ClassLoader>(library_name, false);
 
     // Check if the classloader actually contains the required action
@@ -89,6 +115,11 @@ const TemotoErrorStack& UmrfNodeExec::getErrorMessages() const
 void UmrfNodeExec::clearNode()
 try
 {
+  if (getName() == "graph_entry" || getName() == "graph_exit")
+  {
+    return;
+  }
+
   if (getState() == State::INITIALIZED || getState() == State::RUNNING)
   {
     stop(true);
@@ -120,6 +151,11 @@ catch(...)
 void UmrfNodeExec::instantiate()
 try
 {
+  if (getName() == "graph_entry" || getName() == "graph_exit")
+  {
+    return;
+  }
+
   LOCK_GUARD_TYPE_R guard_action_instance(action_instance_rw_mutex_);
   LOCK_GUARD_TYPE guard_class_loader(class_loader_rw_mutex_);
 
@@ -151,6 +187,11 @@ void UmrfNodeExec::setLatestUmrfJsonStr(const std::string& latest_umrf_json_str)
 
 void UmrfNodeExec::run()
 {
+  if (getName() == "graph_entry" || getName() == "graph_exit")
+  {
+    return;
+  }
+
   // Check if the action is already running state
   if (getState() == UmrfNode::State::RUNNING)
   {
@@ -201,6 +242,7 @@ void UmrfNodeExec::run()
      */
     if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
     {
+      LOCK_GUARD_TYPE_R guard_action_instance(action_instance_rw_mutex_);
       result = (action_instance_->executeActionWrapped()) ? "on_true" : "on_false"; // Blocking call, returns when finished
     }
 
@@ -218,7 +260,7 @@ void UmrfNodeExec::run()
     else if (getActorExecTraits() == UmrfNode::ActorExecTraits::GRAPH)
     {
       ENGINE_HANDLE.executeUmrfGraph(getName(), getInputParameters());
-      result = waitUntilFinished(Waitable{.action_name = "graph_exit", .graph_name = parent_graph_name_});
+      result = waitUntilFinished(Waitable{.action_name = GRAPH_EXIT.getFullName(), .graph_name = parent_graph_name_});
     }
 
   } // try end
@@ -249,17 +291,19 @@ void UmrfNodeExec::run()
 
   if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
   {
+    LOCK_GUARD_TYPE_R guard_action_instance(action_instance_rw_mutex_);
+    action_instance_->getUmrfNode().getInputParametersNc().clearData();
     ENGINE_HANDLE.notifyFinished(Waitable{.action_name = getFullName(), .graph_name = parent_graph_name_}, result);
   }
 
   if (getState() == UmrfNode::State::RUNNING)
   {
-    start_child_nodes_cb_(getFullName(), action_instance_->getUmrfNodeConst().getOutputParameters(), result);
+    start_child_nodes_cb_(asRelation(), result);
     setState(State::FINISHED);
   }
   else if (getState() == UmrfNode::State::ERROR)
   {
-    start_child_nodes_cb_(getFullName(), action_instance_->getUmrfNodeConst().getOutputParameters(), result);
+    start_child_nodes_cb_(asRelation(), result);
   }
 
   {
@@ -271,6 +315,11 @@ void UmrfNodeExec::run()
 
 void UmrfNodeExec::stop(bool ignore_result)
 {
+  if (getName() == "graph_entry" || getName() == "graph_exit")
+  {
+    return;
+  }
+
   if (getState() == UmrfNode::State::STOPPING ||
       getState() == UmrfNode::State::FINISHED ||
       getState() == UmrfNode::State::NOT_SET)
@@ -345,7 +394,7 @@ void UmrfNodeExec::stop(bool ignore_result)
 
   if (getState() == UmrfNode::State::ERROR && !ignore_result)
   {
-    start_child_nodes_cb_(getFullName(), action_instance_->getUmrfNodeConst().getOutputParameters(), "on_error");
+    start_child_nodes_cb_(asRelation(), "on_error");
   }
 
   {
@@ -357,6 +406,11 @@ void UmrfNodeExec::stop(bool ignore_result)
 
 void UmrfNodeExec::pause()
 {
+  if (getName() == "graph_entry" || getName() == "graph_exit")
+  {
+    return;
+  }
+
   if (getState() == UmrfNode::State::PAUSED)
   {
     return;
@@ -433,7 +487,7 @@ void UmrfNodeExec::pause()
 
   if (getState() == UmrfNode::State::ERROR)
   {
-    start_child_nodes_cb_(getFullName(), action_instance_->getUmrfNodeConst().getOutputParameters(), "on_error");
+    start_child_nodes_cb_(asRelation(), "on_error");
   }
 
   {
@@ -452,6 +506,11 @@ void UmrfNodeExec::bypass()
 
 void UmrfNodeExec::clearThread(const UmrfNode::State state_name)
 {
+  if (getName() == "graph_entry" || getName() == "graph_exit")
+  {
+    return;
+  }
+
   LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
 
   auto it = action_threads_.find(state_name);

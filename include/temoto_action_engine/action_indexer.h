@@ -31,6 +31,13 @@
 class ActionIndexer
 {
 public:
+
+  struct Summary
+  {
+    long unsigned int actions;
+    long unsigned int graphs;
+  };
+
   ActionIndexer();
   /**
    * @brief Adds a base path where the ActionIndexer should look for action packages.
@@ -54,7 +61,7 @@ public:
    * 
    * @return unsigned int Number of found actions
    */
-  unsigned int indexActions();
+  Summary indexActions();
 
   /**
    * @brief Returns all UMRFs that were found during last indexing
