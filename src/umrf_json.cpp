@@ -474,6 +474,7 @@ try
       throw CREATE_TEMOTO_ERROR_STACK("Graph exit '" + a.getFullName() + "' not found in the list of actions");
     }
     graph_exit_action.setOutputParameters(it->getOutputParameters());
+    graph_exit_action.setInputParameters(it->getOutputParameters());
     it->addChild(graph_exit_action.asRelation());
   }
 

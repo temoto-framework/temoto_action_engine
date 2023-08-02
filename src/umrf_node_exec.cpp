@@ -115,11 +115,6 @@ const TemotoErrorStack& UmrfNodeExec::getErrorMessages() const
 void UmrfNodeExec::clearNode()
 try
 {
-  if (getName() == "graph_entry" || getName() == "graph_exit")
-  {
-    return;
-  }
-
   if (getState() == State::INITIALIZED || getState() == State::RUNNING)
   {
     stop(true);
@@ -134,6 +129,8 @@ try
     }
     action_thread.second.thread->join();
   }
+
+  getOutputParametersNc().clearData();
 }
 catch(TemotoErrorStack e)
 {
@@ -244,6 +241,7 @@ void UmrfNodeExec::run()
     {
       LOCK_GUARD_TYPE_R guard_action_instance(action_instance_rw_mutex_);
       result = (action_instance_->executeActionWrapped()) ? "on_true" : "on_false"; // Blocking call, returns when finished
+      setOutputParameters(action_instance_->getUmrfNodeConst().getOutputParameters());
     }
 
     /*
@@ -293,6 +291,7 @@ void UmrfNodeExec::run()
   {
     LOCK_GUARD_TYPE_R guard_action_instance(action_instance_rw_mutex_);
     action_instance_->getUmrfNode().getInputParametersNc().clearData();
+    action_instance_->getUmrfNode().getOutputParametersNc().clearData();
     ENGINE_HANDLE.notifyFinished(Waitable{.action_name = getFullName(), .graph_name = parent_graph_name_}, result);
   }
 

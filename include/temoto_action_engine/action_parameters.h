@@ -24,6 +24,7 @@
 #include "temoto_action_engine/action_parameter.h"
 #include "temoto_action_engine/temoto_error.h"
 #include "boost/any.hpp"
+#include <iostream> // TODO remove
 
 /*
  * Action Parameters
@@ -85,9 +86,11 @@ public:
     }
     else
     {
+      std::cout << "D6_1\n";
       // Check if the "parameter-to-be-set" is restricted to certain data values
       if (!checkParamAllowedData(*local_parameter_it, parameter_in))
       {
+        std::cout << "D6_2\n";
         return false;
       }
 
@@ -95,8 +98,10 @@ public:
       ParameterContainer param = *parameters_.find(parameter_in);
       if (parameter_in.getDataSize() != 0)
       {
+        std::cout << "D6_3\n";
         param.setData(parameter_in.getData());
       }
+      std::cout << "D6_4\n";
       parameters_.erase(parameters_.find(parameter_in));          
       parameters_.insert(param);
     }

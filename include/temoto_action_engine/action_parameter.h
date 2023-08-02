@@ -45,7 +45,7 @@ public:
                  , int64_t source_id = UNDEFINED_SOURCE
                  , bool required = true
                  , bool quaranteed = false
-                 , bool updatable = false)
+                 , bool updatable = true)
   : name_(name)
   , type_(type)
   , source_id_(source_id)

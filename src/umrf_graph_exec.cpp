@@ -185,11 +185,22 @@ try
     // Transfer parent's output paramas to the child
     ActionParameters transferable_params;
     const auto& parent_parameters = parent_node->getOutputParameters();
+    
+    std::cout << "parent_param size: " << parent_parameters.getParameterCount() << std::endl;
+    for (const auto& p : parent_parameters)
+    {
+      std::cout << " * name: " << p.getName() << std::endl;
+      std::cout << " * type: " << p.getType() << std::endl;
+      std::cout << " * data: " << p.getDataSize() << std::endl;
+    }
 
     for (const auto& transf_param_name: child_node->getInputParameters().getTransferableParams(parent_parameters))
     {
       transferable_params.setParameter(parent_parameters.getParameter(transf_param_name));
     }
+
+    std::cout << "transferable_params size: " << transferable_params.getParameterCount() << std::endl; 
+
     child_node->updateInputParams(transferable_params);
 
     // Check if child node is ready
