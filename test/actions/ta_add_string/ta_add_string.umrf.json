@@ -1,5 +1,5 @@
 {
-  "name": "TaAppendStrA",
+  "name": "TaAddString",
   "type": "sync",
   "input_parameters": {
     "str_a": {
@@ -10,7 +10,7 @@
     }
   },
   "output_parameters": {
-    "str_a": {
+    "result": {
       "pvf_type": "string"
     }
   }

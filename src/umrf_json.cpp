@@ -254,6 +254,20 @@ std::vector<UmrfNode::Relation> parseChildRelations(const json& relations_json)
       throw CREATE_TEMOTO_ERROR_STACK("Invalid 'instance_id': " + std::string(e.what()));
     }
 
+    // GET REMAPPINGS - not required
+    if (relation_json.contains(RELATION_FIELDS.remap))
+    try
+    {
+      for (const auto& remap_json : relation_json[RELATION_FIELDS.remap])
+      {
+        relation.setParameterRemap(remap_json["from"].get<std::string>(), remap_json["to"].get<std::string>());
+      }
+    }
+    catch(const std::exception& e)
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Invalid remapping: " + std::string(e.what()));
+    }
+
     relations.push_back(relation);
   }
 
@@ -447,7 +461,18 @@ try
     {
       throw CREATE_TEMOTO_ERROR_STACK("Graph entry '" + a.getFullName() + "' not found in the list of actions");
     }
-    graph_entry_action.setInputParameters(it->getInputParameters());
+    
+    /*
+     * TODO: This block currently picks only the parameters that do not
+     * have a default value. Whether that's the right way of setting up
+     * the graph_entry action is debatable
+     */
+    for (const auto& ip : it->getInputParameters())
+    {
+      if (ip.getDataSize() == 0)
+        graph_entry_action.setInputParameter(ip);
+    }
+      
     it->addParent(graph_entry_action.asRelation());
   }
 
@@ -595,9 +620,9 @@ json parameterFieldsToJson(const ActionParameters::ParameterContainer& p)
   }
   
   // Parse the updatablilty
-  if (p.isUpdatable())
+  if (!p.isUpdatable())
   {
-    p_json[PVF_FIELDS.updatable] = true;
+    p_json[PVF_FIELDS.updatable] = false;
   }
 
   // Parse allowed values
@@ -704,8 +729,12 @@ json toUmrfJson(const UmrfNode& u)
   }
 
   // parse parents
-  if (u.getParents().size() != 0)
+  const auto& parents = u.getParents();
+
+  if (parents.size() > 1 
+  || ((parents.size() == 1) && std::find(parents.begin(), parents.end(), GRAPH_ENTRY) == parents.end()))
   {
+
     action[UMRF_FIELDS.parents] = json::array();
     for (const auto& parent : u.getParents())
     {
@@ -729,7 +758,10 @@ json toUmrfJson(const UmrfNode& u)
   }
 
   // parse children
-  if (u.getChildren().size() != 0)
+  const auto& children = u.getChildren();
+
+  if (children.size() > 1 
+  || ((children.size() == 1) && std::find(children.begin(), children.end(), GRAPH_EXIT) == children.end()))
   {
     action[UMRF_FIELDS.children] = json::array();
     for (const auto& child : u.getChildren())
@@ -740,6 +772,18 @@ json toUmrfJson(const UmrfNode& u)
       json child_j;
       child_j[RELATION_FIELDS.name] = child.getName();
       child_j[RELATION_FIELDS.instance_id] = child.getInstanceId();
+
+      if (!child.getParameterRemappings().empty())
+      {
+        child_j[RELATION_FIELDS.remap] = json::array();
+        for (const auto& remapping : child.getParameterRemappings())
+        {
+          json remapping_j;
+          remapping_j["from"] = remapping.first;
+          remapping_j["to"] = remapping.second;
+          child_j[RELATION_FIELDS.remap].push_back(remapping_j);
+        }
+      }
 
       action[UMRF_FIELDS.children].push_back(child_j);
     }
@@ -802,144 +846,3 @@ ActionParameters::Parameters fromUmrfParametersJsonStr(const std::string umrf_pa
 }
 
 } // namespace umrf_json
-
-// void printParameters(const ActionParameters params)
-// {
-//   for (const auto& parameter : params)
-//   {
-//     std::cout << "   - name: " << parameter.getName() << std::endl;
-//     std::cout << "     type: " << parameter.getType() << std::endl;
-
-//     if (parameter.getDataSize() != 0)
-//     {
-//       const auto& data = parameter.getData();
-//       if (parameter.getType() == "string")
-//       {
-//         std::cout << "     value: " << boost::any_cast<std::string>(data) << std::endl;
-//       }
-//       else if (parameter.getType() == "strings")
-//       {
-//         std::cout << "     value: ";
-//         for (const auto& data_item : boost::any_cast<std::vector<std::string>>(data))
-//         {
-//           std::cout << data_item << ", ";
-//         }
-//         std::cout << std::endl;
-//       }
-//       else if (parameter.getType() == "number")
-//       {
-//         std::cout << "     value: " << boost::any_cast<double>(data) << std::endl;
-//       }
-//       else if (parameter.getType() == "numbers")
-//       {
-//         std::cout << "     value: ";
-//         for (const auto& data_item : boost::any_cast<std::vector<double>>(data))
-//         {
-//           std::cout << data_item << ", ";
-//         }
-//         std::cout << std::endl;
-//       }
-//       else if (parameter.getType() == "bool")
-//       {
-//         std::cout << "     value: " << boost::any_cast<bool>(data) << std::endl;
-//       }
-//       else if (parameter.getType() == "bools")
-//       {
-//         std::cout << "     value: ";
-//         for (const auto& data_item : boost::any_cast<std::vector<bool>>(data))
-//         {
-//           std::cout << data_item << ", ";
-//         }
-//         std::cout << std::endl;
-//       }
-//     }
-
-//     if (parameter.getAllowedData().size() != 0)
-//     {
-//       std::cout << "     allowed_values: ";
-//       for (const auto& allowed_data : parameter.getAllowedData())
-//       {
-//         if (parameter.getType() == "string")
-//         {
-//           std::cout << boost::any_cast<std::string>(allowed_data) << ", ";
-//         }
-//         else if (parameter.getType() == "number")
-//         {
-//           std::cout << boost::any_cast<double>(allowed_data) << ", ";
-//         }
-//         else if (parameter.getType() == "bool")
-//         {
-//           std::cout << boost::any_cast<bool>(allowed_data) << ", ";
-//         }
-//       }
-//       std::cout << std::endl;
-//     }
-//   }
-// }
-
-// int main()
-// {
-//   std::string ug_json_str = temoto_action_engine::readFromFile("example_b.json");
-//   UmrfGraph ug = umrf_json::fromUmrfGraphJsonStr(ug_json_str);
-//   std::string ug_json_str_new = umrf_json::toUmrfGraphJsonStr(ug);
-
-//   std::cout << "graph_name: " << ug.getName() << std::endl;
-//   std::cout << "graph_description: " << ug.getDescription() << std::endl;
-//   std::cout << "actions: " << std::endl;
-
-//   for (const auto& action : ug.getUmrfNodes())
-//   {
-//     std::cout << " - name: " << action.getName() << std::endl;
-//     std::cout << "   instance_id: " << action.getInstanceId() << std::endl;
-//     std::cout << "   type: " << action.getType() << std::endl;
-
-//     if (!action.getActor().empty())
-//     {
-//       std::cout << "   actor: " << action.getActor() << std::endl;
-//     }
-
-//     if (!action.getDescription().empty())
-//     {
-//       std::cout << "   description: " << action.getDescription() << std::endl;
-//     }
-
-//     if (!action.getParents().empty())
-//     {
-//       std::cout << "   parents: " << std::endl;
-
-//       for (const auto& parent : action.getParents())
-//       {
-//         std::cout << "   - name: " << parent.getName() << std::endl;
-//         std::cout << "     instance_id: " << parent.getInstanceId() << std::endl;
-//         std::cout << "     required: " << parent.getRequired() << std::endl;
-//       }
-//     }
-
-//     if (!action.getChildren().empty())
-//     {
-//       std::cout << "   children: " << std::endl;
-
-//       for (const auto& child : action.getChildren())
-//       {
-//         std::cout << "   - name: " << child.getName() << std::endl;
-//         std::cout << "     instance_id: " << child.getInstanceId() << std::endl;
-//         std::cout << "     condition: " << child.getCondition() << std::endl;
-//       }
-//     }
-
-//     if (!action.getInputParameters().empty())
-//     {
-//       std::cout << "   input_parameters: " << std::endl;
-//       printParameters(action.getInputParameters());
-//     }
-
-//     if (!action.getOutputParameters().empty())
-//     {
-//       std::cout << "   output_parameters: " << std::endl;
-//       printParameters(action.getOutputParameters());
-//     }
-//   }
-
-//   std::cout << std::endl;
-//   std::cout << ug_json_str_new << std::endl;
-// }

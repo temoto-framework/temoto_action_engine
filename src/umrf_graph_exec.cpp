@@ -184,19 +184,26 @@ try
 
     // Transfer parent's output paramas to the child
     ActionParameters transferable_params;
-    const auto& parent_parameters = parent_node->getOutputParameters();
+    ActionParameters parent_parameters_remapped = parent_node->getOutputParameters();
+
+    // Remap the parameter names
+    const auto& cr = parent_node->getChildren();
+    for (const auto& rel : std::find(cr.begin(), cr.end(), child_node->asRelation())->getParameterRemappings())
+    {
+      parent_parameters_remapped.getParameterNc(rel.first).setName(rel.second);
+    }
     
-    std::cout << "parent_param size: " << parent_parameters.getParameterCount() << std::endl;
-    for (const auto& p : parent_parameters)
+    std::cout << "parent_param size: " << parent_parameters_remapped.getParameterCount() << std::endl;
+    for (const auto& p : parent_parameters_remapped)
     {
       std::cout << " * name: " << p.getName() << std::endl;
       std::cout << " * type: " << p.getType() << std::endl;
       std::cout << " * data: " << p.getDataSize() << std::endl;
     }
 
-    for (const auto& transf_param_name: child_node->getInputParameters().getTransferableParams(parent_parameters))
+    for (const auto& transf_param_name: child_node->getInputParameters().getTransferableParams(parent_parameters_remapped))
     {
-      transferable_params.setParameter(parent_parameters.getParameter(transf_param_name));
+      transferable_params.setParameter(parent_parameters_remapped.getParameter(transf_param_name));
     }
 
     std::cout << "transferable_params size: " << transferable_params.getParameterCount() << std::endl; 

@@ -224,6 +224,11 @@ public:
     return *parameters_.find(name);
   }
 
+  ParameterContainer& getParameterNc(const std::string& name) const
+  {
+    return const_cast<ParameterContainer&>(getParameter(name));
+  }
+
   template <class T> T getParameterData(const std::string& name) const
   try
   {

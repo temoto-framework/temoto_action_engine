@@ -95,6 +95,7 @@ public:
     , required_(r_in.getRequired())
     , received_(r_in.getReceived())
     , conditions_(r_in.conditions_)
+    , parameter_remap_(r_in.parameter_remap_)
     {}
 
     void operator=(const Relation& r_in)
@@ -104,6 +105,7 @@ public:
       required_ = r_in.getRequired();
       received_ = r_in.getReceived();
       conditions_ = r_in.getConditions();
+      parameter_remap_ = r_in.getParameterRemappings();
     }
 
     bool operator==(const Relation& r_in) const
@@ -161,6 +163,31 @@ public:
       conditions_.at(precondition) = response;
     }
 
+    std::string getParameterRemap(const std::string from) const
+    {
+      const auto& to = parameter_remap_.find(from);
+      if (to == parameter_remap_.end())
+      {
+        throw CREATE_TEMOTO_ERROR_STACK("No remapping specified for parameter: " + from);
+      }
+      return to->second;
+    }
+
+    const std::map<std::string, std::string> getParameterRemappings() const
+    {
+      return parameter_remap_;
+    }
+
+    void setParameterRemap(const std::string& from, const std::string& to)
+    {
+      if (parameter_remap_.find(from) != parameter_remap_.end())
+      {
+        throw CREATE_TEMOTO_ERROR_STACK("Attempted to add duplicate remapping for parameter: " + from);
+      }
+      parameter_remap_.insert({from, to});
+      return;
+    }
+
     bool empty() const
     {
       return name_.empty();
@@ -195,6 +222,7 @@ public:
     bool required_; // Indicates whether the child can only execute once the parent has finished the execution  
     bool received_; // Indicates whether the parent has finished execution. Applies only to parent-type relations
     std::map<std::string, std::string> conditions_; // Outlines the conditions of execution
+    std::map<std::string, std::string> parameter_remap_;
   };
 
   UmrfNode();

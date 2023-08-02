@@ -136,6 +136,11 @@
       "description": "action_3 description",
       "instance_id": 0,
       "type": "sync",
+      "output_parameters": {
+        "test_param_x": {
+          "pvf_type": "strings"
+        }
+      },
       "parents": [
         {
           "name": "action_1",
@@ -169,7 +174,13 @@
         },
         {
           "name": "action_5",
-          "instance_id": 0
+          "instance_id": 0,
+          "remap":[
+            {
+              "from": "test_param_x",
+              "to": "test_param_y"
+            }
+          ]
         }
       ]
     },
@@ -196,6 +207,11 @@
       "description": "action_5 description",
       "instance_id": 0,
       "type": "sync",
+      "input_parameters": {
+        "test_param_y": {
+          "pvf_type": "strings"
+        }
+      },
       "output_parameters": {
         "test_param_3": {
           "pvf_type": "strings"

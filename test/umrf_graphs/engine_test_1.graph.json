@@ -3,19 +3,19 @@
   "graph_description": "tests the functionality to pass parameters",
   "graph_entry": [
     {
-      "name": "TaAppendStrA",
+      "name": "TaAddString",
       "instance_id": 0
     }
   ],
   "graph_exit": [
     {
-      "name": "TaAppendStrA",
+      "name": "TaAddString",
       "instance_id": 0
     }
   ],
   "actions": [
     {
-      "name": "TaAppendStrA",
+      "name": "TaAddString",
       "instance_id": 0,
       "type": "sync",
       "input_parameters": {
@@ -29,7 +29,7 @@
         }
       },
       "output_parameters": {
-        "str_a": {
+        "result": {
           "pvf_type": "string"
         }
       }

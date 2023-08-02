@@ -41,8 +41,10 @@ endfunction()
 
 # Add actions
 build_action(ta_example_1)
-build_action(ta_append_str_a)
+build_action(ta_add_string)
+build_action(ta_compare_string)
 
+# Copy the graphs
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/umrf_graphs/example_b.json
   ${CMAKE_CURRENT_BINARY_DIR}/example_b.json COPYONLY
 )
@@ -53,4 +55,8 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/umrf_graphs/engine_test_1.graph.json
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/umrf_graphs/engine_test_2.graph.json
   ${CMAKE_CURRENT_BINARY_DIR}/engine_test_2.graph.json COPYONLY
+)
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/umrf_graphs/engine_test_3.graph.json
+  ${CMAKE_CURRENT_BINARY_DIR}/engine_test_3.graph.json COPYONLY
 )

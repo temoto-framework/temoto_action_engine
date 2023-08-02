@@ -1,0 +1,12 @@
+{
+  "name": "TaCompareString",
+  "type": "sync",
+  "input_parameters": {
+    "str_a": {
+      "pvf_type": "string"
+    },
+    "str_b": {
+      "pvf_type": "string"
+    }
+  }
+}

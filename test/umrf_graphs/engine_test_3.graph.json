@@ -1,0 +1,164 @@
+{
+  "graph_name": "engine_test_3",
+  "graph_description": "tests the functionality run concurrent actions",
+  "graph_entry": [
+    {
+      "name": "TaAddString",
+      "instance_id": 0
+    },
+    {
+      "name": "TaAddString",
+      "instance_id": 1
+    }
+  ],
+  "graph_exit": [
+    {
+      "name": "TaCompareString",
+      "instance_id": 0
+    }
+  ],
+  "actions": [
+    {
+      "name": "TaAddString",
+      "instance_id": 0,
+      "type": "sync",
+      "input_parameters": {
+        "str_a": {
+          "pvf_type": "string",
+          "pvf_value": "A1"
+        },
+        "str_b": {
+          "pvf_type": "string",
+          "pvf_value": "A2"
+        }
+      },
+      "output_parameters": {
+        "result": {
+          "pvf_type": "string"
+        }
+      },
+      "children": [
+        {
+          "name": "TaAddString",
+          "instance_id": 2,
+          "remap": [
+            {
+              "from": "result",
+              "to": "str_a"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TaAddString",
+      "instance_id": 1,
+      "type": "sync",
+      "input_parameters": {
+        "str_a": {
+          "pvf_type": "string",
+          "pvf_value": "B1"
+        },
+        "str_b": {
+          "pvf_type": "string",
+          "pvf_value": "B2"
+        }
+      },
+      "output_parameters": {
+        "result": {
+          "pvf_type": "string"
+        }
+      },
+      "children": [
+        {
+          "name": "TaAddString",
+          "instance_id": 2,
+          "remap": [
+            {
+              "from": "result",
+              "to": "str_b"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TaAddString",
+      "instance_id": 2,
+      "type": "sync",
+      "input_parameters": {
+        "str_a": {
+          "pvf_type": "string"
+        },
+        "str_b": {
+          "pvf_type": "string"
+        }
+      },
+      "output_parameters": {
+        "result": {
+          "pvf_type": "string"
+        }
+      },
+      "parents": [
+        {
+          "name": "TaAddString",
+          "instance_id": 0,
+          "required": true,
+          "conditions": [
+            "on_true -> run",
+            "on_false -> bypass",
+            "on_error -> bypass"
+          ]
+        },
+        {
+          "name": "TaAddString",
+          "instance_id": 1,
+          "required": true,
+          "conditions": [
+            "on_true -> run",
+            "on_false -> bypass",
+            "on_error -> bypass"
+          ]
+        }
+      ],
+      "children": [
+        {
+          "name": "TaCompareString",
+          "instance_id": 0,
+          "remap": [
+            {
+              "from": "result",
+              "to": "str_a"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TaCompareString",
+      "instance_id": 0,
+      "type": "sync",
+      "input_parameters": {
+        "str_a": {
+          "pvf_type": "string"
+        },
+        "str_b": {
+          "pvf_type": "string",
+          "pvf_value": "A1 and A2 and B1 and B2"
+        }
+      },
+      "parents": [
+        {
+          "name": "TaAddString",
+          "instance_id": 2,
+          "required": true,
+          "conditions": [
+            "on_true -> run",
+            "on_false -> bypass",
+            "on_error -> bypass"
+          ]
+        }
+      ]
+    }
+  ]
+}

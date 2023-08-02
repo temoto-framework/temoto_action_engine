@@ -3,12 +3,12 @@
 #include <class_loader/class_loader.hpp>
 #include "ta_example_1/temoto_action.h"
 
-class TaAppendStrA : public TemotoAction
+class TaAddString : public TemotoAction
 {
 public:
 
 // Constructor. REQUIRED BY TEMOTO
-TaAppendStrA()
+TaAddString()
 {}
 
 void onInit()
@@ -24,13 +24,12 @@ bool onRun()
   std::string in_str_b = GET_PARAMETER("str_b", std::string);
 
   // Declaration of output parameters
-  std::string out_str_a = in_str_a + " and " + in_str_b;
+  std::string out_result = in_str_a + " and " + in_str_b;
 
-  TEMOTO_PRINT_OF("got: " + in_str_a + " and " + in_str_b, getName());
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  TEMOTO_PRINT_OF("got: " + out_result, getName());
 
   // Pass the output parameters to the action engine
-  SET_PARAMETER("str_a", "string", out_str_a);
+  SET_PARAMETER("result", "string", out_result);
   return true;
 }
 
@@ -50,10 +49,10 @@ void onStop()
 }
 
 // Destructor
-~TaAppendStrA()
+~TaAddString()
 {}
 
-}; // TaAppendStrA class
+}; // TaAddString class
 
 /* REQUIRED BY CLASS LOADER */
-CLASS_LOADER_REGISTER_CLASS(TaAppendStrA, ActionBase);
+CLASS_LOADER_REGISTER_CLASS(TaAddString, ActionBase);

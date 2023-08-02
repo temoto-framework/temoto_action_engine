@@ -64,6 +64,7 @@ static const struct RelationFields
   const char* conditions = "conditions";
   const char* precondition = "precondition";
   const char* response = "response";
+  const char* remap = "remap";
 }RELATION_FIELDS;
 
 const std::vector<std::string> NATIVE_JSON_TYPES{
