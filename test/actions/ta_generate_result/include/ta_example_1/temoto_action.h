@@ -32,30 +32,6 @@ public:
 
   virtual void updateParameters(const ActionParameters& parameters_in)
   {
-    for (const auto& p_in : parameters_in)
-    {
-      boost::any param_data;
-
-      if (!getUmrfNodeConst().getInputParameters().hasParameter(p_in))
-      {
-        throw CREATE_TEMOTO_ERROR_STACK("This action has no parameter '" + p_in.getName() + "'");
-      }
-      else if (p_in.getType() == "number")
-      {
-        param_data = boost::any_cast<double>(p_in.getData());
-      }
-      else if (p_in.getType() == "string")
-      {
-        param_data = boost::any_cast<std::string>(p_in.getData());
-      }
-
-      else
-      {
-        throw CREATE_TEMOTO_ERROR_STACK("No matching data type");
-      }
-
-      getUmrfNode().getInputParametersNc().setParameterData(p_in.getName(), param_data);
-    }
   }
 };
 

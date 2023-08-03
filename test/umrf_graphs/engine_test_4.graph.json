@@ -1,45 +1,74 @@
 {
   "graph_name": "engine_test_4",
-  "graph_description": "tests the functionality to pass parameters",
+  "graph_description": "tests the conditional execution functionality",
   "graph_entry": [
     {
-      "name": "TaAppendStrA",
+      "name": "TaGenerateResult",
       "instance_id": 0
     }
   ],
   "graph_exit": [
     {
-      "name": "TaAppendStrA",
+      "name": "TaCompareString",
       "instance_id": 1
     }
   ],
   "actions": [
     {
-      "name": "TaAppendStrA",
+      "name": "TaGenerateResult",
       "instance_id": 0,
       "type": "sync",
       "input_parameters": {
-        "str_a": {
-          "pvf_type": "string",
-          "pvf_value": "Input A"
-        },
-        "str_b": {
-          "pvf_type": "string",
-          "pvf_value": "Input B"
-        }
-      },
-      "output_parameters": {
         "result": {
+          "pvf_value": "on_true",
           "pvf_type": "string"
         }
       },
       "children": [
         {
-          "name": "TaAppendStrA",
+          "name": "TaRelayString",
+          "instance_id": 0
+        },
+        {
+          "name": "TaRelayString",
+          "instance_id": 1
+        }
+      ]
+    },
+    {
+      "name": "TaRelayString",
+      "instance_id": 0,
+      "type": "sync",
+      "input_parameters": {
+        "string_in": {
+          "pvf_value": "EXPECT_TRUE",
+          "pvf_type": "string"
+        }
+      },
+      "output_parameters": {
+        "string_out": {
+          "pvf_type": "string"
+        }
+      },
+      "parents": [
+        {
+          "name": "TaGenerateResult",
+          "instance_id": 0,
+          "required": true,
+          "conditions": [
+            "on_true -> run",
+            "on_false -> ignore",
+            "on_error -> bypass"
+          ]
+        }
+      ],
+      "children": [
+        {
+          "name": "TaCompareString",
           "instance_id": 1,
           "remap": [
             {
-              "from": "result",
+              "from": "string_out",
               "to": "str_a"
             }
           ]
@@ -47,7 +76,47 @@
       ]
     },
     {
-      "name": "TaAppendStrA",
+      "name": "TaRelayString",
+      "instance_id": 1,
+      "type": "sync",
+      "input_parameters": {
+        "string_in": {
+          "pvf_value": "EXPECT_FALSE",
+          "pvf_type": "string"
+        }
+      },
+      "output_parameters": {
+        "string_out": {
+          "pvf_type": "string"
+        }
+      },
+      "parents": [
+        {
+          "name": "TaGenerateResult",
+          "instance_id": 0,
+          "required": true,
+          "conditions": [
+            "on_true -> ignore",
+            "on_false -> run",
+            "on_error -> bypass"
+          ]
+        }
+      ],
+      "children": [
+        {
+          "name": "TaCompareString",
+          "instance_id": 1,
+          "remap": [
+            {
+              "from": "string_out",
+              "to": "str_a"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TaCompareString",
       "instance_id": 1,
       "type": "sync",
       "input_parameters": {
@@ -56,19 +125,24 @@
         },
         "str_b": {
           "pvf_type": "string",
-          "pvf_value": "Input C"
-        }
-      },
-      "output_parameters": {
-        "str_a": {
-          "pvf_type": "string"
+          "pvf_value": "EXPECT_TRUE"
         }
       },
       "parents": [
         {
-          "name": "TaAppendStrA",
+          "name": "TaRelayString",
           "instance_id": 0,
-          "required": true,
+          "required": false,
+          "conditions": [
+            "on_true -> run",
+            "on_false -> bypass",
+            "on_error -> bypass"
+          ]
+        },
+        {
+          "name": "TaRelayString",
+          "instance_id": 1,
+          "required": false,
           "conditions": [
             "on_true -> run",
             "on_false -> bypass",

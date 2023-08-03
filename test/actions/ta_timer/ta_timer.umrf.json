@@ -1,0 +1,14 @@
+{
+  "name": "TaTimer",
+  "type": "sync",
+  "input_parameters": {
+    "count_until": {
+      "pvf_type": "number"
+    }
+  },
+  "output_parameters": {
+    "final_count": {
+      "pvf_type": "number"
+    }
+  }
+}

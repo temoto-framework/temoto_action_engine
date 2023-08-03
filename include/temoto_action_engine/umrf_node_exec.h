@@ -71,7 +71,7 @@ public:
 
   void stop(bool ignore_result = false);
 
-  void bypass();
+  void bypass(const std::string& result);
 
 
 

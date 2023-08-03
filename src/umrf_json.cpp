@@ -459,7 +459,7 @@ try
 
     if (it == umrf_actions.end())
     {
-      throw CREATE_TEMOTO_ERROR_STACK("Graph entry '" + a.getFullName() + "' not found in the list of actions");
+      throw CREATE_TEMOTO_ERROR_STACK("Graph entry '" + a.getFullName() + "' of graph '" + graph_name + "' not found in the list of actions");
     }
     
     /*

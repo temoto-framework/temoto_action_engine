@@ -72,10 +72,16 @@ public:
     typedef std::map<std::string, std::string> Conditions;
 
     Relation()
-    : conditions_({
+    : name_("")
+    , instance_id_(0)
+    , required_(true)
+    , received_(false)
+    , conditions_({
       {"on_true", "run"},
       {"on_false", "run"},
+      {"on_stopped", "ignore"},
       {"on_error", "bypass"}})
+    , parameter_remap_(std::map<std::string, std::string>())
     {}
 
     Relation(const std::string& name, const unsigned int& instance_id, bool required = true)
@@ -86,7 +92,9 @@ public:
     , conditions_({
       {"on_true", "run"},
       {"on_false", "run"},
+      {"on_stopped", "ignore"},
       {"on_error", "bypass"}})
+    , parameter_remap_(std::map<std::string, std::string>())
     {}
 
     Relation(const Relation& r_in)
@@ -196,6 +204,7 @@ public:
     const static inline std::vector<std::string> valid_preconditions_{
       "on_true", 
       "on_false",
+      "on_stopped",
       "on_error"};
 
     /**

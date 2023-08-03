@@ -142,7 +142,6 @@ try
   /*
    * Pass the output parameters of the parent action to child actions
    */
-
   if (getState() == State::STOPPING)
   {
     return;
@@ -151,36 +150,44 @@ try
   LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
   std::shared_ptr<UmrfNodeExec> parent_node = graph_nodes_map_.at(parent_node_relation.getFullName());
 
-  std::cout << "D1\n";
-
   /*
    * Update the child nodes and check which children are ready
    */
   for (const auto& child_node_relation : parent_node->getChildren())
   {
-    std::cout << "D1_1a\n";
     std::shared_ptr<UmrfNodeExec> child_node = graph_nodes_map_.at(child_node_relation.getFullName());
-    std::cout << "D1_1b\n";
+
     // Mark that the parent has finished
     child_node->setParentReceived(parent_node_relation);
-    std::cout << "D1_1c\n";
+
+    // Assign this method as a callback to the child action
+    if (child_node->start_child_nodes_cb_ == NULL)
+    {
+      child_node->start_child_nodes_cb_ = std::bind(&UmrfGraphExec::startChildNodes, this
+      , std::placeholders::_1, std::placeholders::_2);
+    }
+
     // Check if the parent should be ignored or not
     const auto child_response = child_node->getParentRelation(parent_node_relation)->getResponse(result);
+    std::cout << getName() << ": D1_2. result(" << parent_node->getFullName() << "):" << result << ", response(" << child_node->getFullName() << "): " << child_response << std::endl;
 
-    std::cout << "D1_2\n";
-
-    if (child_response == "ignore")
+    if (child_response == "bypass" && child_node->getName() == GRAPH_EXIT.getName())
+    {
+      setState(State::FINISHED);
+      ENGINE_HANDLE.notifyFinished(Waitable{.action_name = GRAPH_EXIT.getFullName(), .graph_name = getName()}, result);
+      return;
+    }
+    else if (child_response == "bypass" && child_node->getName() != GRAPH_EXIT.getName())
+    {
+      child_node->bypass(result);
+      continue;
+    }
+    else if (child_response == "ignore")
     {
       continue;
     }
-    else if (child_response == "bypass")
-    {
-      /*TODO: carry the results over to the "grand children" */
-      child_node->bypass();
-      continue;
-    }
 
-    std::cout << "D1_3\n";
+    std::cout << getName() << ": D1_3\n";
 
     // Transfer parent's output paramas to the child
     ActionParameters transferable_params;
@@ -206,42 +213,43 @@ try
       transferable_params.setParameter(parent_parameters_remapped.getParameter(transf_param_name));
     }
 
-    std::cout << "transferable_params size: " << transferable_params.getParameterCount() << std::endl; 
+    std::cout << "transferable_params size: " << transferable_params.getParameterCount() << std::endl;
 
     child_node->updateInputParams(transferable_params);
 
     // Check if child node is ready
     if (!child_node->inputParametersReceived() || !child_node->requiredParentsFinished())
     {
-      std::cout << "D1_3a\n";
+      std::cout << getName() << ": D1_3a\n";
       continue;
     }
 
-    std::cout << "D1_4\n";
+    std::cout << getName() << ": D1_4\n";
 
     if (child_node->getName() == GRAPH_EXIT.getName())
     {
       setState(State::FINISHED);
       ENGINE_HANDLE.notifyFinished(Waitable{.action_name = GRAPH_EXIT.getFullName(), .graph_name = getName()}, result);
+      std::cout << getName() << ": D1_4a BAII\n";
       return;
     }
 
-    std::cout << "D1_5\n";
-
-    child_node->start_child_nodes_cb_ = std::bind(&UmrfGraphExec::startChildNodes, this
-    , std::placeholders::_1, std::placeholders::_2);
+    std::cout << getName() << ": D1_5\n";
 
     // Execute the child action
     if (child_response == "run")
     {
+      std::cout << getName() << ": D1_5a\n";
       child_node->run();
     }
     else if (child_response == "stop")
     {
+      std::cout << getName() << ": D1_5b\n";
       child_node->stop();
     }
     else if (child_response == "pause")
     {
+      std::cout << getName() << ": D1_5c\n";
       child_node->pause();
     }
   }

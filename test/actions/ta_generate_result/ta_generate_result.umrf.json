@@ -1,0 +1,9 @@
+{
+  "name": "TaGenerateResult",
+  "type": "sync",
+  "input_parameters": {
+    "result": {
+      "pvf_type": "string"
+    }
+  }
+}

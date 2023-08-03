@@ -1,0 +1,74 @@
+{
+  "graph_name": "TaGenerateString",
+  "graph_description": "",
+  "graph_entry": [
+    {
+      "name": "TaAddString",
+      "instance_id": 0
+    }
+  ],
+  "graph_exit": [
+    {
+      "name": "TaAddString",
+      "instance_id": 1
+    }
+  ],
+  "actions": [
+    {
+      "name": "TaAddString",
+      "instance_id": 0,
+      "type": "sync",
+      "input_parameters": {
+        "str_a": {
+          "pvf_type": "string"
+        },
+        "str_b": {
+          "pvf_type": "string",
+          "pvf_value": "gen_str_1"
+        }
+      },
+      "output_parameters": {
+        "result": {
+          "pvf_type": "string"
+        }
+      },
+      "children": [
+        {
+          "name": "TaAddString",
+          "instance_id": 1,
+          "remap": [
+            {
+              "from": "result",
+              "to": "str_a"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TaAddString",
+      "instance_id": 1,
+      "type": "sync",
+      "input_parameters": {
+        "str_a": {
+          "pvf_type": "string"
+        },
+        "str_b": {
+          "pvf_type": "string",
+          "pvf_value": "gen_str_2"
+        }
+      },
+      "output_parameters": {
+        "result": {
+          "pvf_type": "string"
+        }
+      },
+      "parents": [
+        {
+          "name": "TaAddString",
+          "instance_id": 0
+        }
+      ]
+    }
+  ]
+}

@@ -45,6 +45,7 @@ public:
    */
   bool stopAction()
   {
+    std::cout << "stopAction: 1" << std::endl;
     STOP_REQUESTED_ = true;
     onStop();
     return true;

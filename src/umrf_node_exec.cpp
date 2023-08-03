@@ -95,7 +95,6 @@ UmrfNodeExec::UmrfNodeExec(const UmrfNode& umrf_node)
 
 UmrfNodeExec::~UmrfNodeExec()
 {
-  // TODO: finish the clear-up implementation
   clearNode();
 }
 
@@ -210,7 +209,6 @@ void UmrfNodeExec::run()
   }
 
   std::string result;
-
   try
   {
     // Move to the error state if the action is not in the following states
@@ -223,7 +221,8 @@ void UmrfNodeExec::run()
     }
 
     // Initialize the action
-    if (getState() == UmrfNode::State::NOT_SET)
+    if (getState() == UmrfNode::State::NOT_SET && 
+        getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
     {
       LOCK_GUARD_TYPE_R guard_action_instance(action_instance_rw_mutex_);
       instantiate();
@@ -231,7 +230,6 @@ void UmrfNodeExec::run()
       setState(State::INITIALIZED);
     }
 
-    auto previous_state = getState();
     setState(State::RUNNING);
 
     /*
@@ -239,7 +237,6 @@ void UmrfNodeExec::run()
      */
     if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
     {
-      LOCK_GUARD_TYPE_R guard_action_instance(action_instance_rw_mutex_);
       result = (action_instance_->executeActionWrapped()) ? "on_true" : "on_false"; // Blocking call, returns when finished
       setOutputParameters(action_instance_->getUmrfNodeConst().getOutputParameters());
     }
@@ -253,12 +250,12 @@ void UmrfNodeExec::run()
     }
 
     /*
-    * EXECUTE ACTION AS GRAPH
-    */
+     * EXECUTE ACTION AS GRAPH
+     */
     else if (getActorExecTraits() == UmrfNode::ActorExecTraits::GRAPH)
     {
       ENGINE_HANDLE.executeUmrfGraph(getName(), getInputParameters());
-      result = waitUntilFinished(Waitable{.action_name = GRAPH_EXIT.getFullName(), .graph_name = parent_graph_name_});
+      result = waitUntilFinished(Waitable{.action_name = GRAPH_EXIT.getFullName(), .graph_name = getName()});
     }
 
   } // try end
@@ -300,10 +297,27 @@ void UmrfNodeExec::run()
     start_child_nodes_cb_(asRelation(), result);
     setState(State::FINISHED);
   }
+  else if (getState() == UmrfNode::State::STOPPING)
+  {
+    start_child_nodes_cb_(asRelation(), "on_stopped");
+    setState(State::FINISHED);
+  }
   else if (getState() == UmrfNode::State::ERROR)
   {
     start_child_nodes_cb_(asRelation(), result);
   }
+
+  // // Parameter cleanup
+  // if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
+  // {
+  //   LOCK_GUARD_TYPE_R guard_action_instance(action_instance_rw_mutex_);
+  //   action_instance_->getUmrfNode().getInputParametersNc().clearData();
+  //   action_instance_->getUmrfNode().getOutputParametersNc().clearData();
+  // }
+  // else if (getActorExecTraits() == UmrfNode::ActorExecTraits::GRAPH)
+  // {
+  //   getOutputParametersNc().clearData();
+  // }
 
   {
     LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
@@ -344,8 +358,7 @@ void UmrfNodeExec::stop(bool ignore_result)
      */
     if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
     {
-      LOCK_GUARD_TYPE_R guard_action_instance(action_instance_rw_mutex_);
-      action_instance_->onStop(); // Blocking call, returns when finished
+      action_instance_->stopAction(); // Blocking call, returns when finished
     }
 
     /*
@@ -363,8 +376,6 @@ void UmrfNodeExec::stop(bool ignore_result)
     {
       // TODO: engine_handle.stopGraph( TODO )
     }
-
-    setState(State::FINISHED);
 
   } // try end
   catch(TemotoErrorStack e)
@@ -496,11 +507,27 @@ void UmrfNodeExec::pause()
   });
 }
 
-void UmrfNodeExec::bypass()
+void UmrfNodeExec::bypass(const std::string& result)
 {
-  /* TODO */
-  // clearThread(UmrfNode::State::BYPASSED);
-  // LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
+  /*
+   * TODO: There are many uncovered scenarios for bypass behavior.
+   * For example what if the action is already running or stopping
+   */
+
+  clearThread(UmrfNode::State::BYPASSED);
+  LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
+
+  /*
+   * Run the bypass procedure in a thread
+   */
+  action_threads_[UmrfNode::State::BYPASSED] = UmrfNodeExec::ThreadWrapper();
+  action_threads_[UmrfNode::State::BYPASSED].thread = std::make_shared<std::thread>([&]()
+  {
+    start_child_nodes_cb_(asRelation(), result);
+
+    LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
+    action_threads_[UmrfNode::State::BYPASSED].is_running = false;
+  });
 }
 
 void UmrfNodeExec::clearThread(const UmrfNode::State state_name)

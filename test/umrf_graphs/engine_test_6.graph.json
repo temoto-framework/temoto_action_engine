@@ -1,0 +1,109 @@
+{
+  "graph_name": "engine_test_6",
+  "graph_description": "Tests hierarchical graphs",
+  "graph_entry": [
+    {
+      "name": "TaRelayString",
+      "instance_id": 0
+    }
+  ],
+  "graph_exit": [
+    {
+      "name": "TaCompareString",
+      "instance_id": 0
+    }
+  ],
+  "actions": [
+    {
+      "name": "TaRelayString",
+      "instance_id": 0,
+      "type": "sync",
+      "input_parameters": {
+        "string_in": {
+          "pvf_value": "first_string",
+          "pvf_type": "string"
+        }
+      },
+      "output_parameters": {
+        "string_out": {
+          "pvf_type": "string"
+        }
+      },
+      "children": [
+        {
+          "name": "TaGenerateString",
+          "instance_id": 0,
+          "remap": [
+            {
+              "from": "string_out",
+              "to": "str_a"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TaGenerateString",
+      "instance_id": 0,
+      "type": "sync",
+      "input_parameters": {
+        "str_a": {
+          "pvf_type": "string"
+        }
+      },
+      "output_parameters": {
+        "result": {
+          "pvf_type": "string"
+        }
+      },
+      "parents": [
+        {
+          "name": "TaRelayString",
+          "instance_id": 0,
+          "required": true,
+          "conditions": [
+            "on_true -> run",
+            "on_false -> bypass"
+          ]
+        }
+      ],
+      "children": [
+        {
+          "name": "TaCompareString",
+          "instance_id": 0,
+          "remap": [
+            {
+              "from": "result",
+              "to": "str_a"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TaCompareString",
+      "instance_id": 0,
+      "type": "sync",
+      "input_parameters": {
+        "str_a": {
+          "pvf_type": "string"
+        },
+        "str_b": {
+          "pvf_type": "string",
+          "pvf_value": "SOMETHING NOT RIGHT HERE"
+        }
+      },
+      "parents": [
+        {
+          "name": "TaGenerateString",
+          "instance_id": 0,
+          "required": true,
+          "conditions": [
+            "on_true -> run",
+            "on_false -> bypass"
+          ]
+        }
+      ]
+    }
+  ]
+}

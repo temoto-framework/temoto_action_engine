@@ -1,0 +1,75 @@
+{
+  "graph_name": "engine_test_5",
+  "graph_description": "tests the functionality execute actions sequentially",
+  "graph_entry": [
+    {
+      "name": "TaTimer",
+      "instance_id": 0
+    },
+    {
+      "name": "TaTimer",
+      "instance_id": 1
+    }
+  ],
+  "graph_exit": [
+    {
+      "name": "TaTimer",
+      "instance_id": 1,
+      "conditions": [
+        "on_stopped -> run"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "name": "TaTimer",
+      "instance_id": 0,
+      "type": "sync",
+      "input_parameters": {
+        "count_until": {
+          "pvf_type": "number",
+          "pvf_value": 3.0
+        }
+      },
+      "output_parameters": {
+        "final_count": {
+          "pvf_type": "number"
+        }
+      },
+      "children": [
+        {
+          "name": "TaTimer",
+          "instance_id": 1
+        }
+      ]
+    },
+    {
+      "name": "TaTimer",
+      "instance_id": 1,
+      "type": "sync",
+      "input_parameters": {
+        "count_until": {
+          "pvf_type": "number",
+          "pvf_value": 0.0
+        }
+      },
+      "output_parameters": {
+        "final_count": {
+          "pvf_type": "number"
+        }
+      },
+      "parents": [
+        {
+          "name": "TaTimer",
+          "instance_id": 0,
+          "required": false,
+          "conditions": [
+            "on_true -> stop",
+            "on_false -> bypass",
+            "on_error -> bypass"
+          ]
+        }
+      ]
+    }
+  ]
+}

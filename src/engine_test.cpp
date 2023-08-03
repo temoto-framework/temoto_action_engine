@@ -10,7 +10,7 @@ int main()
   std::cout << "setting actions and graphs path to '" << path << "'" << std::endl;
   ae.addActionsPath("../test/build");
 
-  std::string graph_name = "engine_test_3";
+  std::string graph_name = "engine_test_6";
   std::cout << "executing graph '" << graph_name << "'" << std::endl;
   ae.executeUmrfGraph(graph_name);
 

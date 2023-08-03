@@ -1,0 +1,14 @@
+{
+  "name": "TaRelayString",
+  "type": "sync",
+  "input_parameters": {
+    "string_in": {
+      "pvf_type": "string"
+    }
+  },
+  "output_parameters": {
+    "string_out": {
+      "pvf_type": "string"
+    }
+  }
+}

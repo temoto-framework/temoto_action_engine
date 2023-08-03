@@ -94,6 +94,7 @@
           "conditions": [
             "on_true -> stop",
             "on_false -> stop",
+            "on_stopped -> ignore",
             "on_error -> bypass"
           ]
         }
@@ -149,6 +150,7 @@
           "conditions": [
             "on_true -> run",
             "on_false -> run",
+            "on_stopped -> ignore",
             "on_error -> bypass"
           ]
         },
@@ -159,6 +161,7 @@
           "conditions": [
             "on_true -> run",
             "on_false -> run",
+            "on_stopped -> ignore",
             "on_error -> bypass"
           ]
         }
@@ -197,6 +200,7 @@
           "conditions": [
             "on_true -> ignore",
             "on_false -> stop",
+            "on_stopped -> ignore",
             "on_error -> bypass"
           ]
         }
@@ -228,6 +232,7 @@
           "conditions": [
             "on_true -> stop",
             "on_false -> ignore",
+            "on_stopped -> ignore",
             "on_error -> bypass"
           ]
         }
