@@ -128,8 +128,6 @@ try
     }
     action_thread.second.thread->join();
   }
-
-  getOutputParametersNc().clearData();
 }
 catch(TemotoErrorStack e)
 {
@@ -281,9 +279,6 @@ void UmrfNodeExec::run()
     result = "on_error";
   }
 
-  // Delete any input data due to std::any virtual deleter
-  getInputParametersNc().clearData();
-
   if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
   {
     LOCK_GUARD_TYPE_R guard_action_instance(action_instance_rw_mutex_);
@@ -307,17 +302,9 @@ void UmrfNodeExec::run()
     start_child_nodes_cb_(asRelation(), result);
   }
 
-  // // Parameter cleanup
-  // if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
-  // {
-  //   LOCK_GUARD_TYPE_R guard_action_instance(action_instance_rw_mutex_);
-  //   action_instance_->getUmrfNode().getInputParametersNc().clearData();
-  //   action_instance_->getUmrfNode().getOutputParametersNc().clearData();
-  // }
-  // else if (getActorExecTraits() == UmrfNode::ActorExecTraits::GRAPH)
-  // {
-  //   getOutputParametersNc().clearData();
-  // }
+  // Delete any input and output data due to std::any virtual deleter
+  getInputParametersNc().clearData();
+  getOutputParametersNc().clearData();
 
   {
     LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);

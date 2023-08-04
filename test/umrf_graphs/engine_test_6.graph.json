@@ -20,7 +20,7 @@
       "type": "sync",
       "input_parameters": {
         "string_in": {
-          "pvf_value": "first_string",
+          "pvf_value": "A",
           "pvf_type": "string"
         }
       },
@@ -90,7 +90,7 @@
         },
         "str_b": {
           "pvf_type": "string",
-          "pvf_value": "SOMETHING NOT RIGHT HERE"
+          "pvf_value": "A and B and C"
         }
       },
       "parents": [

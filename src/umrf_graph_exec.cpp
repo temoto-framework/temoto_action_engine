@@ -47,28 +47,38 @@ void UmrfGraphExec::startGraph(const std::string& result, const ActionParameters
     node.second->setGraphName(getName());
   }
 
-  std::shared_ptr<UmrfNodeExec> root_node = graph_nodes_map_.at(GRAPH_ENTRY.getFullName());
+  std::shared_ptr<UmrfNodeExec> graph_entry = graph_nodes_map_.at(GRAPH_ENTRY.getFullName());
 
   if (!params.empty())
   {
     // Transfer the parameters
     ActionParameters transferable_params;
-    for (const auto& transf_param_name: root_node->getInputParameters().getTransferableParams(params))
+    for (const auto& transf_param_name: graph_entry->getInputParameters().getTransferableParams(params))
     {
       transferable_params.setParameter(params.getParameter(transf_param_name));
     }
-    root_node->updateInputParams(transferable_params);
+    graph_entry->updateInputParams(transferable_params);
   }
 
   // Check if all required parameters are received
-  if (!root_node->inputParametersReceived())
+  if (!graph_entry->inputParametersReceived())
   {
     return;
   }
 
   setState(State::RUNNING);
-  root_node->setOutputParameters(root_node->getInputParameters());
+  graph_entry->setOutputParameters(graph_entry->getInputParameters());
   startChildNodes(GRAPH_ENTRY, result);
+
+  /*
+   * In order to avoid interdependencies of input and output parameters
+   * between different hierarchical graphs, remove the input and output data of
+   * the 'graph_entry' action. This is again related to the quirks of the 'std::any'.
+   * The reason why the data is removed here is to make sure that the children of 
+   * 'graph_entry' got the data.
+   */
+  graph_entry->getInputParametersNc().clearData();
+  graph_entry->getOutputParametersNc().clearData();
 }
 
 std::string UmrfGraphExec::stopGraph()
@@ -85,11 +95,18 @@ std::string UmrfGraphExec::stopGraph()
   setState(State::STOPPING);
   LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
 
+  // Stop all nodes
   for (auto& graph_node : graph_nodes_map_)
   {
     graph_node.second->stop(true);
   }
 
+  // Make sure to remove the parameters from the graph exit first. Entry has already been
+  // cleared after the graph was started
+  graph_nodes_map_.at(GRAPH_EXIT.getFullName())->getInputParametersNc().clearData();
+  graph_nodes_map_.at(GRAPH_EXIT.getFullName())->getOutputParametersNc().clearData();
+
+  // Wait until all nodes finish
   bool had_error = false;
   for (auto& graph_node : graph_nodes_map_)
   {

@@ -46,35 +46,7 @@ build_action(ta_relay_string)
 build_action(ta_generate_result)
 build_action(ta_timer)
 
-# Copy the graphs
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/umrf_graphs/example_b.json
-  ${CMAKE_CURRENT_BINARY_DIR}/example_b.json COPYONLY
-)
-
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/umrf_graphs/engine_test_1.graph.json
-  ${CMAKE_CURRENT_BINARY_DIR}/engine_test_1.graph.json COPYONLY
-)
-
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/umrf_graphs/engine_test_2.graph.json
-  ${CMAKE_CURRENT_BINARY_DIR}/engine_test_2.graph.json COPYONLY
-)
-
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/umrf_graphs/engine_test_3.graph.json
-  ${CMAKE_CURRENT_BINARY_DIR}/engine_test_3.graph.json COPYONLY
-)
-
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/umrf_graphs/engine_test_4.graph.json
-  ${CMAKE_CURRENT_BINARY_DIR}/engine_test_4.graph.json COPYONLY
-)
-
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/umrf_graphs/engine_test_5.graph.json
-  ${CMAKE_CURRENT_BINARY_DIR}/engine_test_5.graph.json COPYONLY
-)
-
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/umrf_graphs/engine_test_6.graph.json
-  ${CMAKE_CURRENT_BINARY_DIR}/engine_test_6.graph.json COPYONLY
-)
-
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/umrf_graphs/ta_generate_string.graph.json
-  ${CMAKE_CURRENT_BINARY_DIR}/ta_generate_string.graph.json COPYONLY
-)
+# Copy the UMRF graphs
+install(DIRECTORY  ${CMAKE_CURRENT_SOURCE_DIR}/umrf_graphs/ 
+        DESTINATION ${CMAKE_CURRENT_BINARY_DIR} 
+        FILES_MATCHING PATTERN "*.graph.json" )

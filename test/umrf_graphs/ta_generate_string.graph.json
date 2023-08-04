@@ -24,7 +24,7 @@
         },
         "str_b": {
           "pvf_type": "string",
-          "pvf_value": "gen_str_1"
+          "pvf_value": "B"
         }
       },
       "output_parameters": {
@@ -55,7 +55,7 @@
         },
         "str_b": {
           "pvf_type": "string",
-          "pvf_value": "gen_str_2"
+          "pvf_value": "C"
         }
       },
       "output_parameters": {
