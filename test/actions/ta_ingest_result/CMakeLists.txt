@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1)
-project(ta_generate_result)
+project(ta_ingest_result)
 
 add_compile_options(-std=c++17)
 

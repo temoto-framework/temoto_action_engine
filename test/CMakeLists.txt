@@ -43,7 +43,9 @@ endfunction()
 build_action(ta_add_string)
 build_action(ta_compare_string)
 build_action(ta_relay_string)
-build_action(ta_generate_result)
+build_action(ta_ingest_result)
+build_action(ta_trigger_result)
+build_action(ta_trigger_result_multi)
 build_action(ta_timer)
 
 # Copy the UMRF graphs

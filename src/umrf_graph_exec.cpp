@@ -153,6 +153,24 @@ void UmrfGraphExec::stopNode(const std::string& umrf_name)
   graph_nodes_map_.at(umrf_name)->stop();
 }
 
+std::set<std::string> UmrfGraphExec::getLinkedActions(const UmrfNode::Relation& parent) const
+{
+  LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
+  std::set<std::string> stoplist;
+
+  for (const auto& child : graph_nodes_map_.at(parent.getFullName())->getChildren())
+  {
+    if (stoplist.find(child.getFullName()) != stoplist.end())
+      continue;
+
+    stoplist.insert(child.getFullName());
+    auto sub_stoplist = getLinkedActions(child);
+    stoplist.insert(sub_stoplist.begin(), sub_stoplist.end());
+  }
+
+  return stoplist;
+}
+
 void UmrfGraphExec::startChildNodes(const UmrfNode::Relation& parent_node_relation, const std::string& result)
 try
 {
@@ -164,8 +182,51 @@ try
     return;
   }
 
+  // LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
+  // std::shared_ptr<UmrfNodeExec> parent_node = graph_nodes_map_.at(parent_node_relation.getFullName());
+
+  /*
+   * If the parent action's type is 'spontaneous', then stop all the actions
+   * that come after the children
+   */
+  const std::string& parent_node_type = [&]
+  {
+    LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
+    return graph_nodes_map_.at(parent_node_relation.getFullName())->getType();
+  }(); 
+
+  if (parent_node_type == "spontaneous")
+  {
+    for(const auto& n : getLinkedActions(parent_node_relation))
+    {
+      graph_nodes_map_.at(n)->stop();
+    }
+
+    for(const auto& n : getLinkedActions(parent_node_relation))
+    {
+      while (true)
+      {
+        {
+          LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
+          std::shared_ptr<UmrfNodeExec> parent_node = graph_nodes_map_.at(parent_node_relation.getFullName());
+
+          if (graph_nodes_map_.at(n)->getState() == UmrfNode::State::FINISHED ||
+              graph_nodes_map_.at(n)->getState() == UmrfNode::State::ERROR ||
+              graph_nodes_map_.at(n)->getState() == UmrfNode::State::NOT_SET)
+          {
+            break;
+          }
+        }
+        std::cout << "--- wait " << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      }
+    }
+  }
+
   LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
   std::shared_ptr<UmrfNodeExec> parent_node = graph_nodes_map_.at(parent_node_relation.getFullName());
+
+  std::cout << parent_node->getFullName() << ": B2\n";
 
   /*
    * Update the child nodes and check which children are ready
@@ -185,6 +246,7 @@ try
     }
 
     // Check if the parent should be ignored or not
+    std::cout << "!!!!!!!!!!!!!!!!!!!!!1" << parent_node->getFullName() << std::endl;
     const auto child_response = child_node->getParentRelation(parent_node_relation)->getResponse(result);
     std::cout << getName() << ": D1_2. result(" << parent_node->getFullName() << "):" << result << ", response(" << child_node->getFullName() << "): " << child_response << std::endl;
 

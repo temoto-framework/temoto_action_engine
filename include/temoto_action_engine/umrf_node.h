@@ -146,7 +146,7 @@ public:
       return name_ + "_" + std::to_string(instance_id_);
     }
 
-    const Conditions& getConditions() const
+    Conditions getConditions() const
     {
       return conditions_;
     }

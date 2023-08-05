@@ -3,12 +3,12 @@
 #include <class_loader/class_loader.hpp>
 #include "ta_example_1/temoto_action.h"
 
-class TaGenerateResult : public TemotoAction
+class TaTriggerResult : public TemotoAction
 {
 public:
 
 // Constructor. REQUIRED BY TEMOTO
-TaGenerateResult()
+TaTriggerResult()
 {}
 
 void onInit()
@@ -22,7 +22,7 @@ bool onRun()
   // Input parameters
   std::string in_result = GET_PARAMETER("result", std::string);
 
-  TEMOTO_PRINT_OF("generating result: " + in_result, getName());
+  TEMOTO_PRINT_OF("triggering a result: " + in_result, getName());
 
   if (in_result == "on_true")
     return true;
@@ -50,10 +50,10 @@ void onStop()
 }
 
 // Destructor
-~TaGenerateResult()
+~TaTriggerResult()
 {}
 
-}; // TaGenerateResult class
+}; // TaTriggerResult class
 
 /* REQUIRED BY CLASS LOADER */
-CLASS_LOADER_REGISTER_CLASS(TaGenerateResult, ActionBase);
+CLASS_LOADER_REGISTER_CLASS(TaTriggerResult, ActionBase);

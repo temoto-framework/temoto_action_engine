@@ -1,0 +1,60 @@
+{
+  "graph_name": "engine_test_7",
+  "graph_description": "Tests the spontaneous action mechanism",
+  "graph_entry": [
+    {
+      "name": "TaTriggerResultMulti",
+      "instance_id": 0
+    }
+  ],
+  "graph_exit": [
+    {
+      "name": "TaIngestResult",
+      "instance_id": 0
+    }
+  ],
+  "actions": [
+    {
+      "name": "TaTriggerResultMulti",
+      "type": "spontaneous",
+      "instance_id": 0,
+      "input_parameters": {
+        "results": {
+          "pvf_type": "strings",
+          "pvf_value": ["on_true", "on_true", "on_true"]
+        },
+        "delay": {
+          "pvf_type": "number",
+          "pvf_value": 1.0
+        }
+      },
+      "children": [
+        {
+          "name": "TaIngestResult",
+          "instance_id": 0
+        }
+      ]
+    },
+    {
+      "name": "TaIngestResult",
+      "instance_id": 0,
+      "type": "sync",
+      "input_parameters": {
+        "ingest_count": {
+          "pvf_type": "number",
+          "pvf_value": 3.0
+        },
+        "timeout": {
+          "pvf_type": "number",
+          "pvf_value": 5.0
+        }
+      },
+      "parents": [
+        {
+          "name": "TaTriggerResultMulti",
+          "instance_id": 0
+        }
+      ]
+    }
+  ]
+}

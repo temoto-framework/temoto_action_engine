@@ -45,7 +45,6 @@ bool onRun()
       break;
   }
 
-
   if (action_stop)
   {
     TEMOTO_PRINT_OF("stopping the timer on: " + std::to_string(current_count) + " s", getName());

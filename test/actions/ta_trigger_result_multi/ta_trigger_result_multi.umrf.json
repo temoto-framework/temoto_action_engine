@@ -1,0 +1,12 @@
+{
+  "name": "TaTriggerResultMulti",
+  "type": "spontaneous",
+  "input_parameters": {
+    "results": {
+      "pvf_type": "strings"
+    },
+    "delay": {
+      "pvf_type": "number"
+    }
+  }
+}

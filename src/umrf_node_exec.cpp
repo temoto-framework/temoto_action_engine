@@ -205,6 +205,9 @@ void UmrfNodeExec::run()
     LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
     action_threads_[UmrfNode::State::RUNNING].is_running = true;
   }
+  
+  do // do-while loop for 'spontaneous' actions
+  {
 
   std::string result;
   try
@@ -252,6 +255,7 @@ void UmrfNodeExec::run()
      */
     else if (getActorExecTraits() == UmrfNode::ActorExecTraits::GRAPH)
     {
+      // TODO: capture the errors
       ENGINE_HANDLE.executeUmrfGraph(getName(), getInputParameters());
       result = waitUntilFinished(Waitable{.action_name = GRAPH_EXIT.getFullName(), .graph_name = getName()});
     }
@@ -263,6 +267,7 @@ void UmrfNodeExec::run()
     action_threads_[UmrfNode::State::RUNNING].error_messages.appendError(FORWARD_TEMOTO_ERROR_STACK(e));
     setState(State::ERROR);
     result = "on_error";
+    std::cout << "ERROR (" << getFullName() << "): " << e.what() << std::endl;
   }
   catch(const std::exception& e)
   {
@@ -270,6 +275,7 @@ void UmrfNodeExec::run()
     action_threads_[UmrfNode::State::RUNNING].error_messages = CREATE_TEMOTO_ERROR_STACK(std::string(e.what()));
     setState(State::ERROR);
     result = "on_error";
+    std::cout << "ERROR (" << getFullName() << "): " << e.what() << std::endl;
   }
   catch(...)
   {
@@ -277,6 +283,7 @@ void UmrfNodeExec::run()
     action_threads_[UmrfNode::State::RUNNING].error_messages = CREATE_TEMOTO_ERROR_STACK("Caught an unhandled error.");
     setState(State::ERROR);
     result = "on_error";
+    std::cout << "ERROR (" << getFullName() << "): " << "no clue what happened" << std::endl;
   }
 
   if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
@@ -287,20 +294,24 @@ void UmrfNodeExec::run()
     ENGINE_HANDLE.notifyFinished(Waitable{.action_name = getFullName(), .graph_name = parent_graph_name_}, result);
   }
 
-  if (getState() == UmrfNode::State::RUNNING)
+  if (getState() == UmrfNode::State::RUNNING || getState() == UmrfNode::State::ERROR)
   {
     start_child_nodes_cb_(asRelation(), result);
-    setState(State::FINISHED);
   }
   else if (getState() == UmrfNode::State::STOPPING)
   {
     start_child_nodes_cb_(asRelation(), "on_stopped");
+  }
+
+  if (getType() == "spontaneous")
+  {
     setState(State::FINISHED);
   }
-  else if (getState() == UmrfNode::State::ERROR)
-  {
-    start_child_nodes_cb_(asRelation(), result);
-  }
+
+  } // While loop
+  while(getType() == "spontaneous" &&
+        getState() != UmrfNode::State::PAUSED &&
+        getState() != UmrfNode::State::ERROR);
 
   // Delete any input and output data due to std::any virtual deleter
   getInputParametersNc().clearData();
@@ -310,6 +321,12 @@ void UmrfNodeExec::run()
     LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
     action_threads_[UmrfNode::State::RUNNING].is_running = false;
   }
+
+  if (getState() != UmrfNode::State::ERROR)
+  {
+    setState(State::FINISHED);
+  }
+
   });
 }
 
@@ -534,7 +551,8 @@ void UmrfNodeExec::clearThread(const UmrfNode::State state_name)
 
   if (it->second.is_running)
   {
-    throw CREATE_TEMOTO_ERROR_STACK("Cannot clear thread '" + state_to_str_map_.at(state_name) + "' because it's running");
+    throw CREATE_TEMOTO_ERROR_STACK("Cannot clear thread '" + state_to_str_map_.at(state_name) +
+      "' of '" + getFullName() + "' because it's running");
   }
 
   if (it->second.thread->joinable())

@@ -1,0 +1,12 @@
+{
+  "name": "TaIngestResult",
+  "type": "sync",
+  "input_parameters": {
+    "ingest_count": {
+      "pvf_type": "number"
+    },
+    "timeout": {
+      "pvf_type": "number"
+    }
+  }
+}
