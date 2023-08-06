@@ -31,6 +31,7 @@ bool onRun()
 
   if (current_ingest_count >= final_ingest_count)
   {
+    TEMOTO_PRINT_OF("Final ingestion count reached", getName());
     return true;
   }
 
@@ -38,7 +39,7 @@ bool onRun()
   bool timeout_reached = false;
   while (true)
   {
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
       std::chrono::high_resolution_clock::now() - start).count() / 1000.0;
 
@@ -60,6 +61,7 @@ bool onRun()
   }
   else if (action_stop)
   {
+    action_stop = false;
     TEMOTO_PRINT_OF("externally stopped", getName());
     return true;
   }
@@ -92,7 +94,7 @@ void onStop()
 private:
 
 bool action_stop = false;
-int current_ingest_count;
+int current_ingest_count = 0;
 int final_ingest_count;
 double timeout;
 

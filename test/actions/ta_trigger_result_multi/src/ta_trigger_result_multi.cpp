@@ -32,15 +32,17 @@ bool onRun()
    */
   if (count == in_results.size())
   {
+    TEMOTO_PRINT_OF("Trigger count reached, sleeping until stopped", getName());
     std::unique_lock<std::mutex> lock(m);
     cv.wait(lock, [&]{return stop;});
+    TEMOTO_PRINT_OF("Woke up after receiving a stop signal", getName());
     return true;
   }
 
   /*
    * Sleep for a determined amount of time
    */
-  TEMOTO_PRINT_OF("sleeping for: " + std::to_string(int(in_delay * 1000)) + " s", getName());
+  TEMOTO_PRINT_OF("sleeping for: " + std::to_string(in_delay) + " s", getName());
   std::this_thread::sleep_for(std::chrono::milliseconds(int(in_delay * 1000)));
 
   std::string result = in_results.at(count);

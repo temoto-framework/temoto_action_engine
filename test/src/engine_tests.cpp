@@ -6,12 +6,102 @@
 TEST(EngineTest, Lifecycle) 
 { 
   ActionEngine ae("ae_instance_1");
-  // std::string ug_json_str = temoto_action_engine::readFromFile("example_b.json");
-  // UmrfGraph ug_a = umrf_json::fromUmrfGraphJsonStr(ug_json_str);
-  // std::string ug_json_str_new = umrf_json::toUmrfGraphJsonStr(ug_a);
+}
 
-  // json ug_json_original = json::parse(ug_json_str);
-  // json ug_json_converted = json::parse(ug_json_str_new);
+TEST(EngineTest, SimpleAction)
+{
+  std::string graph_name = "engine_test_1";
+  std::string expected_result = "on_true";
 
-  // ASSERT_EQ(ug_json_original, ug_json_converted);
+  ActionEngine ae("ae_instance_1");
+  ae.addActionsPath(".");
+
+  ae.executeUmrfGraph(graph_name);
+  std::string result = ae.waitForGraph(graph_name);
+
+  ASSERT_EQ(result, expected_result);
+}
+
+TEST(EngineTest, SimpleSequence)
+{
+  std::string graph_name = "engine_test_2";
+  std::string expected_result = "on_true";
+
+  ActionEngine ae("ae_instance_1");
+  ae.addActionsPath(".");
+
+  ae.executeUmrfGraph(graph_name);
+  std::string result = ae.waitForGraph(graph_name);
+
+  ASSERT_EQ(result, expected_result);
+}
+
+TEST(EngineTest, SimpleConcurrency)
+{
+  std::string graph_name = "engine_test_3";
+  std::string expected_result = "on_true";
+
+  ActionEngine ae("ae_instance_1");
+  ae.addActionsPath(".");
+
+  ae.executeUmrfGraph(graph_name);
+  std::string result = ae.waitForGraph(graph_name);
+
+  ASSERT_EQ(result, expected_result);
+}
+
+TEST(EngineTest, SimpleConditionals)
+{
+  std::string graph_name = "engine_test_4";
+  std::string expected_result = "on_true";
+
+  ActionEngine ae("ae_instance_1");
+  ae.addActionsPath(".");
+
+  ae.executeUmrfGraph(graph_name);
+  std::string result = ae.waitForGraph(graph_name);
+
+  ASSERT_EQ(result, expected_result);
+}
+
+TEST(EngineTest, InvokeStop)
+{
+  std::string graph_name = "engine_test_5";
+  std::string expected_result = "on_stopped";
+
+  ActionEngine ae("ae_instance_1");
+  ae.addActionsPath(".");
+
+  ae.executeUmrfGraph(graph_name);
+  std::string result = ae.waitForGraph(graph_name);
+
+  ASSERT_EQ(result, expected_result);
+}
+
+TEST(EngineTest, SimpleHierarchy)
+{
+  std::string graph_name = "engine_test_6";
+  std::string expected_result = "on_true";
+
+  ActionEngine ae("ae_instance_1");
+  ae.addActionsPath(".");
+
+  ae.executeUmrfGraph(graph_name);
+  std::string result = ae.waitForGraph(graph_name);
+
+  ASSERT_EQ(result, expected_result);
+}
+
+TEST(EngineTest, SimpleReactiveBehavior)
+{
+  std::string graph_name = "engine_test_7";
+  std::string expected_result = "on_true";
+
+  ActionEngine ae("ae_instance_1");
+  ae.addActionsPath(".");
+
+  ae.executeUmrfGraph(graph_name);
+  std::string result = ae.waitForGraph(graph_name);
+
+  ASSERT_EQ(result, expected_result);
 }

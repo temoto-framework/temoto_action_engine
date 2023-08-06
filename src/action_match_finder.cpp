@@ -115,6 +115,7 @@ bool ActionMatchFinder::findMatchingAction(UmrfNode& umrf_node_in, const UmrfNod
     if (param_in.getDataSize() != 0)
     {
       new_param.setData(param_in.getData());
+      new_param.setNativeData(param_in.getNativeData());
     }
     umrf_node_in.getInputParametersNc().setParameter(new_param, true);
   }

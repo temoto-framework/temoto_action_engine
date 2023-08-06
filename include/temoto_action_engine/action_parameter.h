@@ -64,6 +64,7 @@ public:
   , updatable_(ap.updatable_)
   , data_(ap.data_)
   , allowed_data_(ap.allowed_data_)
+  , native_data_(ap.native_data_)
   {}
 
   // void operator=(const ActionParameter<T>& ap)
@@ -77,6 +78,7 @@ public:
   //   updatable_ = ap.updatable_;
   //   data_ = ap.data_;
   //   allowed_data_ = ap.allowed_data_;
+  //   native_data_ = ap.native_data_;
   // }
 
   ActionParameter(const std::string& name)
@@ -284,6 +286,16 @@ public:
     data_.clear();
   }
 
+  void setNativeData(bool native_data)
+  {
+    native_data_ = native_data;
+  }
+
+  bool getNativeData() const
+  {
+    return native_data_;
+  }
+
 private:
   std::string name_;
   mutable std::string type_;
@@ -294,6 +306,7 @@ private:
   mutable bool updatable_;
   mutable std::vector<T> data_;
   mutable std::vector<T> allowed_data_;
+  bool native_data_ = false;
 };
 
 #endif

@@ -177,13 +177,10 @@ try
   /*
    * Pass the output parameters of the parent action to child actions
    */
-  if (getState() == State::STOPPING)
+  if (getState() != State::RUNNING)
   {
     return;
   }
-
-  // LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
-  // std::shared_ptr<UmrfNodeExec> parent_node = graph_nodes_map_.at(parent_node_relation.getFullName());
 
   /*
    * If the parent action's type is 'spontaneous', then stop all the actions
@@ -208,8 +205,6 @@ try
       {
         {
           LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
-          std::shared_ptr<UmrfNodeExec> parent_node = graph_nodes_map_.at(parent_node_relation.getFullName());
-
           if (graph_nodes_map_.at(n)->getState() == UmrfNode::State::FINISHED ||
               graph_nodes_map_.at(n)->getState() == UmrfNode::State::ERROR ||
               graph_nodes_map_.at(n)->getState() == UmrfNode::State::NOT_SET)
@@ -217,7 +212,6 @@ try
             break;
           }
         }
-        std::cout << "--- wait " << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
       }
     }
@@ -225,8 +219,6 @@ try
 
   LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
   std::shared_ptr<UmrfNodeExec> parent_node = graph_nodes_map_.at(parent_node_relation.getFullName());
-
-  std::cout << parent_node->getFullName() << ": B2\n";
 
   /*
    * Update the child nodes and check which children are ready
@@ -246,9 +238,8 @@ try
     }
 
     // Check if the parent should be ignored or not
-    std::cout << "!!!!!!!!!!!!!!!!!!!!!1" << parent_node->getFullName() << std::endl;
     const auto child_response = child_node->getParentRelation(parent_node_relation)->getResponse(result);
-    std::cout << getName() << ": D1_2. result(" << parent_node->getFullName() << "):" << result << ", response(" << child_node->getFullName() << "): " << child_response << std::endl;
+    std::cout << getName() << ": result(" << parent_node->getFullName() << "):" << result << ", response(" << child_node->getFullName() << "): " << child_response << std::endl;
 
     if (child_response == "bypass" && child_node->getName() == GRAPH_EXIT.getName())
     {
@@ -266,8 +257,6 @@ try
       continue;
     }
 
-    std::cout << getName() << ": D1_3\n";
-
     // Transfer parent's output paramas to the child
     ActionParameters transferable_params;
     ActionParameters parent_parameters_remapped = parent_node->getOutputParameters();
@@ -278,57 +267,38 @@ try
     {
       parent_parameters_remapped.getParameterNc(rel.first).setName(rel.second);
     }
-    
-    std::cout << "parent_param size: " << parent_parameters_remapped.getParameterCount() << std::endl;
-    for (const auto& p : parent_parameters_remapped)
-    {
-      std::cout << " * name: " << p.getName() << std::endl;
-      std::cout << " * type: " << p.getType() << std::endl;
-      std::cout << " * data: " << p.getDataSize() << std::endl;
-    }
 
     for (const auto& transf_param_name: child_node->getInputParameters().getTransferableParams(parent_parameters_remapped))
     {
       transferable_params.setParameter(parent_parameters_remapped.getParameter(transf_param_name));
     }
 
-    std::cout << "transferable_params size: " << transferable_params.getParameterCount() << std::endl;
-
     child_node->updateInputParams(transferable_params);
 
     // Check if child node is ready
     if (!child_node->inputParametersReceived() || !child_node->requiredParentsFinished())
     {
-      std::cout << getName() << ": D1_3a\n";
       continue;
     }
-
-    std::cout << getName() << ": D1_4\n";
 
     if (child_node->getName() == GRAPH_EXIT.getName())
     {
       setState(State::FINISHED);
       ENGINE_HANDLE.notifyFinished(Waitable{.action_name = GRAPH_EXIT.getFullName(), .graph_name = getName()}, result);
-      std::cout << getName() << ": D1_4a BAII\n";
       return;
     }
-
-    std::cout << getName() << ": D1_5\n";
 
     // Execute the child action
     if (child_response == "run")
     {
-      std::cout << getName() << ": D1_5a\n";
       child_node->run();
     }
     else if (child_response == "stop")
     {
-      std::cout << getName() << ": D1_5b\n";
       child_node->stop();
     }
     else if (child_response == "pause")
     {
-      std::cout << getName() << ": D1_5c\n";
       child_node->pause();
     }
   }
