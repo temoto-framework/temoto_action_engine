@@ -18,39 +18,19 @@
 #define TEMOTO_ACTION_ENGINE__ACTION_ENGINE_HANDLE_H
 
 #include "temoto_action_engine/action_parameters.h"
-#include "temoto_action_engine/temoto_error.h"
 #include "temoto_action_engine/mutex.h"
+#include "temoto_action_engine/temoto_error.h"
+#include "temoto_action_engine/waitlist.h"
 
 #include <functional>
 #include <map>
 #include <memory>
 #include <vector>
 
-struct WaitlistItem
-{
-  std::string action_name;
-  std::string graph_name;
-
-  bool operator==(const WaitlistItem& other) const
-  {
-    return (action_name == other.action_name) && (graph_name == other.graph_name);
-  }
-
-  bool operator <(const WaitlistItem& other) const
-  {
-    return (action_name + graph_name) < (other.action_name + other.graph_name);
-  }
-};
-
-typedef WaitlistItem Waiter;
-typedef WaitlistItem Waitable;
-
 class EngineHandle
 {
 friend class ActionEngine;
-typedef std::function<void(const Waitable&, const Waiter&)> AddWaiterT;
 typedef std::function<void(const std::string&, const ActionParameters&, const std::string&)> ExecuteGraphT;
-typedef std::function<void(const Waitable&, const std::string&)> NotifyFinishedT;
 
 public:
 
