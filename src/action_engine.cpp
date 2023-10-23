@@ -344,14 +344,22 @@ void ActionEngine::notifyFinished(const Waitable& waitable, const std::string& r
   LOCK_GUARD_TYPE_R l_graph(umrf_graph_map_rw_mutex_);
   const auto& waitable_action = umrf_graph_exec_map_.at(waitable.graph_name)->graph_nodes_map_.at(waitable.action_name);
 
+  // Notify local actions
   for (const auto& waiter : sync_map_.at(waitable))
   {
     auto& waiting_action = umrf_graph_exec_map_.at(waiter.graph_name)->graph_nodes_map_.at(waiter.action_name);
     waiting_action->setRemoteResult(result);
-    waiting_action->setOutputParameters(waitable_action->getInputParameters());   
+    waiting_action->setOutputParameters(waitable_action->getInputParameters()); // BUG: implicitly assumes the waitable is a GRAPH EXIT
     waiting_action->notifyFinished();
   }
 
+  // Notify remote acions
+  if(waitable.actor_name == actor_name_)
+  {
+    // synchronizer.sendNotify(waitable, result,);
+  }
+
+  // TODO: for shared actions, erase when all acks are received
   sync_map_.erase(waitable);
 }
 

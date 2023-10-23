@@ -18,16 +18,71 @@
 #define TEMOTO_ACTION_ENGINE__ACTION_SYNCHRONIZER_H
 
 #include "temoto_action_engine/waitlist.h"
+#include "temoto_action_engine/action_synchronizer_plugin_base.h"
+#include "temoto_action_engine/action_engine_handle.h"
+
+#include <class_loader/multi_library_class_loader.hpp>
+#include <memory>
+#include <mutex>
+#include <vector>
+
+std::string camelToSnake(std::string str_camel_case)
+{
+  std::string str_snake_case = "";
+  char c = tolower(str_camel_case[0]);
+  str_snake_case += (char(c));
+
+  for (int i = 1; i < str_camel_case.length(); i++) 
+  {
+    char ch = str_camel_case[i];
+    if (isupper(ch)) 
+    {
+      str_snake_case = str_snake_case + '_';
+      str_snake_case += char(tolower(ch));
+    }
+    else 
+    {
+      str_snake_case = str_snake_case + ch;
+    }
+  }
+  return str_snake_case;
+}
 
 class ActionSynchronizer
 {
 public:
 
-  virtual void notify(Waitable waitable, unsigned int ack_count) = 0;
+  ActionSynchronizer(std::vector<std::string> plugin_names)
+  {
+    class_loader_ = std::make_shared<class_loader::MultiLibraryClassLoader>(false);
 
-  virtual void acknowledge(Waitable waitable, Waiter waiter) = 0;
+    for(const auto& plugin_name : plugin_names)
+    {
+      auto plugin = class_loader_->createSharedInstance<ActionSynchronizerPluginBase>(plugin_name, plugin_name + ".so");
+      // TODO: plugin->setNotificationReceivedCallback();
+      sync_plugins_.push_back(plugin);
+    }
+  }
 
-  virtual void setNotifyCallback(NotifyFinishedT notify_finished_fptr_) = 0;
+  void sendNotify(const Waitable& waitable)
+  {
+    std::lock_guard<std::mutex> l(m_);
+    for (const auto& plugin : sync_plugins_)
+    {
+      plugin->sendNotification(waitable);
+    }
+  }
+
+  void onNotificationReceived(/*todo*/)
+  {
+    ENGINE_HANDLE.notifyFinished()
+  }
+
+private:
+
+std::shared_ptr<class_loader::MultiLibraryClassLoader> class_loader_;
+std::vector<std::shared_ptr<ActionSynchronizerPluginBase>> sync_plugins_;
+std::mutex m_;
 
 };
 

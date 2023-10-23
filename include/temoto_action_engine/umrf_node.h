@@ -18,6 +18,7 @@
 #define TEMOTO_ACTION_ENGINE__UMRF_NODE_H
 
 #include <memory>
+#include <optional>
 #include "temoto_action_engine/umrf.h"
 
 class UmrfNode : public Umrf

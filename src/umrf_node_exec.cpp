@@ -251,7 +251,10 @@ void UmrfNodeExec::run()
      */
     else if (getActorExecTraits() == UmrfNode::ActorExecTraits::REMOTE)
     {
-      result = waitUntilFinished(Waitable{.action_name = getFullName(), .graph_name = parent_graph_name_});
+      result = waitUntilFinished(Waitable{
+        .action_name = getFullName(),
+        .actor_name = getActor(),
+        .graph_name = parent_graph_name_});
     }
 
     /*
@@ -287,12 +290,22 @@ void UmrfNodeExec::run()
     result = "on_error";
   }
 
+  // Clear the parameters if local
   if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
   {
     LOCK_GUARD_TYPE_R guard_action_instance(action_instance_rw_mutex_);
     action_instance_->getUmrfNode().getInputParametersNc().clearData();
     action_instance_->getUmrfNode().getOutputParametersNc().clearData();
-    ENGINE_HANDLE.notifyFinished(Waitable{.action_name = getFullName(), .graph_name = parent_graph_name_}, result);
+  }
+
+  // Let the waiters know that the action (LOCAL or GRAPH) is finished
+  if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL ||
+      getActorExecTraits() == UmrfNode::ActorExecTraits::GRAPH)
+  {
+    ENGINE_HANDLE.notifyFinished(Waitable{
+      .action_name = getFullName(),
+      .actor_name = getActor(),
+      .graph_name = parent_graph_name_}, result);
   }
 
   if (getState() == UmrfNode::State::ERROR)

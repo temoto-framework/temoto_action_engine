@@ -20,6 +20,7 @@
 #include "temoto_action_engine/action_engine_handle.h"
 #include "temoto_action_engine/action_indexer.h"
 #include "temoto_action_engine/action_match_finder.h"
+#include "temoto_action_engine/action_synchronizer.h"
 #include "temoto_action_engine/temoto_error.h"
 #include "temoto_action_engine/umrf_graph.h"
 #include "temoto_action_engine/umrf_graph_exec.h"

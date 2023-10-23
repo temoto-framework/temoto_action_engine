@@ -23,11 +23,14 @@
 struct WaitlistItem
 {
   std::string action_name;
+  std::string actor_name;
   std::string graph_name;
 
   bool operator==(const WaitlistItem& other) const
   {
-    return (action_name == other.action_name) && (graph_name == other.graph_name);
+    return (action_name == other.action_name) && 
+           (graph_name == other.graph_name) &&
+           (actor_name == other.actor_name);
   }
 
   bool operator <(const WaitlistItem& other) const
