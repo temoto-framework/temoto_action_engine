@@ -302,10 +302,16 @@ void UmrfNodeExec::run()
   if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL ||
       getActorExecTraits() == UmrfNode::ActorExecTraits::GRAPH)
   {
-    ENGINE_HANDLE.notifyFinished(Waitable{
-      .action_name = getFullName(),
-      .actor_name = getActor(),
-      .graph_name = parent_graph_name_}, result);
+    Waitable waitable{.action_name = getFullName(), .actor_name = getActor(), .graph_name = parent_graph_name_};
+    if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL && getName() == GRAPH_EXIT.getName())
+    {
+      ENGINE_HANDLE.notifyFinished(waitable, result, getInputParameters());
+    }
+    else
+    {
+      ENGINE_HANDLE.notifyFinished(waitable, result, getOutputParameters());
+    }
+      
   }
 
   if (getState() == UmrfNode::State::ERROR)

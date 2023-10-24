@@ -20,33 +20,12 @@
 #include "temoto_action_engine/waitlist.h"
 #include "temoto_action_engine/action_synchronizer_plugin_base.h"
 #include "temoto_action_engine/action_engine_handle.h"
+#include "temoto_action_engine/umrf_json.h"
 
 #include <class_loader/multi_library_class_loader.hpp>
 #include <memory>
 #include <mutex>
 #include <vector>
-
-std::string camelToSnake(std::string str_camel_case)
-{
-  std::string str_snake_case = "";
-  char c = tolower(str_camel_case[0]);
-  str_snake_case += (char(c));
-
-  for (int i = 1; i < str_camel_case.length(); i++) 
-  {
-    char ch = str_camel_case[i];
-    if (isupper(ch)) 
-    {
-      str_snake_case = str_snake_case + '_';
-      str_snake_case += char(tolower(ch));
-    }
-    else 
-    {
-      str_snake_case = str_snake_case + ch;
-    }
-  }
-  return str_snake_case;
-}
 
 class ActionSynchronizer
 {
@@ -64,18 +43,20 @@ public:
     }
   }
 
-  void sendNotify(const Waitable& waitable)
+  void sendNotify(const Waitable& waitable, const std::string& result, const ActionParameters& params)
   {
+    std::string params_json_str = umrf_json::toUmrfParametersJsonStr(params);
     std::lock_guard<std::mutex> l(m_);
+    
     for (const auto& plugin : sync_plugins_)
     {
-      plugin->sendNotification(waitable);
+      plugin->sendNotification(waitable, result, params_json_str);
     }
   }
 
   void onNotificationReceived(/*todo*/)
   {
-    ENGINE_HANDLE.notifyFinished()
+    //ENGINE_HANDLE.notifyFinished()
   }
 
 private:

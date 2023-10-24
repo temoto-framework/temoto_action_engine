@@ -235,14 +235,12 @@ try
     // Skip that parameter if it's not updatable
     if (!input_param_loc.isUpdatable())
     {
-      std::cout << "D4_1\n";
       continue;
     }
 
     // Update the parameter
     if (!setInputParameter(input_param_in))
     {
-      std::cout << "D4_2\n";
       continue;
     }
     parameters_updated = true;

@@ -86,6 +86,8 @@ std::string toUmrfJsonStr(const UmrfNode& u);
 
 std::string toUmrfGraphJsonStr(const UmrfGraph& ug);
 
+std::string toUmrfParametersJsonStr(const ActionParameters& ap);
+
 }
 
 #endif

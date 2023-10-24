@@ -23,7 +23,7 @@ class ActionSynchronizerPluginBase
 {
 public:
 
-  virtual void sendNotification(const Waitable& waitable) = 0;
+  virtual void sendNotification(const Waitable& waitable, const std::string& result, const std::string& params) = 0;
 
   virtual void setNotificationReceivedCallback(NotifyFinishedT notify_finished_fptr_) = 0;
 

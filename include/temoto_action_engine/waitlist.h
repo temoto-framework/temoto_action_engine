@@ -20,6 +20,8 @@
 #include <functional>
 #include <string>
 
+class ActionParameters; // Forward declaration
+
 struct WaitlistItem
 {
   std::string action_name;
@@ -43,6 +45,6 @@ typedef WaitlistItem Waiter;
 typedef WaitlistItem Waitable;
 
 typedef std::function<void(const Waitable&, const Waiter&)> AddWaiterT;
-typedef std::function<void(const Waitable&, const std::string&)> NotifyFinishedT;
+typedef std::function<void(const Waitable&, const std::string&, const ActionParameters&)> NotifyFinishedT;
 
 #endif

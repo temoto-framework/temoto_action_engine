@@ -703,6 +703,11 @@ json parametersToJson(const ActionParameters& parameters)
   return parameters_json;
 }
 
+std::string toUmrfParametersJsonStr(const ActionParameters& ap)
+{
+  return parametersToJson(ap).dump(4);
+}
+
 json toUmrfJson(const UmrfNode& u)
 {
   json action;

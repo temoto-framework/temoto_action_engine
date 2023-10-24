@@ -82,7 +82,7 @@ private:
 
   void monitoringLoop();
 
-  void notifyFinished(const Waitable& waitable, const std::string& result);
+  void notifyFinished(const Waitable& waitable, const std::string& result, const ActionParameters& params);
 
   bool matchGraph(UmrfGraph& g, std::set<std::string> g_blacklist);
 

@@ -51,9 +51,9 @@ public:
     execute_graph_fptr_(graph_name, params, result);
   }
 
-  void notifyFinished(const Waitable& waitable, const std::string& result)
+  void notifyFinished(const Waitable& waitable, const std::string& result, const ActionParameters& params)
   {
-    notify_finished_fptr_(waitable, result);
+    notify_finished_fptr_(waitable, result, params);
   }
 
 private:

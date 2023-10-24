@@ -26,7 +26,7 @@ ActionEngine::ActionEngine(const std::string& actor_name)
   , std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 
   ENGINE_HANDLE.notify_finished_fptr_ = std::bind(&ActionEngine::notifyFinished, this
-  , std::placeholders::_1, std::placeholders::_2);
+  , std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 
   ENGINE_HANDLE.add_waiter_fptr_ = std::bind(&ActionEngine::addWaiter, this
   , std::placeholders::_1, std::placeholders::_2);
@@ -326,7 +326,7 @@ std::vector<std::string> ActionEngine::getGraphJsons() const
   return umrf_graph_jsons;
 }
 
-void ActionEngine::notifyFinished(const Waitable& waitable, const std::string& result)
+void ActionEngine::notifyFinished(const Waitable& waitable, const std::string& result, const ActionParameters& params)
 {
   LOCK_GUARD_TYPE l_sync(sync_map_rw_mutex_);
 
@@ -349,14 +349,14 @@ void ActionEngine::notifyFinished(const Waitable& waitable, const std::string& r
   {
     auto& waiting_action = umrf_graph_exec_map_.at(waiter.graph_name)->graph_nodes_map_.at(waiter.action_name);
     waiting_action->setRemoteResult(result);
-    waiting_action->setOutputParameters(waitable_action->getInputParameters()); // BUG: implicitly assumes the waitable is a GRAPH EXIT
+    waiting_action->setOutputParameters(params);
     waiting_action->notifyFinished();
   }
 
   // Notify remote acions
   if(waitable.actor_name == actor_name_)
   {
-    // synchronizer.sendNotify(waitable, result,);
+    // synchronizer.sendNotify(waitable, result, params);
   }
 
   // TODO: for shared actions, erase when all acks are received
