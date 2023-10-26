@@ -19,13 +19,30 @@
 
 #include "temoto_action_engine/waitlist.h"
 
+struct Notification
+{
+  std::string parameters;
+  std::string result;
+  Waitable    waitable;
+};
+
+struct GraphDescriptor
+{
+  std::string actor_name;
+  std::string graph_name;
+  std::string parameters;
+  std::string result;
+};
+
 class ActionSynchronizerPluginBase
 {
 public:
 
   virtual void sendNotification(const Waitable& waitable, const std::string& result, const std::string& params) = 0;
 
-  virtual void setNotificationReceivedCallback(NotifyFinishedT notify_finished_fptr_) = 0;
+  virtual void setNotificationReceivedCallback(std::function<void(const Notification&)> notification_received_cb) = 0;
+
+  virtual void setExecuteGraphCallback(std::function<void(const GraphDescriptor&)> execute_graph_cb) = 0;
 
 };
 

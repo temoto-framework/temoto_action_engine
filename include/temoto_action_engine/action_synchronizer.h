@@ -38,7 +38,8 @@ public:
     for(const auto& plugin_name : plugin_names)
     {
       auto plugin = class_loader_->createSharedInstance<ActionSynchronizerPluginBase>(plugin_name, plugin_name + ".so");
-      // TODO: plugin->setNotificationReceivedCallback();
+      plugin->setNotificationReceivedCallback(std::bind(&ActionSynchronizer::onNotificationReceived, this, std::placeholders::_1));
+      plugin->setExecuteGraphCallback(std::bind(&ActionSynchronizer::onExecuteGraph, this, std::placeholders::_1));
       sync_plugins_.push_back(plugin);
     }
   }
@@ -52,11 +53,34 @@ public:
     {
       plugin->sendNotification(waitable, result, params_json_str);
     }
+
+    /*
+     * TODO: Wait for acknowledgement by all agents
+     */
   }
 
-  void onNotificationReceived(/*todo*/)
+  void onNotificationReceived(const Notification& n)
   {
-    //ENGINE_HANDLE.notifyFinished()
+    /*
+     * TODO: Make sure that the same notification has not already been received from
+     * other synchronizer plugin
+     */
+
+    ENGINE_HANDLE.notifyFinished(n.waitable
+    , n.result
+    , umrf_json::fromUmrfParametersJsonStr(n.parameters));
+  }
+
+  void onExecuteGraph(const GraphDescriptor& gd)
+  {
+    /*
+     * TODO: Make sure that the same notification has not already been received from
+     * other synchronizer plugin
+     */
+
+    ENGINE_HANDLE.executeUmrfGraph(gd.graph_name
+    , umrf_json::fromUmrfParametersJsonStr(gd.parameters)
+    , gd.result);
   }
 
 private:
