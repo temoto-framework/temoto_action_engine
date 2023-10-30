@@ -35,7 +35,7 @@
 class ActionEngine
 {
 public:
-  ActionEngine(const std::string& actor_name);
+  ActionEngine(const std::string& actor_name, std::vector<std::string> sync_plugin_names = {});
 
   // TODO: this method is prolly deprecated and should be removed
   void start();
@@ -86,9 +86,12 @@ private:
 
   bool matchGraph(UmrfGraph& g, std::set<std::string> g_blacklist);
 
+  bool synchronizerAvailable() const;
+
   // void updateUmrfGraph(const std::string& graph_name, std::vector<UmrfNode> umrfs_vec);
   ActionIndexer ai_;
   ActionMatchFinder amf_;
+  std::unique_ptr<ActionSynchronizer> as_;
 
   typedef std::map<std::string, std::shared_ptr<UmrfGraphExec>> UmrfGraphExecMap;
   mutable MUTEX_TYPE_R umrf_graph_map_rw_mutex_;

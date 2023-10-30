@@ -18,7 +18,7 @@
 #include "temoto_action_engine/messaging.h"
 #include "temoto_action_engine/umrf_json.h"
 
-ActionEngine::ActionEngine(const std::string& actor_name)
+ActionEngine::ActionEngine(const std::string& actor_name, std::vector<std::string> sync_plugin_names)
 : actor_name_(actor_name)
 , stop_monitoring_thread_(false)
 {
@@ -30,6 +30,11 @@ ActionEngine::ActionEngine(const std::string& actor_name)
 
   ENGINE_HANDLE.add_waiter_fptr_ = std::bind(&ActionEngine::addWaiter, this
   , std::placeholders::_1, std::placeholders::_2);
+
+  if (!sync_plugin_names.empty())
+  {
+    as_ = std::make_unique<ActionSynchronizer>(sync_plugin_names);
+  }
 
   //start();
 }
@@ -356,7 +361,7 @@ void ActionEngine::notifyFinished(const Waitable& waitable, const std::string& r
   // Notify remote acions
   if(waitable.actor_name == actor_name_)
   {
-    // synchronizer.sendNotify(waitable, result, params);
+    as_->sendNotify(waitable, result, params);
   }
 
   // TODO: for shared actions, erase when all acks are received
@@ -470,4 +475,9 @@ std::string ActionEngine::waitForGraph(const std::string& graph_name)
   });
 
   return finished_graphs_.at(graph_name);
+}
+
+bool ActionEngine::synchronizerAvailable() const
+{
+  as_ ? true : false;
 }

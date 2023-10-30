@@ -264,7 +264,9 @@ void UmrfNodeExec::run()
     {
       // TODO: capture the errors
       ENGINE_HANDLE.executeUmrfGraph(getName(), getInputParameters());
-      result = waitUntilFinished(Waitable{.action_name = GRAPH_EXIT.getFullName(), .graph_name = getName()});
+      result = waitUntilFinished(Waitable{
+        .action_name = GRAPH_EXIT.getFullName(), 
+        .graph_name = getName()});
     }
 
   } // try end

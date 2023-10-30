@@ -59,6 +59,8 @@ public:
      */
   }
 
+private:
+
   void onNotificationReceived(const Notification& n)
   {
     /*
@@ -74,7 +76,7 @@ public:
   void onExecuteGraph(const GraphDescriptor& gd)
   {
     /*
-     * TODO: Make sure that the same notification has not already been received from
+     * TODO: Make sure that the same graph has not already been received from
      * other synchronizer plugin
      */
 
@@ -83,11 +85,9 @@ public:
     , gd.result);
   }
 
-private:
-
-std::shared_ptr<class_loader::MultiLibraryClassLoader> class_loader_;
-std::vector<std::shared_ptr<ActionSynchronizerPluginBase>> sync_plugins_;
-std::mutex m_;
+  std::shared_ptr<class_loader::MultiLibraryClassLoader> class_loader_;
+  std::vector<std::shared_ptr<ActionSynchronizerPluginBase>> sync_plugins_;
+  std::mutex m_;
 
 };
 
