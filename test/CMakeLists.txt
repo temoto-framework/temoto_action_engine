@@ -5,6 +5,7 @@ add_compile_options(-std=c++17 -g)
 
 find_package(temoto_action_engine REQUIRED)
 find_package(GTest REQUIRED)
+find_package(Boost COMPONENTS program_options REQUIRED)
 
 include_directories(${GTEST_INCLUDE_DIRS})
 
@@ -48,7 +49,21 @@ build_action(ta_trigger_result)
 build_action(ta_trigger_result_multi)
 build_action(ta_timer)
 
+# Build the commandline graph executor
+add_executable(run_graph_cmd
+  src/run_graph_cmd.cpp
+)
+
+add_dependencies(run_graph_cmd
+  temoto_action_engine
+)
+
+target_link_libraries(run_graph_cmd
+  temoto_action_engine
+  ${Boost_LIBRARIES}
+)
+
 # Copy the UMRF graphs
-install(DIRECTORY  ${CMAKE_CURRENT_SOURCE_DIR}/umrf_graphs/ 
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/umrf_graphs/ 
         DESTINATION ${CMAKE_CURRENT_BINARY_DIR} 
         FILES_MATCHING PATTERN "*.graph.json" )

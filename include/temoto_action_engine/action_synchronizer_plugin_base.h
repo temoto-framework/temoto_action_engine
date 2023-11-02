@@ -40,10 +40,21 @@ public:
 
   virtual void sendNotification(const Waitable& waitable, const std::string& result, const std::string& params) = 0;
 
-  virtual void setNotificationReceivedCallback(std::function<void(const Notification&)> notification_received_cb) = 0;
+  void setNotificationReceivedCallback(std::function<void(const Notification&)> notification_received_cb)
+  {
+    notification_received_cb_ = notification_received_cb;
+  }
 
-  virtual void setExecuteGraphCallback(std::function<void(const GraphDescriptor&)> execute_graph_cb) = 0;
+  void setExecuteGraphCallback(std::function<void(const GraphDescriptor&)> execute_graph_cb)
+  {
+    execute_graph_cb_ = execute_graph_cb;
+  }
 
+private:
+
+  std::function<void(const Notification&)> notification_received_cb_;
+
+  std::function<void(const GraphDescriptor&)> execute_graph_cb_;
 };
 
 #endif

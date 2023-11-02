@@ -16,7 +16,6 @@
 
 #include <iostream>
 #include <chrono>
-#include <fstream>
 #include "temoto_action_engine/action_engine.h"
 #include "temoto_action_engine/umrf_json.h"
 #include <boost/program_options.hpp>
@@ -30,20 +29,36 @@ try
   po::options_description desc("Allowed options");
   desc.add_options()
     ("help,h", "Show help message")
+    ("actor",        po::value<std::string>(), "Name of this action engine instance")
     ("actions-path", po::value<std::string>(), "Action packages root path")
-    ("umrf-graph", po::value<std::string>(), "Input UMRF graph path");
+    ("sync-plugin",  po::value<std::string>(), "Name of the action synchronization plugin")
+    ("graph-name",   po::value<std::string>(), "Input UMRF graph path");
 
   po::store(po::parse_command_line(argc, argv, desc), vm);
   po::notify(vm);
 
+  std::string actor;
   std::string actions_path;
-  std::string umrf_graph_path;
+  std::string sync_plugin;
+  std::string graph_name;
 
   // Print help message
   if (vm.count("help"))
   {
     std::cout << desc << std::endl;
     return 0;
+  }
+
+  // Get the name of this action engine instance    
+  if (vm.count("actor"))
+  {
+    actor = vm["actor"].as<std::string>();
+  }
+  else
+  {
+    TEMOTO_PRINT("Missing the name of the actor");
+    std::cout << desc << std::endl;
+    return 1;
   }
 
   // Get the action packages path file and get the paths    
@@ -58,10 +73,16 @@ try
     return 1;
   }
 
-  // Get the path to the input umrf graph
-  if (vm.count("umrf-graph"))
+  // Get name of the action synchronization plugin
+  if (vm.count("sync-plugin"))
   {
-    umrf_graph_path = vm["umrf-graph"].as<std::string>();
+    sync_plugin = vm["sync-plugin"].as<std::string>();
+  }
+
+  // Get the path to the input umrf graph
+  if (vm.count("graph-name"))
+  {
+    graph_name = vm["graph-name"].as<std::string>();
   }
   else
   {
@@ -70,36 +91,32 @@ try
     return 1;
   }
 
-  std::string umrf_graph_name = argv[1];
-  ActionEngine action_engine;
+  std::unique_ptr<ActionEngine> action_engine;
+
+  if (!sync_plugin.empty())
+  {
+    action_engine = std::make_unique<ActionEngine>(actor, std::vector<std::string>{sync_plugin});
+  }
+  else
+  {
+    action_engine = std::make_unique<ActionEngine>(actor);
+  }
 
   // Tell the Action Engine where to look for the actions (in temoto_action_engine/build/actions)
-  if (!action_engine.addActionsPath(actions_path))
+  if (!action_engine->addActionsPath(actions_path))
   {
     throw CREATE_TEMOTO_ERROR(actions_path + " does not contain any TeMoto actions");
   }
 
-  // Get the UMRF graph json
-  std::ifstream umrf_graph_json_fs(umrf_graph_path);
-  std::string umrf_graph_json_str;
-  umrf_graph_json_str.assign(std::istreambuf_iterator<char>(umrf_graph_json_fs), std::istreambuf_iterator<char>());
-  std::cout << "Got UMRF graph:\n" << umrf_graph_json_str << std::endl;
+  // Execute the UMRF graph and wait for the result
+  action_engine->executeUmrfGraph(graph_name);
+  std::string result = action_engine->waitForGraph(graph_name);
 
-  // Convert UMRF graph json string to UmrfGraph datastructure
-  UmrfGraph umrf_graph = umrf_json::fromUmrfGraphJsonStr(umrf_graph_json_str);
-
-  // Execute the UMRF graph
-  action_engine.executeUmrfGraph(umrf_graph);
-
-  // As this is not a blocking call, we can do something "useful" while the UMRF graph is being run
-  while(true)
-  {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-  }
-  return 0;
+  return (result == "on_true") ? 0 : 1;
 }
 catch (const std::exception& e)
 {
   std::cerr << e.what() << std::endl;
   return 1;
 }
+

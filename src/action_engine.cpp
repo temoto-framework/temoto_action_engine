@@ -270,8 +270,8 @@ try
   if (ai_.containsActions(action_packages_path))
   {
     ai_.addActionPath(action_packages_path); 
-    auto summary = ai_.indexActions();
-    TEMOTO_PRINT("Found '" + std::to_string(summary.actions) + "' actions and '" + std::to_string(summary.graphs) + "' graphs");
+    auto [nr_of_actions, nr_of_graphs] {ai_.indexActions()};
+    TEMOTO_PRINT("Found '" + std::to_string(nr_of_actions) + "' actions and '" + std::to_string(nr_of_graphs) + "' graphs");
     return true;
   }
   return false;
@@ -361,6 +361,7 @@ void ActionEngine::notifyFinished(const Waitable& waitable, const std::string& r
   // Notify remote acions
   if(waitable.actor_name == actor_name_)
   {
+    if (!synchronizerAvailable()) {/* TODO: prolly an error should be thrown, TBD */}
     as_->sendNotify(waitable, result, params);
   }
 
@@ -479,5 +480,5 @@ std::string ActionEngine::waitForGraph(const std::string& graph_name)
 
 bool ActionEngine::synchronizerAvailable() const
 {
-  as_ ? true : false;
+  return as_ ? true : false;
 }

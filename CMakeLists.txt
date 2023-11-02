@@ -68,19 +68,6 @@ if (TESTS)
   add_subdirectory(test)
 endif()
 
-add_executable(engine_test
-  src/engine_test.cpp
-)
-
-add_dependencies(engine_test
-  ${PROJECT_NAME}
-)
-
-target_link_libraries(engine_test
-  ${PROJECT_NAME}
-)
-
-
 #
 # INSTALL
 #

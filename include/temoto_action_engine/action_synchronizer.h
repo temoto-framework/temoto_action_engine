@@ -37,7 +37,8 @@ public:
 
     for(const auto& plugin_name : plugin_names)
     {
-      auto plugin = class_loader_->createSharedInstance<ActionSynchronizerPluginBase>(plugin_name, plugin_name + ".so");
+      class_loader_->loadLibrary("lib" + plugin_name + ".so");
+      auto plugin = class_loader_->createSharedInstance<ActionSynchronizerPluginBase>(plugin_name);
       plugin->setNotificationReceivedCallback(std::bind(&ActionSynchronizer::onNotificationReceived, this, std::placeholders::_1));
       plugin->setExecuteGraphCallback(std::bind(&ActionSynchronizer::onExecuteGraph, this, std::placeholders::_1));
       sync_plugins_.push_back(plugin);
