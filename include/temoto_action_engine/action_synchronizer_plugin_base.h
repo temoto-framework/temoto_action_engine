@@ -18,6 +18,9 @@
 #define TEMOTO_ACTION_ENGINE__ACTION_SYNCHRONIZER_PLUGIN_BASE_H
 
 #include "temoto_action_engine/waitlist.h"
+#include <string>
+#include <vector>
+#include <set>
 
 struct Notification
 {
@@ -38,7 +41,9 @@ class ActionSynchronizerPluginBase
 {
 public:
 
-  virtual void sendNotification(const Waitable& waitable, const std::string& result, const std::string& params) = 0;
+  virtual bool notify(const Notification& notification) = 0;
+
+  virtual bool handshake(const std::string& handshake_token, const std::set<std::string> other_actors, size_t timeout) = 0;
 
   void setNotificationReceivedCallback(std::function<void(const Notification&)> notification_received_cb)
   {
@@ -50,11 +55,19 @@ public:
     execute_graph_cb_ = execute_graph_cb;
   }
 
-private:
+  void setName(const std::string& actor_name)
+  {
+    actor_name_ = actor_name;
+  }
+
+protected:
 
   std::function<void(const Notification&)> notification_received_cb_;
 
   std::function<void(const GraphDescriptor&)> execute_graph_cb_;
+
+  std::string actor_name_;
+
 };
 
 #endif

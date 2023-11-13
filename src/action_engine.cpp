@@ -18,10 +18,12 @@
 #include "temoto_action_engine/messaging.h"
 #include "temoto_action_engine/umrf_json.h"
 
-ActionEngine::ActionEngine(const std::string& actor_name, std::vector<std::string> sync_plugin_names)
+ActionEngine::ActionEngine(const std::string& actor_name, const std::string& sync_plugin_name)
 : actor_name_(actor_name)
 , stop_monitoring_thread_(false)
 {
+  ENGINE_HANDLE.actor_name_ = actor_name_;
+
   ENGINE_HANDLE.execute_graph_fptr_ = std::bind(&ActionEngine::executeUmrfGraph, this
   , std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 
@@ -31,9 +33,9 @@ ActionEngine::ActionEngine(const std::string& actor_name, std::vector<std::strin
   ENGINE_HANDLE.add_waiter_fptr_ = std::bind(&ActionEngine::addWaiter, this
   , std::placeholders::_1, std::placeholders::_2);
 
-  if (!sync_plugin_names.empty())
+  if (!sync_plugin_name.empty())
   {
-    as_ = std::make_unique<ActionSynchronizer>(sync_plugin_names);
+    as_ = std::make_unique<ActionSynchronizer>(sync_plugin_name, actor_name_);
   }
 
   //start();
@@ -155,18 +157,34 @@ try
   {
     throw CREATE_TEMOTO_ERROR_STACK("Cannot execute UMRF graph '" + graph_name + "' because it's not in initialized state.");
   }
-  else
+
+  // Synchronize the execution of the graph with other actors
+  auto actors = umrf_graph_exec_map_.at(graph_name)->getActors();
+  actors.erase(actor_name_);
+
+  if (!actors.empty())
   {
-    umrf_graph_exec_map_.at(graph_name)->startGraph(result, params);
+    if(!synchronizerAvailable())
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Cannot execute UMRF graph '" + graph_name + "': actor synchronizer not initialized.");
+    }
+
+    if (!as_->multiActorHandshake(graph_name, actors, 5000))
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Cannot execute UMRF graph '" + graph_name + "': failed to reach other actors.");
+    }
+
+    TEMOTO_PRINT_OF("Handshake successful", actor_name_);
   }
+
+  umrf_graph_exec_map_.at(graph_name)->startGraph(result, params);
 }
 catch(TemotoErrorStack e)
 {
-  TEMOTO_PRINT(e.what());
+  TEMOTO_PRINT_OF(e.what(), actor_name_);
   stopUmrfGraph(graph_name);
   throw FORWARD_TEMOTO_ERROR_STACK(e);
 }
-
 
 void ActionEngine::modifyGraph(const std::string& graph_name, const UmrfGraphDiffs& graph_diffs)
 {
@@ -288,18 +306,18 @@ bool ActionEngine::stop()
   // Stop all actions
   for (auto& umrf_graph : umrf_graph_exec_map_)
   {
-    TEMOTO_PRINT("Stopping umrf graph " + umrf_graph.second->getName());
+    TEMOTO_PRINT_OF("Stopping umrf graph " + umrf_graph.second->getName(), actor_name_);
     umrf_graph.second->stopGraph();
   }
 
   // Clear all actions
   for (auto& umrf_graph : umrf_graph_exec_map_)
   {
-    TEMOTO_PRINT("Clearing umrf graph " + umrf_graph.second->getName());
+    TEMOTO_PRINT_OF("Clearing umrf graph " + umrf_graph.second->getName(), actor_name_);
     umrf_graph.second->clearGraph();
   }
 
-  TEMOTO_PRINT("Removing all umrf graphs");
+  TEMOTO_PRINT_OF("Removing all umrf graphs", actor_name_);
   umrf_graph_exec_map_.clear();
 
   // // Stop the monitoring thread
@@ -307,7 +325,7 @@ bool ActionEngine::stop()
   // notify_cv_.notify_all();
   // monitoring_thread_.join();
 
-  TEMOTO_PRINT("Action Engine is stopped");
+  TEMOTO_PRINT_OF("Action Engine is stopped", actor_name_);
   return true;
 }
 
@@ -341,28 +359,26 @@ void ActionEngine::notifyFinished(const Waitable& waitable, const std::string& r
     notify_cv_.notify_all();
   }
 
-  if (sync_map_.find(waitable) == sync_map_.end())
+  if (sync_map_.find(waitable) != sync_map_.end())
   {
-    return;
-  }
+    LOCK_GUARD_TYPE_R l_graph(umrf_graph_map_rw_mutex_);
+    const auto& waitable_action = umrf_graph_exec_map_.at(waitable.graph_name)->graph_nodes_map_.at(waitable.action_name);
 
-  LOCK_GUARD_TYPE_R l_graph(umrf_graph_map_rw_mutex_);
-  const auto& waitable_action = umrf_graph_exec_map_.at(waitable.graph_name)->graph_nodes_map_.at(waitable.action_name);
-
-  // Notify local actions
-  for (const auto& waiter : sync_map_.at(waitable))
-  {
-    auto& waiting_action = umrf_graph_exec_map_.at(waiter.graph_name)->graph_nodes_map_.at(waiter.action_name);
-    waiting_action->setRemoteResult(result);
-    waiting_action->setOutputParameters(params);
-    waiting_action->notifyFinished();
+    // Notify local actions
+    for (const auto& waiter : sync_map_.at(waitable))
+    {
+      auto& waiting_action = umrf_graph_exec_map_.at(waiter.graph_name)->graph_nodes_map_.at(waiter.action_name);
+      waiting_action->setRemoteResult(result);
+      waiting_action->setOutputParameters(params);
+      waiting_action->notifyFinished();
+    }
   }
 
   // Notify remote acions
   if(waitable.actor_name == actor_name_)
   {
-    if (!synchronizerAvailable()) {/* TODO: prolly an error should be thrown, TBD */}
-    as_->sendNotify(waitable, result, params);
+    if (synchronizerAvailable()) /* TODO: prolly an error should be thrown, TBD */
+      as_->sendNotify(waitable, result, params);
   }
 
   // TODO: for shared actions, erase when all acks are received

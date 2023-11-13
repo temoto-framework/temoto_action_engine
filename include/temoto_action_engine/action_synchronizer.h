@@ -31,33 +31,34 @@ class ActionSynchronizer
 {
 public:
 
-  ActionSynchronizer(std::vector<std::string> plugin_names)
+  ActionSynchronizer(const std::string& plugin_name, const std::string actor_name)
   {
     class_loader_ = std::make_shared<class_loader::MultiLibraryClassLoader>(false);
-
-    for(const auto& plugin_name : plugin_names)
-    {
-      class_loader_->loadLibrary("lib" + plugin_name + ".so");
-      auto plugin = class_loader_->createSharedInstance<ActionSynchronizerPluginBase>(plugin_name);
-      plugin->setNotificationReceivedCallback(std::bind(&ActionSynchronizer::onNotificationReceived, this, std::placeholders::_1));
-      plugin->setExecuteGraphCallback(std::bind(&ActionSynchronizer::onExecuteGraph, this, std::placeholders::_1));
-      sync_plugins_.push_back(plugin);
-    }
+    class_loader_->loadLibrary("lib" + plugin_name + ".so");
+    sync_plugin_ = class_loader_->createSharedInstance<ActionSynchronizerPluginBase>(plugin_name);
+    sync_plugin_->setNotificationReceivedCallback(std::bind(&ActionSynchronizer::onNotificationReceived, this, std::placeholders::_1));
+    sync_plugin_->setExecuteGraphCallback(std::bind(&ActionSynchronizer::onExecuteGraph, this, std::placeholders::_1));
+    sync_plugin_->setName(actor_name);
   }
 
   void sendNotify(const Waitable& waitable, const std::string& result, const ActionParameters& params)
   {
-    std::string params_json_str = umrf_json::toUmrfParametersJsonStr(params);
-    std::lock_guard<std::mutex> l(m_);
+    std::string params_json_str{params.empty() ? std::string() :
+      umrf_json::toUmrfParametersJsonStr(params)};
+    std::lock_guard<std::mutex> l(mutex_notify_);
     
-    for (const auto& plugin : sync_plugins_)
-    {
-      plugin->sendNotification(waitable, result, params_json_str);
-    }
+    Notification n;
+    n.parameters = params_json_str;
+    n.result = result;
+    n.waitable = waitable;
 
-    /*
-     * TODO: Wait for acknowledgement by all agents
-     */
+    sync_plugin_->notify(n);
+  }
+
+  bool multiActorHandshake(const std::string& handshake_token, const std::set<std::string> other_actors, size_t timeout)
+  {
+    std::lock_guard<std::mutex> l(mutex_handshake_);
+    return sync_plugin_->handshake(handshake_token, other_actors, timeout);
   }
 
 private:
@@ -69,9 +70,20 @@ private:
      * other synchronizer plugin
      */
 
-    ENGINE_HANDLE.notifyFinished(n.waitable
-    , n.result
-    , umrf_json::fromUmrfParametersJsonStr(n.parameters));
+    std::cout << "[" << ENGINE_HANDLE.getActor() << "::" << __func__ << "]" << " got params from '" << n.waitable.actor_name << "::" << n.waitable.action_name << "' " << n.parameters << std::endl;
+
+    if (n.parameters.empty())
+    {
+      ENGINE_HANDLE.notifyFinished(n.waitable
+      , n.result
+      , ActionParameters());
+    }
+    else
+    {
+      ENGINE_HANDLE.notifyFinished(n.waitable
+      , n.result
+      , umrf_json::fromUmrfParametersJsonStr(n.parameters));
+    }
   }
 
   void onExecuteGraph(const GraphDescriptor& gd)
@@ -87,8 +99,9 @@ private:
   }
 
   std::shared_ptr<class_loader::MultiLibraryClassLoader> class_loader_;
-  std::vector<std::shared_ptr<ActionSynchronizerPluginBase>> sync_plugins_;
-  std::mutex m_;
+  std::shared_ptr<ActionSynchronizerPluginBase> sync_plugin_;
+  std::mutex mutex_notify_;
+  std::mutex mutex_handshake_;
 
 };
 

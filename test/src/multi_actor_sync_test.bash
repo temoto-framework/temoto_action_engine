@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # Run commands concurrently
-./run_graph_cmd --actor "Actor A" --actions-path . --graph-name engine_test_8 &
+./run_graph_cmd --actor "Actor A" --actions-path . --graph-name engine_test_8 --sync-plugin action_sync_cyclone_dds &
 pid1=$!
 
-./run_graph_cmd --actor "Actor B" --actions-path . --graph-name engine_test_8 &
+./run_graph_cmd --actor "Actor B" --actions-path . --graph-name engine_test_8 --sync-plugin action_sync_cyclone_dds &
 pid2=$!
 
-./run_graph_cmd --actor "Actor C" --actions-path . --graph-name engine_test_8 &
+./run_graph_cmd --actor "Actor C" --actions-path . --graph-name engine_test_8 --sync-plugin action_sync_cyclone_dds &
 pid3=$!
 
 # Wait for both commands to finish

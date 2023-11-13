@@ -56,10 +56,16 @@ public:
     notify_finished_fptr_(waitable, result, params);
   }
 
+  std::string getActor() const
+  {
+    return actor_name_;
+  }
+
 private:
   AddWaiterT add_waiter_fptr_;
   ExecuteGraphT execute_graph_fptr_;
   NotifyFinishedT notify_finished_fptr_;
+  std::string actor_name_;
 };
 
 inline EngineHandle ENGINE_HANDLE;

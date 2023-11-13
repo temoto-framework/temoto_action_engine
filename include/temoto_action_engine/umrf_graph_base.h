@@ -308,6 +308,22 @@ public:
     }
   }
 
+  std::set<std::string> getActors()
+  {
+    LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);
+
+    std::set<std::string> actors;
+    for(const auto& node : graph_nodes_map_)
+    {
+      if (!node.second->getActor().empty())
+      {
+        actors.insert(node.second->getActor());
+      }
+    }
+
+    return actors;
+  }
+
 protected:
 
   bool initialize()

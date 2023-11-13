@@ -111,7 +111,8 @@ std::string UmrfGraphExec::stopGraph()
   for (auto& graph_node : graph_nodes_map_)
   {
     while (graph_node.second->getState() != UmrfNode::State::FINISHED &&
-      graph_node.second->getState() != UmrfNode::State::ERROR)
+      graph_node.second->getState() != UmrfNode::State::ERROR &&
+      graph_node.second->getState() != UmrfNode::State::NOT_SET)
     {
       std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
@@ -239,7 +240,9 @@ try
 
     // Check if the parent should be ignored or not
     const auto child_response = child_node->getParentRelation(parent_node_relation)->getResponse(result);
-    std::cout << getName() << ": result(" << parent_node->getFullName() << "):" << result << ", response(" << child_node->getFullName() << "): " << child_response << std::endl;
+    std::stringstream ss;
+    ss << ": result(" << parent_node->getFullName() << "):" << result << ", response(" << child_node->getFullName() << "): " << child_response << std::endl;
+    TEMOTO_PRINT_OF(ss.str(), ENGINE_HANDLE.getActor() + " in " + getName());
 
     if (child_response == "bypass" && child_node->getName() == GRAPH_EXIT.getName())
     {

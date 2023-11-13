@@ -33,7 +33,7 @@ namespace temoto_messaging
 
   inline void printOf(const std::string& message, const std::string& prefix, const std::string& of)
   {
-    PrintThread{} << "[" << prefix << " of " << of << "] " << message << std::endl;
+    PrintThread{} << "[" << of << "::" << prefix << "] " << message << std::endl;
   }
 }
 

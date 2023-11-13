@@ -95,7 +95,7 @@ try
 
   if (!sync_plugin.empty())
   {
-    action_engine = std::make_unique<ActionEngine>(actor, std::vector<std::string>{sync_plugin});
+    action_engine = std::make_unique<ActionEngine>(actor, sync_plugin);
   }
   else
   {
@@ -116,6 +116,7 @@ try
 }
 catch (const std::exception& e)
 {
+  std::cout << "broblem" << std::endl;
   std::cerr << e.what() << std::endl;
   return 1;
 }

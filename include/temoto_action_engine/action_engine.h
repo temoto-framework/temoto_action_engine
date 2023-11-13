@@ -35,7 +35,7 @@
 class ActionEngine
 {
 public:
-  ActionEngine(const std::string& actor_name, std::vector<std::string> sync_plugin_names = {});
+  ActionEngine(const std::string& actor_name, const std::string& sync_plugin_name = "");
 
   // TODO: this method is prolly deprecated and should be removed
   void start();

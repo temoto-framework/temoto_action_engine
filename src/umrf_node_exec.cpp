@@ -251,6 +251,7 @@ void UmrfNodeExec::run()
      */
     else if (getActorExecTraits() == UmrfNode::ActorExecTraits::REMOTE)
     {
+      TEMOTO_PRINT_OF("Waiting for '" + getActor() + "' to finish action '" + getFullName() + "'", ENGINE_HANDLE.getActor());
       result = waitUntilFinished(Waitable{
         .action_name = getFullName(),
         .actor_name = getActor(),
@@ -313,7 +314,6 @@ void UmrfNodeExec::run()
     {
       ENGINE_HANDLE.notifyFinished(waitable, result, getOutputParameters());
     }
-      
   }
 
   if (getState() == UmrfNode::State::ERROR)
