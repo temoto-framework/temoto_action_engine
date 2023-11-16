@@ -31,12 +31,13 @@ class EngineHandle
 {
 friend class ActionEngine;
 typedef std::function<void(const std::string&, const ActionParameters&, const std::string&)> ExecuteGraphT;
+typedef std::function<void(const std::string&)> AcknowledgeT;
 
 public:
 
-  void acknowledge(const Waitable& waitable, const Waiter& waiter)
+  void acknowledge(const std::string& token)
   {
-    // TODO
+    acknowledge_fptr_(token);
   }
 
   void addWaiter(const Waitable& waitable, const Waiter& waiter)
@@ -51,9 +52,9 @@ public:
     execute_graph_fptr_(graph_name, params, result);
   }
 
-  void notifyFinished(const Waitable& waitable, const std::string& result, const ActionParameters& params)
+  void notifyFinished(const Waitable& waitable, const std::string& result, const ActionParameters& params, const std::string& token = "")
   {
-    notify_finished_fptr_(waitable, result, params);
+    notify_finished_fptr_(waitable, result, params, token);
   }
 
   std::string getActor() const
@@ -62,6 +63,7 @@ public:
   }
 
 private:
+  AcknowledgeT acknowledge_fptr_;
   AddWaiterT add_waiter_fptr_;
   ExecuteGraphT execute_graph_fptr_;
   NotifyFinishedT notify_finished_fptr_;

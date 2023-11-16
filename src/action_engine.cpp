@@ -24,11 +24,14 @@ ActionEngine::ActionEngine(const std::string& actor_name, const std::string& syn
 {
   ENGINE_HANDLE.actor_name_ = actor_name_;
 
+  ENGINE_HANDLE.acknowledge_fptr_ = std::bind(&ActionEngine::acknowledge, this
+  , std::placeholders::_1);
+
   ENGINE_HANDLE.execute_graph_fptr_ = std::bind(&ActionEngine::executeUmrfGraph, this
   , std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 
   ENGINE_HANDLE.notify_finished_fptr_ = std::bind(&ActionEngine::notifyFinished, this
-  , std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+  , std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
 
   ENGINE_HANDLE.add_waiter_fptr_ = std::bind(&ActionEngine::addWaiter, this
   , std::placeholders::_1, std::placeholders::_2);
@@ -169,7 +172,7 @@ try
       throw CREATE_TEMOTO_ERROR_STACK("Cannot execute UMRF graph '" + graph_name + "': actor synchronizer not initialized.");
     }
 
-    if (!as_->multiActorHandshake(graph_name, actors, 5000))
+    if (!as_->bidirHandshake(graph_name, actors, 5000))
     {
       throw CREATE_TEMOTO_ERROR_STACK("Cannot execute UMRF graph '" + graph_name + "': failed to reach other actors.");
     }
@@ -349,7 +352,16 @@ std::vector<std::string> ActionEngine::getGraphJsons() const
   return umrf_graph_jsons;
 }
 
-void ActionEngine::notifyFinished(const Waitable& waitable, const std::string& result, const ActionParameters& params)
+void ActionEngine::acknowledge(const std::string& token)
+{
+  if (synchronizerAvailable()) /* TODO: prolly an error should be thrown, TBD */
+    as_->unidirHandshake(token);
+}
+
+void ActionEngine::notifyFinished(const Waitable& waitable
+, const std::string& result
+, const ActionParameters& params
+, const std::string& token)
 {
   LOCK_GUARD_TYPE l_sync(sync_map_rw_mutex_);
 
@@ -370,18 +382,26 @@ void ActionEngine::notifyFinished(const Waitable& waitable, const std::string& r
       auto& waiting_action = umrf_graph_exec_map_.at(waiter.graph_name)->graph_nodes_map_.at(waiter.action_name);
       waiting_action->setRemoteResult(result);
       waiting_action->setOutputParameters(params);
-      waiting_action->notifyFinished();
+      waiting_action->notifyFinished(token);
     }
   }
 
   // Notify remote acions
   if(waitable.actor_name == actor_name_)
   {
+    auto actors{[&]
+    {
+      LOCK_GUARD_TYPE_R l_graph(umrf_graph_map_rw_mutex_);
+      return umrf_graph_exec_map_.at(waitable.graph_name)->getActors();
+    }()};
+
+    actors.erase(actor_name_);
+
     if (synchronizerAvailable()) /* TODO: prolly an error should be thrown, TBD */
-      as_->sendNotify(waitable, result, params);
+      if (!as_->sendNotify(waitable, result, params, actors, 5000))
+        throw CREATE_TEMOTO_ERROR_STACK("The notification from '" + actor_name_ + "' did not reach all actors");
   }
 
-  // TODO: for shared actions, erase when all acks are received
   sync_map_.erase(waitable);
 }
 

@@ -74,6 +74,8 @@ public:
 
 private:
 
+  void acknowledge(const std::string& token);
+
   void addWaiter(const Waitable& waitable, const Waiter& waiter);
 
   bool graphExists(const std::string& graph_name) const;
@@ -82,7 +84,7 @@ private:
 
   void monitoringLoop();
 
-  void notifyFinished(const Waitable& waitable, const std::string& result, const ActionParameters& params);
+  void notifyFinished(const Waitable& waitable, const std::string& result, const ActionParameters& params, const std::string& token = "");
 
   bool matchGraph(UmrfGraph& g, std::set<std::string> g_blacklist);
 

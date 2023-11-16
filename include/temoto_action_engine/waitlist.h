@@ -45,6 +45,6 @@ typedef WaitlistItem Waiter;
 typedef WaitlistItem Waitable;
 
 typedef std::function<void(const Waitable&, const Waiter&)> AddWaiterT;
-typedef std::function<void(const Waitable&, const std::string&, const ActionParameters&)> NotifyFinishedT;
+typedef std::function<void(const Waitable&, const std::string&, const ActionParameters&, const std::string&)> NotifyFinishedT;
 
 #endif

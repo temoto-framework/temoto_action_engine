@@ -26,6 +26,7 @@ struct Notification
 {
   std::string parameters;
   std::string result;
+  std::string id;
   Waitable    waitable;
 };
 
@@ -41,9 +42,11 @@ class ActionSynchronizerPluginBase
 {
 public:
 
-  virtual bool notify(const Notification& notification) = 0;
+  virtual bool notify(const Notification& notification, const std::set<std::string> other_actors, const size_t timeout) = 0;
 
-  virtual bool handshake(const std::string& handshake_token, const std::set<std::string> other_actors, size_t timeout) = 0;
+  virtual bool bidirHandshake(const std::string& handshake_token, const std::set<std::string> other_actors, const size_t timeout) = 0;
+
+  virtual bool unidirHandshake(const std::string& handshake_token) = 0;
 
   void setNotificationReceivedCallback(std::function<void(const Notification&)> notification_received_cb)
   {

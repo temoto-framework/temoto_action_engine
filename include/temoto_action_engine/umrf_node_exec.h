@@ -94,7 +94,7 @@ public:
 
   void setGraphName(const std::string& parent_graph_name);
 
-  void notifyFinished();
+  void notifyFinished(const std::string& remote_notification_id = "");
 
   void setRemoteResult(const std::string& remote_result);
 
@@ -124,6 +124,7 @@ private:
   std::mutex wait_cv_mutex_;
   bool wait_ = false;
   std::string remote_result_;
+  std::string remote_notification_id_;
 
   std::string waitUntilFinished(const Waitable& waitable);
 

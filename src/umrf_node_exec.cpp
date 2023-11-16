@@ -605,15 +605,16 @@ std::string UmrfNodeExec::waitUntilFinished(const Waitable& waitable)
   std::unique_lock<std::mutex> lock(wait_cv_mutex_);
   wait_cv_.wait(lock, [&]{return !wait_;});
 
-  // send acknowledgement, blocks until consensus is reached among all actors
-  ENGINE_HANDLE.acknowledge(waitable, waiter);
+  if (getActor() != ENGINE_HANDLE.getActor() && !ENGINE_HANDLE.getActor().empty())
+    ENGINE_HANDLE.acknowledge(remote_notification_id_);
 
   return remote_result_;
 }
 
-void UmrfNodeExec::notifyFinished()
+void UmrfNodeExec::notifyFinished(const std::string& remote_notification_id)
 {
   wait_ = false;
+  remote_notification_id_ = remote_notification_id;
   wait_cv_.notify_all();
 }
 
