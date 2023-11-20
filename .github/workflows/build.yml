@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main 
- #     - nlohmann-json
+      - nlohmann-json
   pull_request:
     branches: 
       - main
@@ -44,7 +44,7 @@ jobs:
     - name: cmake install
       run: sudo cmake --install build/
 
-    # run the tests
+    # set up and run the single actor tests
     - name: "tests: install gtest"
       run: sudo apt install -yq libgtest-dev
 
@@ -60,7 +60,69 @@ jobs:
       working-directory: ./test/build
       run: cmake --build .
 
+    - name: "tests: install"
+      working-directory: ./test/build
+      run: cmake --install .
+
     - name: "tests: run"
       working-directory: ./test/build
-      run: ./tests
-      
+      run: source ../setup.bash && ./tests
+
+    # 
+    # set up and run the multi actor tests
+    #
+
+    - name: "tests::cyclonedds: mkdir"
+      working-directory: ./test/action_sync_cyclone_dds/cyclonedds
+      run: mkdir build
+
+    - name: "tests::cyclonedds: cmake"
+      working-directory: ./test/action_sync_cyclone_dds/cyclonedds
+      run: cmake -Bbuild -H.
+
+    - name: "tests::cyclonedds: build"
+      working-directory: ./test/action_sync_cyclone_dds/cyclonedds
+      run: cmake --build ./build
+
+    - name: "tests::cyclonedds: install"
+      working-directory: ./test/action_sync_cyclone_dds/cyclonedds
+      run: sudo cmake --install ./build
+
+
+    - name: "tests::cyclonedds-cxx: mkdir"
+      working-directory: ./test/action_sync_cyclone_dds/cyclonedds-cxx
+      run: mkdir build
+
+    - name: "tests::cyclonedds-cxx: cmake"
+      working-directory: ./test/action_sync_cyclone_dds/cyclonedds-cxx
+      run: cmake -Bbuild -H.
+
+    - name: "tests::cyclonedds-cxx: build"
+      working-directory: ./test/action_sync_cyclone_dds/cyclonedds-cxx
+      run: cmake --build ./build
+
+    - name: "tests::cyclonedds-cxx: install"
+      working-directory: ./test/action_sync_cyclone_dds/cyclonedds-cxx
+      run: sudo cmake --install ./build
+
+
+    - name: "tests::sync-plugin: mkdir"
+      working-directory: ./test/action_sync_cyclone_dds
+      run: mkdir build
+
+    - name: "tests::sync-plugin: cmake"
+      working-directory: ./test/action_sync_cyclone_dds
+      run: cmake -Bbuild -H.
+
+    - name: "tests::sync-plugin: build"
+      working-directory: ./test/action_sync_cyclone_dds
+      run: cmake --build ./build
+
+    - name: "tests::sync-plugin: install"
+      working-directory: ./test/action_sync_cyclone_dds
+      run: sudo cmake --install ./build
+
+
+    - name: "tests: run multi actor test"
+      working-directory: ./test/build
+      run: source ../setup.bash && bash ../src/multi_actor_sync_test.bash

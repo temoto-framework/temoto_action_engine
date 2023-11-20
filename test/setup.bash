@@ -19,6 +19,8 @@ search_and_append_libs() {
   done
 }
 
+append_to_ld_library_path "/usr/local/lib/"
+
 directory=${PWD}
 search_and_append_libs "$directory"
 

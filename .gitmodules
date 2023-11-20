@@ -1,0 +1,3 @@
+[submodule "test/action_sync_cyclone_dds"]
+	path = test/action_sync_cyclone_dds
+	url = https://github.com/temoto-framework/action_sync_cyclone_dds
