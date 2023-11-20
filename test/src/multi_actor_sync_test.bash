@@ -24,3 +24,9 @@ status3=$?
 echo "Command 1 exit status: $status1"
 echo "Command 2 exit status: $status2"
 echo "Command 3 exit status: $status3"
+
+if [ $status1 -eq 0 ] && [ $status2 -eq 0 ] && [ $status3 -eq 0 ]; then
+    exit 0
+else
+    exit 1
+fi

@@ -28,23 +28,6 @@ make
 sudo make install
 ```
 
-## Run the demos
-There are couple of UMRF graphs in the `examples/umrf_graphs` folder which utilize the `ta_example_1` action. This simple action is designed to increment a number (numerical value + unit), thus it accepts and outputs a parameter named `distance`. In `example_1.umrfg.json`, multiple instances of `ta_example_1` form a loop, and therefore you can see an increasing number being printed out in the terminal:
-```bash
-cd build
-./tae_example --actions-path actions --umrf-graph ../examples/umrf_graphs/example_1.umrfg.json
-
-...
-
-[executeTemotoAction of TaExample1_1] got: 1.000000 meters
-[executeTemotoAction of TaExample1_2] got: 2.000000 meters
-[executeTemotoAction of TaExample1_1] got: 3.000000 meters
-[executeTemotoAction of TaExample1_2] got: 4.000000 meters
-[executeTemotoAction of TaExample1_1] got: 5.000000 meters
-
-...
-```
-
 ## g++ build example
 Let's say you have your application, which uses the temoto_action_engine, in ```my_app.cpp```
 ```cmake
