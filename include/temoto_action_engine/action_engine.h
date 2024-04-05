@@ -52,7 +52,7 @@ public:
   
   bool addActionsPath(const std::string& action_packages_path);
 
-  std::vector<std::string> getGraphJsons() const;
+  std::vector<std::string> getGraphJsons(const std::vector<std::string>& requested_graphs) const;
 
   ~ActionEngine();
 
