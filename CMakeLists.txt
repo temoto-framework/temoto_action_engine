@@ -9,6 +9,8 @@ if( "$ENV{TEMOTO_COMPILER}" STREQUAL "clang")
   add_compile_options(-Wthread-safety)
 endif()
 
+cmake_policy(SET CMP0057 NEW)
+
 find_package(Boost COMPONENTS filesystem program_options REQUIRED)
 find_package(class_loader REQUIRED)
 
@@ -64,6 +66,7 @@ add_executable(tae_example
 )
 target_link_libraries(tae_example
   ${PROJECT_NAME}
+  class_loader
 )
 
 set(ACTION_LIB_DIR
