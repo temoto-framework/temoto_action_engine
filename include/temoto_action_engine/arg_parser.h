@@ -30,7 +30,7 @@ class ArgParser
 public:
 	ArgParser(int argc, char** argv);
 
-	bool parseMainWakeWord();
+	bool parseActorName();
 
 	bool parseExtraWakeWords();
 
@@ -43,7 +43,7 @@ public:
 	const std::vector<std::string>& getActionPaths() const;
 
 private:
-	std::string main_wake_word_;
+	std::string actor_name_;
 	std::vector<std::string> wake_words_;
 	std::vector<std::string> action_paths_;
 	po::variables_map vm_;

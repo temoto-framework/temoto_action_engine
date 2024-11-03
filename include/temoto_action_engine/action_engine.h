@@ -37,9 +37,6 @@ class ActionEngine
 public:
   ActionEngine(const std::string& actor_name, const std::string& sync_plugin_name = "");
 
-  // TODO: this method is prolly deprecated and should be removed
-  void start();
-
   void executeUmrfGraphA(UmrfGraph umrf_graph, const std::string& result = "on_true"
   , bool name_match_required = false);
 
@@ -82,8 +79,6 @@ private:
 
   void addUmrfGraph(const std::string& graph_name, const std::vector<UmrfNode>& umrf_nodes);
 
-  void monitoringLoop();
-
   void notifyFinished(const Waitable& waitable, const std::string& result, const ActionParameters& params, const std::string& token = "");
 
   bool matchGraph(UmrfGraph& g, std::set<std::string> g_blacklist);
@@ -110,8 +105,5 @@ private:
 
   std::map<std::string, std::string> finished_graphs_;
 
-  std::thread monitoring_thread_;
-
-  bool stop_monitoring_thread_;
 };
 #endif

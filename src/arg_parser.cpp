@@ -26,7 +26,7 @@ ArgParser::ArgParser(int argc, char** argv)
 : description_(po::options_description("Allowed options"))
 {
 	description_.add_options()
-		("wake-word", po::value<std::string>(), "Required. Main wake word.")
+		("actor-name", po::value<std::string>(), "Required. Main wake word.")
 		("actions-path", po::value<std::string>(), "Required. Action packages base path")
 		("extra-wake-words", po::value<std::string>(), "Optional. Additional wake words. Indicates to which wake words the action engine will respond to.");
 
@@ -36,12 +36,12 @@ ArgParser::ArgParser(int argc, char** argv)
 	parseArgs();
 }
 
-bool ArgParser::parseMainWakeWord()
+bool ArgParser::parseActorName()
 {
-	if (vm_.count("wake-word"))
+	if (vm_.count("actor-name"))
 	{
-		main_wake_word_ = vm_["wake-word"].as<std::string>();
-		wake_words_.push_back(main_wake_word_);
+		actor_name_ = vm_["actor-name"].as<std::string>();
+		wake_words_.push_back(actor_name_);
 		return true;
 	}
 	return false;
@@ -75,7 +75,7 @@ void ArgParser::parseArgs()
 	{
 		// No extra wake words
 	}
-	if (!parseMainWakeWord())
+	if (!parseActorName())
 	{
 		std::stringstream ss;
 		ss << "Missing the main wake word\n" << description_;

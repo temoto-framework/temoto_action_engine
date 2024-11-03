@@ -20,7 +20,6 @@
 
 ActionEngine::ActionEngine(const std::string& actor_name, const std::string& sync_plugin_name)
 : actor_name_(actor_name)
-, stop_monitoring_thread_(false)
 {
   ENGINE_HANDLE.actor_name_ = actor_name_;
 
@@ -39,51 +38,6 @@ ActionEngine::ActionEngine(const std::string& actor_name, const std::string& syn
   if (!sync_plugin_name.empty())
   {
     as_ = std::make_unique<ActionSynchronizer>(sync_plugin_name, actor_name_);
-  }
-
-  //start();
-}
-
-void ActionEngine::start()
-{
-  monitoring_thread_ = std::thread(&ActionEngine::monitoringLoop, this);
-}
-
-void ActionEngine::monitoringLoop()
-{
-  while (!stop_monitoring_thread_)
-  {
-    // Wait until a thread is finished
-    std::unique_lock<std::mutex> notify_cv_lock(notify_cv_mutex_);
-    notify_cv_.wait(notify_cv_lock, [&]{return !finished_graphs_.empty() || stop_monitoring_thread_;});
-
-    if (stop_monitoring_thread_)
-    {
-      break;
-    }
-
-    LOCK_GUARD_TYPE_R guard_graph_nodes_map_(umrf_graph_map_rw_mutex_);
-    for (const auto& finished_graph : finished_graphs_)
-    try
-    {
-      /* TODO: notify*/
-
-      TEMOTO_PRINT("Clearing umrf graph '" + finished_graph.first + "'");
-      umrf_graph_exec_map_.erase(finished_graph.first);
-    }
-    catch(TemotoErrorStack e)
-    {
-      std::cout << e.what() << '\n';
-    }
-    catch(const std::exception& e)
-    {
-      std::cerr << e.what() << '\n';
-    }
-    catch(...)
-    {
-      std::cerr << "[" << __func__ << "] caught an unhandled exception" << '\n';
-    }
-    finished_graphs_.clear();
   }
 }
 
@@ -130,8 +84,7 @@ try
 {
   LOCK_GUARD_TYPE_R guard_graph_nodes_map_(umrf_graph_map_rw_mutex_);
 
-  // Check if the requested graph exists
-  if (!graphExists(graph_name))
+  auto runGraph = [&](const std::string& graph_name)
   {
     const auto& indexed_graphs = ai_.getGraphs();
     const auto known_graph = std::find_if(indexed_graphs.begin(), indexed_graphs.end(),
@@ -153,12 +106,21 @@ try
     }
 
     umrf_graph_exec_map_.emplace(graph_name, std::make_shared<UmrfGraphExec>(known_graph_cpy));
-  }
+  };
 
-  // Check if the graph is in initialized state
-  if (umrf_graph_exec_map_.at(graph_name)->getState() != UmrfGraphExec::State::INITIALIZED)
+  if (!graphExists(graph_name))
   {
-    throw CREATE_TEMOTO_ERROR_STACK("Cannot execute UMRF graph '" + graph_name + "' because it's not in initialized state.");
+    runGraph(graph_name);
+  }
+  else if (umrf_graph_exec_map_.at(graph_name)->getState() == UmrfGraphExec::State::FINISHED)
+  {
+    finished_graphs_.erase(graph_name);
+    umrf_graph_exec_map_.erase(graph_name);
+    runGraph(graph_name);
+  }
+  else
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("Cannot execute UMRF graph '" + graph_name + "' because it's already active.");
   }
 
   // Synchronize the execution of the graph with other actors
@@ -322,11 +284,6 @@ bool ActionEngine::stop()
 
   TEMOTO_PRINT_OF("Removing all umrf graphs", actor_name_);
   umrf_graph_exec_map_.clear();
-
-  // // Stop the monitoring thread
-  // stop_monitoring_thread_ = true;
-  // notify_cv_.notify_all();
-  // monitoring_thread_.join();
 
   TEMOTO_PRINT_OF("Action Engine is stopped", actor_name_);
   return true;

@@ -38,7 +38,7 @@ public:
   {
     class_loader_ = std::make_shared<class_loader::MultiLibraryClassLoader>(false);
     class_loader_->loadLibrary("lib" + plugin_name + ".so");
-    sync_plugin_ = class_loader_->createSharedInstance<ActionSynchronizerPluginBase>(plugin_name);
+    sync_plugin_ = class_loader_->createUniqueInstance<ActionSynchronizerPluginBase>(plugin_name);
     sync_plugin_->setNotificationReceivedCallback(std::bind(&ActionSynchronizer::onNotificationReceived, this, std::placeholders::_1));
     sync_plugin_->setExecuteGraphCallback(std::bind(&ActionSynchronizer::onExecuteGraph, this, std::placeholders::_1));
     sync_plugin_->setName(actor_name);
@@ -147,7 +147,7 @@ private:
   }
 
   std::shared_ptr<class_loader::MultiLibraryClassLoader> class_loader_;
-  std::shared_ptr<ActionSynchronizerPluginBase> sync_plugin_;
+  class_loader::ClassLoader::UniquePtr<ActionSynchronizerPluginBase> sync_plugin_;
   std::mutex mutex_notify_;
   std::mutex mutex_handshake_;
 
