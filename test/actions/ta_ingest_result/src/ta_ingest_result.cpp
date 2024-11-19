@@ -1,29 +1,29 @@
+#include <class_loader/class_loader.hpp>
+#include "ta_ingest_result/temoto_action.hpp"
+
 #include <chrono>
 #include <thread>
-#include <class_loader/class_loader.hpp>
-#include "ta_example_1/temoto_action.h"
 
 class TaIngestResult : public TemotoAction
 {
 public:
 
-// Constructor. REQUIRED BY TEMOTO
-TaIngestResult()
-{}
+TaIngestResult() // REQUIRED
+{
+}
 
 void onInit()
 {
   TEMOTO_PRINT_OF("Initializing", getName());
 }
 
-// REQUIRED BY TEMOTO
-bool onRun()
+bool onRun() // REQUIRED
 {
   // Input parameters
   if (current_ingest_count == 0)
   {
-    final_ingest_count = int(GET_PARAMETER("ingest_count", double));
-    timeout = GET_PARAMETER("timeout", double);
+    final_ingest_count = params_in.ingest_count;
+    timeout = params_in.timeout;
   }
 
   TEMOTO_PRINT_OF("ingested a result " + std::to_string(++current_ingest_count) +
@@ -87,9 +87,9 @@ void onStop()
   action_stop = true;
 }
 
-// Destructor
 ~TaIngestResult()
-{}
+{
+}
 
 private:
 

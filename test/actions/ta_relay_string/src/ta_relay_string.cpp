@@ -1,32 +1,24 @@
-#include <chrono>
-#include <thread>
 #include <class_loader/class_loader.hpp>
-#include "ta_example_1/temoto_action.h"
+#include "ta_relay_string/temoto_action.hpp"
 
 class TaRelayString : public TemotoAction
 {
 public:
 
-// Constructor. REQUIRED BY TEMOTO
-TaRelayString()
-{}
+TaRelayString() // REQUIRED
+{
+}
 
 void onInit()
 {
   TEMOTO_PRINT_OF("Initializing", getName());
 }
 
-// REQUIRED BY TEMOTO
-bool onRun()
+bool onRun() // REQUIRED
 {
-  // Input parameters
-  std::string string_in = GET_PARAMETER("string_in", std::string);
-  std::string string_out = string_in;
+  params_out.string_out = params_in.string_in;
+  TEMOTO_PRINT_OF("relaying: " + params_out.string_out, getName());
 
-  TEMOTO_PRINT_OF("relaying: " + string_out, getName());
-
-  // Pass the output parameters to the action engine
-  SET_PARAMETER("string_out", "string", string_out);
   return true;
 }
 
@@ -45,9 +37,9 @@ void onStop()
   TEMOTO_PRINT_OF("Stopping", getName());
 }
 
-// Destructor
 ~TaRelayString()
-{}
+{
+}
 
 }; // TaRelayString class
 

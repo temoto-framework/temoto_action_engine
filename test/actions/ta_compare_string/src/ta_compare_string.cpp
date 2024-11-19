@@ -1,36 +1,29 @@
-#include <chrono>
-#include <thread>
 #include <class_loader/class_loader.hpp>
-#include "ta_example_1/temoto_action.h"
+#include "ta_compare_string/temoto_action.hpp"
 
 class TaCompareString : public TemotoAction
 {
 public:
 
-// Constructor. REQUIRED BY TEMOTO
-TaCompareString()
-{}
+TaCompareString() // REQUIRED
+{
+}
 
 void onInit()
 {
   TEMOTO_PRINT_OF("Initializing", getName());
 }
 
-// REQUIRED BY TEMOTO
-bool onRun()
+bool onRun() // REQUIRED
 {
-  // Input parameters
-  std::string in_str_a = GET_PARAMETER("str_a", std::string);
-  std::string in_str_b = GET_PARAMETER("str_b", std::string);
-
-  if (in_str_a == in_str_b)
+  if (params_in.str_a == params_in.str_b)
   {
-    TEMOTO_PRINT_OF("strings '" + in_str_a + "' and '" + in_str_b + "' are EQUAL", getName());
+    TEMOTO_PRINT_OF("strings '" + params_in.str_a + "' and '" + params_in.str_b + "' are EQUAL", getName());
     return true;
   }
   else
   {
-    TEMOTO_PRINT_OF("strings '" + in_str_a + "' and '" + in_str_b + "' NOT EQUAL", getName());
+    TEMOTO_PRINT_OF("strings '" + params_in.str_a + "' and '" + params_in.str_b + "' NOT EQUAL", getName());
     return false;
   }
 }
@@ -50,9 +43,9 @@ void onStop()
   TEMOTO_PRINT_OF("Stopping", getName());
 }
 
-// Destructor
 ~TaCompareString()
-{}
+{
+}
 
 }; // TaCompareString class
 

@@ -1,35 +1,26 @@
-#include <chrono>
-#include <thread>
 #include <class_loader/class_loader.hpp>
-#include "ta_example_1/temoto_action.h"
+#include "ta_add_string/temoto_action.hpp"
 
 class TaAddString : public TemotoAction
 {
 public:
 
-// Constructor. REQUIRED BY TEMOTO
-TaAddString()
-{}
+TaAddString() // REQUIRED
+{
+}
 
 void onInit()
 {
   TEMOTO_PRINT_OF("Initializing", getName());
 }
 
-// REQUIRED BY TEMOTO
-bool onRun()
+bool onRun() // REQUIRED
 {
-  // Input parameters
-  std::string in_str_a = GET_PARAMETER("str_a", std::string);
-  std::string in_str_b = GET_PARAMETER("str_b", std::string);
+  TEMOTO_PRINT_OF("Running", getName());
 
-  // Declaration of output parameters
-  std::string out_result = in_str_a + " and " + in_str_b;
+  params_out.result = params_in.str_a + " and " +  params_in.str_b;
+  TEMOTO_PRINT_OF("got: " + params_out.result, getName());
 
-  TEMOTO_PRINT_OF("got: " + out_result, getName());
-
-  // Pass the output parameters to the action engine
-  SET_PARAMETER("result", "string", out_result);
   return true;
 }
 
@@ -48,9 +39,9 @@ void onStop()
   TEMOTO_PRINT_OF("Stopping", getName());
 }
 
-// Destructor
 ~TaAddString()
-{}
+{
+}
 
 }; // TaAddString class
 

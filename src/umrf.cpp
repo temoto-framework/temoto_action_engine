@@ -175,12 +175,10 @@ bool Umrf::inputParametersReceived() const
   {
     if (!input_parameter.isRequired())
     {
-      std::cout << "D5_1\n";
       continue;
     }
     if (input_parameter.getDataSize() == 0)
     {
-      std::cout << "D5_2\n";
       params_received = false;
       break;
     }

@@ -1,26 +1,26 @@
+#include <class_loader/class_loader.hpp>
+#include "ta_timer/temoto_action.hpp"
+
 #include <chrono>
 #include <thread>
-#include <class_loader/class_loader.hpp>
-#include "ta_example_1/temoto_action.h"
 
 class TaTimer : public TemotoAction
 {
 public:
 
-// Constructor. REQUIRED BY TEMOTO
-TaTimer()
-{}
+TaTimer() // REQUIRED
+{
+}
 
 void onInit()
 {
   TEMOTO_PRINT_OF("Initializing", getName());
 }
 
-// REQUIRED BY TEMOTO
-bool onRun()
+bool onRun() // REQUIRED
 {
   // Input parameters
-  count_until = GET_PARAMETER("count_until", double);
+  const auto& count_until = params_in.count_until;
 
   double starting_count = current_count;
   auto start = std::chrono::high_resolution_clock::now();
@@ -59,7 +59,7 @@ bool onRun()
   }
 
   // Pass the output parameters to the action engine
-  SET_PARAMETER("final_count", "number", current_count);
+  params_out.final_count = current_count;
   return true;
 }
 
@@ -80,9 +80,9 @@ void onStop()
   action_stop = true;
 }
 
-// Destructor
 ~TaTimer()
-{}
+{
+}
 
 private:
 

@@ -1,29 +1,26 @@
+#pragma once
 
-#ifndef ta_example_1__TEMOTO_ACTION_H
-#define ta_example_1__TEMOTO_ACTION_H
-
-/* REQUIRED BY TEMOTO */
 #include "temoto_action_engine/action_base.h"
 #include "temoto_action_engine/temoto_error.h"
 #include "temoto_action_engine/messaging.h"
 
-#define GET_PARAMETER(name, type) getUmrfNodeConst().getInputParameters().getParameterData<type>(name)
-#define SET_PARAMETER(name, type, value) getUmrfNode().getOutputParametersNc().setParameter(name, type, boost::any(value))
+#include "ta_ingest_result/input_parameters.hpp"
 
 /**
  * @brief Class that integrates TeMoto Base Subsystem specific and Action Engine specific codebases.
- * 
+ *
  */
 class TemotoAction : public ActionBase
 {
 public:
+
   TemotoAction()
   {}
 
   /**
    * @brief Get the Name of the action
-   * 
-   * @return const std::string& 
+   *
+   * @return const std::string&
    */
   const std::string& getName()
   {
@@ -33,6 +30,20 @@ public:
   virtual void updateParameters(const ActionParameters& parameters_in)
   {
   }
-};
 
-#endif
+  input_parameters_t params_in;
+
+private:
+
+  void getInputParameters()
+  {
+    const auto& params{getUmrfNodeConst().getInputParameters()};
+
+    params_in.ingest_count = params.getParameterData<double>("ingest_count");
+    params_in.timeout = params.getParameterData<double>("timeout");
+  }
+
+  void setOutputParameters()
+  {
+  }
+};
