@@ -34,6 +34,7 @@
       "description": "action_0 description",
       "instance_id": 0,
       "type": "sync",
+      "state": 0,
       "input_parameters": {
         "test_param_1": {
           "pvf_type": "string",
@@ -112,6 +113,7 @@
       "description": "action_1 description",
       "instance_id": 0,
       "type": "sync",
+      "state": 0,
       "children": [
         {
           "name": "action_3",
@@ -125,6 +127,7 @@
       "description": "action_2 description",
       "instance_id": 0,
       "type": "sync",
+      "state": 0,
       "children": [
         {
           "name": "action_3",
@@ -137,6 +140,7 @@
       "description": "action_3 description",
       "instance_id": 0,
       "type": "sync",
+      "state": 0,
       "output_parameters": {
         "test_param_x": {
           "pvf_type": "strings"
@@ -192,6 +196,7 @@
       "description": "action_4 description",
       "instance_id": 0,
       "type": "sync",
+      "state": 0,
       "parents": [
         {
           "name": "action_3",
@@ -211,6 +216,7 @@
       "description": "action_5 description",
       "instance_id": 0,
       "type": "sync",
+      "state": 0,
       "input_parameters": {
         "test_param_y": {
           "pvf_type": "strings"

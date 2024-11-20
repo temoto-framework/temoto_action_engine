@@ -446,6 +446,7 @@ try
   UmrfNode graph_entry_action;
   graph_entry_action.setName(GRAPH_FIELDS.entry);
   graph_entry_action.setChildren(graph_entry);
+  graph_entry_action.setType("sync");
 
   // Get the input parameters for the entry
   for (const auto& a : graph_entry)
@@ -483,6 +484,7 @@ try
   UmrfNode graph_exit_action;
   graph_exit_action.setName(GRAPH_FIELDS.exit);
   graph_exit_action.setParents(graph_exit);
+  graph_exit_action.setType("sync");
 
   // Get the output parameters for the exit
   for (const auto& a : graph_exit)
@@ -715,6 +717,7 @@ json toUmrfJson(const UmrfNode& u)
   action[UMRF_FIELDS.instance_id] = u.getInstanceId();
   action[UMRF_FIELDS.description] = u.getDescription();
   action[UMRF_FIELDS.type] = u.getType();
+  action[UMRF_FIELDS.state] = u.getState();
 
   // parse actor
   if (!u.getActor().empty())

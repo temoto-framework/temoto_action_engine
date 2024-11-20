@@ -100,9 +100,9 @@ UmrfNodeExec::~UmrfNodeExec()
 
 UmrfNode UmrfNodeExec::asUmrfNode() const
 {
-  UmrfNode umrf_node = umrf_json::fromUmrfJsonStr(getLatestUmrfJsonStr());
-  umrf_node.setState(getState());
-  return umrf_node;
+  // UmrfNode umrf_node = umrf_json::fromUmrfJsonStr(getLatestUmrfJsonStr());
+  std::string umrf_node_string = umrf_json::toUmrfJsonStr(*this);
+  return umrf_json::fromUmrfJsonStr(umrf_node_string);
   //return UmrfNode(*this);
 }
 
@@ -236,6 +236,7 @@ void UmrfNodeExec::run()
     }
 
     setState(State::RUNNING);
+    ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
 
     /*
      * EXECUTE ACTION AS LOCAL

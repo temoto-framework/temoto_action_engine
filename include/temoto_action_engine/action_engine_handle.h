@@ -32,6 +32,7 @@ class EngineHandle
 friend class ActionEngine;
 typedef std::function<void(const std::string&, const ActionParameters&, const std::string&)> ExecuteGraphT;
 typedef std::function<void(const std::string&)> AcknowledgeT;
+typedef std::function<void(const std::string&, const std::string&)> StateChangeT;
 
 public:
 
@@ -57,6 +58,11 @@ public:
     notify_finished_fptr_(waitable, result, params, token);
   }
 
+  void notifyStateChange(const std::string& action_name, const std::string& graph_name)
+  {
+    on_state_change_fptr(action_name, graph_name);
+  }
+
   std::string getActor() const
   {
     return actor_name_;
@@ -67,6 +73,7 @@ private:
   AddWaiterT add_waiter_fptr_;
   ExecuteGraphT execute_graph_fptr_;
   NotifyFinishedT notify_finished_fptr_;
+  StateChangeT on_state_change_fptr;
   std::string actor_name_;
 };
 

@@ -59,6 +59,8 @@ public:
 
   std::string waitForGraph(const std::string& graph_name);
 
+  std::vector<std::string> readFeedbackBuffer();
+
   ~ActionEngine();
 
   /**
@@ -84,6 +86,8 @@ private:
   bool matchGraph(UmrfGraph& g, std::set<std::string> g_blacklist);
 
   bool synchronizerAvailable() const;
+
+  void onStateChange(const std::string& action_name, const std::string& graph_name);
 
   // void updateUmrfGraph(const std::string& graph_name, std::vector<UmrfNode> umrfs_vec);
   ActionIndexer ai_;

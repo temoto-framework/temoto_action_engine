@@ -8,6 +8,7 @@
           "description": "go",
           "instance_id": 0,
           "type": "sync",
+          "state": 0,
           "input_parameters": {
               "test_param_1": {
                   "pvf_type": "string",
@@ -82,6 +83,7 @@
           "description": "observe",
           "instance_id": 0,
           "type": "sync",
+          "state": 0,
           "input_parameters": {
               "pose_quat": {
                   "orientation": {
@@ -137,6 +139,7 @@
           "description": "observe",
           "instance_id": 0,
           "type": "sync",
+          "state": 0,
           "children": [
               {
                   "name": "move_arm",
@@ -155,6 +158,7 @@
           "description": "observe",
           "instance_id": 1,
           "type": "sync",
+          "state": 0,
           "input_parameters": {
               "pose_quat": {
                   "orientation": {
@@ -209,6 +213,7 @@
           "description": "observe",
           "instance_id": 1,
           "type": "sync",
+          "state": 0,
           "parents": [
               {
                   "name": "move_arm",

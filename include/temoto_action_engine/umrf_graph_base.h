@@ -164,7 +164,7 @@ public:
   virtual ~UmrfGraphBase()
   {}
 
-  UmrfGraphCommon toUmrgGraphCommon()
+  UmrfGraphCommon toUmrfGraphCommon()
   {
     updateUmrfNodes();
     return UmrfGraphCommon(*this);
@@ -328,11 +328,6 @@ protected:
 
   bool initialize()
   {
-    if (getState() != State::UNINITIALIZED)
-    {
-      return true;
-    }
-
     // Initialize the umrf_node nodes map
     for (const auto& umrf_node : umrf_nodes_vec_)
     try

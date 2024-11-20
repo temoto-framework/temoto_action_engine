@@ -18,6 +18,11 @@
 #include "temoto_action_engine/messaging.h"
 #include "temoto_action_engine/umrf_json.h"
 
+#include <boost/circular_buffer.hpp>
+
+boost::circular_buffer<std::string> feedback_buffer(100);
+std::mutex feedback_buffer_m;
+
 ActionEngine::ActionEngine(const std::string& actor_name, const std::string& sync_plugin_name)
 : actor_name_(actor_name)
 {
@@ -35,10 +40,33 @@ ActionEngine::ActionEngine(const std::string& actor_name, const std::string& syn
   ENGINE_HANDLE.add_waiter_fptr_ = std::bind(&ActionEngine::addWaiter, this
   , std::placeholders::_1, std::placeholders::_2);
 
+  ENGINE_HANDLE.on_state_change_fptr = std::bind(&ActionEngine::onStateChange, this
+  , std::placeholders::_1, std::placeholders::_2);
+
   if (!sync_plugin_name.empty())
   {
     as_ = std::make_unique<ActionSynchronizer>(sync_plugin_name, actor_name_);
   }
+}
+
+void ActionEngine::onStateChange(const std::string& action_name, const std::string& graph_name)
+{
+  LOCK_GUARD_TYPE l(feedback_buffer_m);
+  feedback_buffer.push_front([&]
+  {
+    LOCK_GUARD_TYPE_R guard_graph_nodes_map_(umrf_graph_map_rw_mutex_);
+    return umrf_json::toUmrfGraphJsonStr(umrf_graph_exec_map_.at(graph_name)->toUmrfGraphCommon());
+  }());
+}
+
+std::vector<std::string> ActionEngine::readFeedbackBuffer()
+{
+  LOCK_GUARD_TYPE l(feedback_buffer_m);
+
+  std::vector<std::string> vec(feedback_buffer.begin(), feedback_buffer.end());
+  feedback_buffer.clear();
+
+  return vec;
 }
 
 bool ActionEngine::graphExists(const std::string& graph_name) const
@@ -298,7 +326,7 @@ std::vector<std::string> ActionEngine::getGraphJsons() const
   {
     for (const auto& umrf_graph_exec : umrf_graph_exec_map_)
     {
-      std::string umrf_graph_json = umrf_json::toUmrfGraphJsonStr(umrf_graph_exec.second->toUmrgGraphCommon()); 
+      std::string umrf_graph_json = umrf_json::toUmrfGraphJsonStr(umrf_graph_exec.second->toUmrfGraphCommon()); 
       umrf_graph_jsons.push_back(umrf_graph_json);     
     }
   }
