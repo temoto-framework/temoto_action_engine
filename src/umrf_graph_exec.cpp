@@ -1,12 +1,12 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * Copyright 2020 TeMoto Telerobotics
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -74,7 +74,7 @@ void UmrfGraphExec::startGraph(const std::string& result, const ActionParameters
    * In order to avoid interdependencies of input and output parameters
    * between different hierarchical graphs, remove the input and output data of
    * the 'graph_entry' action. This is again related to the quirks of the 'std::any'.
-   * The reason why the data is removed here is to make sure that the children of 
+   * The reason why the data is removed here is to make sure that the children of
    * 'graph_entry' got the data.
    */
   graph_entry->getInputParametersNc().clearData();
@@ -84,7 +84,7 @@ void UmrfGraphExec::startGraph(const std::string& result, const ActionParameters
 std::string UmrfGraphExec::stopGraph()
 {
   if (getState() == State::UNINITIALIZED ||
-      getState() == State::STOPPING ||  
+      getState() == State::STOPPING ||
       getState() == State::STOPPED ||
       getState() == State::FINISHED ||
       getState() == State::ERROR)
@@ -191,7 +191,7 @@ try
   {
     LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
     return graph_nodes_map_.at(parent_node_relation.getFullName())->getType();
-  }(); 
+  }();
 
   if (parent_node_type == "spontaneous")
   {
@@ -240,9 +240,9 @@ try
 
     // Check if the parent should be ignored or not
     const auto child_response = child_node->getParentRelation(parent_node_relation)->getResponse(result);
-    std::stringstream ss;
-    ss << ": result(" << parent_node->getFullName() << "):" << result << ", response(" << child_node->getFullName() << "): " << child_response << std::endl;
-    TEMOTO_PRINT_OF(ss.str(), ENGINE_HANDLE.getActor() + " in " + getName());
+    // std::stringstream ss;
+    // ss << ": result(" << parent_node->getFullName() << "):" << result << ", response(" << child_node->getFullName() << "): " << child_response << std::endl;
+    // TEMOTO_PRINT_OF(ss.str(), ENGINE_HANDLE.getActor() + " in " + getName());
 
     if (child_response == "bypass" && child_node->getName() == GRAPH_EXIT.getName())
     {
@@ -293,7 +293,7 @@ try
       ENGINE_HANDLE.notifyFinished(Waitable{.action_name = GRAPH_EXIT.getFullName(), .graph_name = getName()}
       , result
       , child_node->getInputParameters());
-      
+
       return;
     }
 
