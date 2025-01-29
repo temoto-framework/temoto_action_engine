@@ -1,12 +1,12 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * Copyright 2023 TeMoto Framework
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,7 +30,7 @@
 
 /**
  * @brief Handles loading and execution of TeMoto Actions
- * 
+ *
  */
 class ActionEngine
 {
@@ -45,17 +45,19 @@ public:
 
   /**
    * @brief Modifies a UMRF graph according to the graph_diffs
-   * 
-   * @param graph_name 
-   * @param graph_diffs 
+   *
+   * @param graph_name
+   * @param graph_diffs
    */
   void modifyGraph(const std::string& graph_name, const UmrfGraphDiffs& graph_diffs);
 
   void stopUmrfGraph(const std::string& umrf_graph_name);
-  
+
   bool addActionsPath(const std::string& action_packages_path);
 
-  std::vector<std::string> getGraphJsons() const;
+  std::vector<std::string> getGraphJsonsIndexed() const;
+
+  std::vector<std::string> getGraphJsonsRunning() const;
 
   std::string waitForGraph(const std::string& graph_name);
 
@@ -65,9 +67,9 @@ public:
 
   /**
    * @brief Stops all graphs
-   * 
-   * @return true 
-   * @return false 
+   *
+   * @return true
+   * @return false
    */
   bool stop();
 

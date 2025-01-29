@@ -317,7 +317,7 @@ bool ActionEngine::stop()
   return true;
 }
 
-std::vector<std::string> ActionEngine::getGraphJsons() const
+std::vector<std::string> ActionEngine::getGraphJsonsRunning() const
 {
   LOCK_GUARD_TYPE_R guard_graph_nodes_map_(umrf_graph_map_rw_mutex_);
 
@@ -326,8 +326,26 @@ std::vector<std::string> ActionEngine::getGraphJsons() const
   {
     for (const auto& umrf_graph_exec : umrf_graph_exec_map_)
     {
-      std::string umrf_graph_json = umrf_json::toUmrfGraphJsonStr(umrf_graph_exec.second->toUmrfGraphCommon()); 
-      umrf_graph_jsons.push_back(umrf_graph_json);     
+      std::string umrf_graph_json = umrf_json::toUmrfGraphJsonStr(umrf_graph_exec.second->toUmrfGraphCommon());
+      umrf_graph_jsons.push_back(umrf_graph_json);
+    }
+  }
+  catch(TemotoErrorStack e)
+  {
+    throw FORWARD_TEMOTO_ERROR_STACK(e);
+  }
+  return umrf_graph_jsons;
+}
+
+std::vector<std::string> ActionEngine::getGraphJsonsIndexed() const
+{
+  std::vector<std::string> umrf_graph_jsons;
+  try
+  {
+    for (const auto& indexed_graph : ai_.getGraphs())
+    {
+      std::string umrf_graph_json = umrf_json::toUmrfGraphJsonStr(indexed_graph);
+      umrf_graph_jsons.push_back(umrf_graph_json);
     }
   }
   catch(TemotoErrorStack e)
