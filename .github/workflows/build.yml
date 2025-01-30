@@ -3,10 +3,9 @@ name: Build
 on:
   push:
     branches:
-      - main 
-      - nlohmann-json
+      - main
   pull_request:
-    branches: 
+    branches:
       - main
 
 env:
@@ -14,7 +13,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
     - uses: actions/checkout@v3
@@ -30,7 +29,7 @@ jobs:
 
     - name: install nlohmann-json
       run: sudo apt install -yq nlohmann-json3-dev
-      
+
     # build project
     - name: mkdir
       run: mkdir build
