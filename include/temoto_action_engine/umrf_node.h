@@ -28,7 +28,7 @@ public:
   /// Defines what the underlying implementation for this umrf is
   enum class ActorExecTraits
   {
-    LOCAL,  // A locally executable action 
+    LOCAL,  // A locally executable action
     REMOTE, // An action that is executed on a remote system
     GRAPH   // A sub-graph
   };
@@ -36,7 +36,7 @@ public:
   /// Defines all possible states for the action handle
   enum class State
   {
-    NOT_SET,      // TODO: Rename to something more meaningful 
+    UNINITIALIZED,
     INITIALIZED,
     RUNNING,
     PAUSED,
@@ -46,10 +46,9 @@ public:
     ERROR
   };
 
-
   /// A convenience datastructure which helps to convert state names to std::string
   const static inline std::map<State, std::string> state_to_str_map_{
-    {State::NOT_SET, "NOT_SET"},
+    {State::UNINITIALIZED, "UNINITIALIZED"},
     {State::INITIALIZED, "INITIALIZED"},
     {State::RUNNING, "RUNNING"},
     {State::PAUSED, "PAUSED"},
@@ -58,9 +57,19 @@ public:
     {State::BYPASSED, "BYPASSED"},
     {State::ERROR, "ERROR"}};
 
+  const static inline std::map<std::string, State> str_to_state_map_{
+    {"UNINITIALIZED", State::UNINITIALIZED},
+    {"INITIALIZED", State::INITIALIZED},
+    {"RUNNING", State::RUNNING},
+    {"PAUSED", State::PAUSED},
+    {"STOPPING", State::STOPPING},
+    {"FINISHED", State::FINISHED},
+    {"BYPASSED", State::BYPASSED},
+    {"ERROR", State::ERROR}};
+
   /**
    * @brief Embeds infromation about a parent/child connection
-   * 
+   *
    */
   struct Relation
   {

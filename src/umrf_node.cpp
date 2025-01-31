@@ -20,7 +20,7 @@
 // const UmrfNode::Relation GRAPH_EXIT = UmrfNode::Relation("graph_exit", 0);
 
 UmrfNode::UmrfNode()
-: state_(State::NOT_SET)
+: state_(State::UNINITIALIZED)
 , instance_id_(0)
 , actor_exec_traits_(UmrfNode::ActorExecTraits::LOCAL)
 {}

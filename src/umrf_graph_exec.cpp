@@ -112,7 +112,7 @@ std::string UmrfGraphExec::stopGraph()
   {
     while (graph_node.second->getState() != UmrfNode::State::FINISHED &&
       graph_node.second->getState() != UmrfNode::State::ERROR &&
-      graph_node.second->getState() != UmrfNode::State::NOT_SET)
+      graph_node.second->getState() != UmrfNode::State::UNINITIALIZED)
     {
       std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
@@ -208,7 +208,7 @@ try
           LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
           if (graph_nodes_map_.at(n)->getState() == UmrfNode::State::FINISHED ||
               graph_nodes_map_.at(n)->getState() == UmrfNode::State::ERROR ||
-              graph_nodes_map_.at(n)->getState() == UmrfNode::State::NOT_SET)
+              graph_nodes_map_.at(n)->getState() == UmrfNode::State::UNINITIALIZED)
           {
             break;
           }

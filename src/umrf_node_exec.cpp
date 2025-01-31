@@ -157,9 +157,9 @@ try
   LOCK_GUARD_TYPE_R guard_action_instance(action_instance_rw_mutex_);
   LOCK_GUARD_TYPE guard_class_loader(class_loader_rw_mutex_);
 
-  if (getState() != State::NOT_SET)
+  if (getState() != State::UNINITIALIZED)
   {
-    throw CREATE_TEMOTO_ERROR_STACK("Cannot instantiate the action because it's not in NOT_SET state");
+    throw CREATE_TEMOTO_ERROR_STACK("Cannot instantiate the action because it's not in UNINITIALIZED state");
   }
 
   action_instance_ = class_loader_->createInstance<ActionBase>(getName());
@@ -217,16 +217,16 @@ void UmrfNodeExec::run()
   try
   {
     // Move to the error state if the action is not in the following states
-    if (getState() != UmrfNode::State::NOT_SET && 
+    if (getState() != UmrfNode::State::UNINITIALIZED && 
         getState() != UmrfNode::State::INITIALIZED &&
         getState() != UmrfNode::State::PAUSED &&
         getState() != UmrfNode::State::FINISHED)
     {
-      throw CREATE_TEMOTO_ERROR_STACK("Action has to be in the following states to run: NOT_SET; INITIALIZED; PAUSED; FINISHED.");
+      throw CREATE_TEMOTO_ERROR_STACK("Action has to be in the following states to run: UNINITIALIZED; INITIALIZED; PAUSED; FINISHED.");
     }
 
     // Initialize the action
-    if (getState() == UmrfNode::State::NOT_SET && 
+    if (getState() == UmrfNode::State::UNINITIALIZED && 
         getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
     {
       LOCK_GUARD_TYPE_R guard_action_instance(action_instance_rw_mutex_);
@@ -368,7 +368,7 @@ void UmrfNodeExec::stop(bool ignore_result)
 
   if (getState() == UmrfNode::State::STOPPING ||
       getState() == UmrfNode::State::FINISHED ||
-      getState() == UmrfNode::State::NOT_SET)
+      getState() == UmrfNode::State::UNINITIALIZED)
   {
     return;
   }

@@ -337,7 +337,7 @@ try
   if (uj.contains(UMRF_FIELDS.state))
   try
   {
-    un.setState(uj.at(UMRF_FIELDS.state));
+    un.setState(UmrfNode::str_to_state_map_.at(uj.at(UMRF_FIELDS.state)));
   }
   catch(const std::exception& e)
   {
@@ -717,7 +717,7 @@ json toUmrfJson(const UmrfNode& u)
   action[UMRF_FIELDS.instance_id] = u.getInstanceId();
   action[UMRF_FIELDS.description] = u.getDescription();
   action[UMRF_FIELDS.type] = u.getType();
-  action[UMRF_FIELDS.state] = u.getState();
+  action[UMRF_FIELDS.state] = UmrfNode::state_to_str_map_.at(u.getState());
 
   // parse actor
   if (!u.getActor().empty())
@@ -740,7 +740,7 @@ json toUmrfJson(const UmrfNode& u)
   // parse parents
   const auto& parents = u.getParents();
 
-  if (parents.size() > 1 
+  if (parents.size() > 1
   || ((parents.size() == 1) && std::find(parents.begin(), parents.end(), GRAPH_ENTRY) == parents.end()))
   {
 
