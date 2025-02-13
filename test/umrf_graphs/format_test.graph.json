@@ -1,6 +1,7 @@
 {
   "graph_name": "robot go observe the valve [x=-93.6; y=11.0; yaw=-0.85]",
   "graph_description": "Robot navigates to the valve and observes it",
+  "graph_state": "RUNNING",
   "graph_entry": [
     {
       "name": "action_0",
@@ -19,7 +20,7 @@
     {
       "name": "action_4",
       "required": true,
-      "instance_id": 0 
+      "instance_id": 0
     },
     {
       "name": "action_5",
@@ -34,7 +35,7 @@
       "description": "action_0 description",
       "instance_id": 0,
       "type": "sync",
-      "state": 0,
+      "state": "UNINITIALIZED",
       "input_parameters": {
         "test_param_1": {
           "pvf_type": "string",
@@ -105,7 +106,10 @@
           "name": "action_3",
           "instance_id": 0
         }
-      ]
+      ],
+      "gui_attributes": {
+        "position": { "x": 0, "y": 150 }
+      }
     },
     {
       "name": "action_1",
@@ -113,7 +117,7 @@
       "description": "action_1 description",
       "instance_id": 0,
       "type": "sync",
-      "state": 0,
+      "state": "RUNNING",
       "children": [
         {
           "name": "action_3",
@@ -127,7 +131,7 @@
       "description": "action_2 description",
       "instance_id": 0,
       "type": "sync",
-      "state": 0,
+      "state": "BYPASSED",
       "children": [
         {
           "name": "action_3",
@@ -140,7 +144,7 @@
       "description": "action_3 description",
       "instance_id": 0,
       "type": "sync",
-      "state": 0,
+      "state": "INITIALIZED",
       "output_parameters": {
         "test_param_x": {
           "pvf_type": "strings"
@@ -189,14 +193,17 @@
             }
           ]
         }
-      ]
+      ],
+      "gui_attributes": {
+        "position": { "x": 0, "y": 250 }
+      }
     },
     {
       "name": "action_4",
       "description": "action_4 description",
       "instance_id": 0,
       "type": "sync",
-      "state": 0,
+      "state": "FINISHED",
       "parents": [
         {
           "name": "action_3",
@@ -216,7 +223,7 @@
       "description": "action_5 description",
       "instance_id": 0,
       "type": "sync",
-      "state": 0,
+      "state": "ERROR",
       "input_parameters": {
         "test_param_y": {
           "pvf_type": "strings"

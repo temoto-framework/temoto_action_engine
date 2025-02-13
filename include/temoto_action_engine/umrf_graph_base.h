@@ -44,6 +44,26 @@ public:
     ERROR
   };
 
+  const static inline std::map<State, std::string> state_to_str_map_{
+    {State::UNINITIALIZED, "UNINITIALIZED"},
+    {State::INITIALIZED, "INITIALIZED"},
+    {State::RUNNING, "RUNNING"},
+    // {State::PAUSED, "PAUSED"},
+    {State::STOPPING, "STOPPING"},
+    {State::STOPPED, "STOPPED"},
+    {State::FINISHED, "FINISHED"},
+    {State::ERROR, "ERROR"}};
+
+  const static inline std::map<std::string, State> str_to_state_map_{
+    {"UNINITIALIZED", State::UNINITIALIZED},
+    {"INITIALIZED", State::INITIALIZED},
+    {"RUNNING", State::RUNNING},
+    // {"PAUSED", State::PAUSED},
+    {"STOPPING", State::STOPPING},
+    {"STOPPED", State::STOPPED},
+    {"FINISHED", State::FINISHED},
+    {"ERROR", State::ERROR}};
+
   UmrfGraphCommon(const std::string& graph_name)
   : graph_name_(graph_name)
   , state_(State::UNINITIALIZED)
@@ -347,7 +367,11 @@ protected:
      * TODO: Check that parents are pointing to existing children and vice versa
      */
 
-    setState(State::INITIALIZED);
+    if (state_ == State::UNINITIALIZED) // Needed to preserve the state
+    {
+      setState(State::INITIALIZED);
+    }
+
     return true;
   }
 
@@ -371,5 +395,3 @@ protected:
   GUARDED_VARIABLE(UmrfGraphNodeMap graph_nodes_map_, graph_nodes_map_rw_mutex_);
 };
 #endif
-
-

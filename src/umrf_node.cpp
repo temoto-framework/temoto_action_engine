@@ -33,6 +33,7 @@ UmrfNode::UmrfNode(const UmrfNode& un)
 , children_(un.children_)
 , full_name_(un.full_name_)
 , actor_exec_traits_(un.actor_exec_traits_)
+, gui_attributes_(un.gui_attributes_)
 {}
 
 UmrfNode UmrfNode::asUmrfNode() const
@@ -73,7 +74,7 @@ bool UmrfNode::setInstanceId(const unsigned int& instance_id)
   LOCK_GUARD_TYPE guard_instance_id(instance_id_rw_mutex_);
   instance_id_ = instance_id;
   full_name_ = name_ + "_" + std::to_string(instance_id_);
-  return true;  
+  return true;
 }
 
 const std::vector<UmrfNode::Relation>& UmrfNode::getParents() const
@@ -88,7 +89,7 @@ bool UmrfNode::setParents(const std::vector<UmrfNode::Relation>& parents)
   if (!parents.empty())
   {
     parents_ = parents;
-    return true;  
+    return true;
   }
   else
   {
@@ -156,7 +157,7 @@ bool UmrfNode::setChildren(const std::vector<UmrfNode::Relation>& children)
   if (!children.empty())
   {
     children_ = children;
-    return true;  
+    return true;
   }
   else
   {
@@ -241,4 +242,14 @@ void UmrfNode::setActorExecTraits(UmrfNode::ActorExecTraits traits)
 UmrfNode::ActorExecTraits UmrfNode::getActorExecTraits() const
 {
   return actor_exec_traits_;
+}
+
+void UmrfNode::setGuiAttributes(const std::string& gui_attributes)
+{
+  gui_attributes_ = gui_attributes;
+}
+
+std::string UmrfNode::getGuiAttributes() const
+{
+  return gui_attributes_;
 }

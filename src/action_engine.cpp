@@ -51,10 +51,20 @@ ActionEngine::ActionEngine(const std::string& actor_name, const std::string& syn
 
 void ActionEngine::onStateChange(const std::string& action_name, const std::string& graph_name)
 {
+  // If graphs are being modified, then do not send any state updates
+  if (umrf_graph_map_rw_mutex_.try_lock())
+  {
+    umrf_graph_map_rw_mutex_.unlock();
+  }
+  else
+  {
+    return;
+  }
+
   LOCK_GUARD_TYPE l(feedback_buffer_m);
   feedback_buffer.push_front([&]
   {
-    LOCK_GUARD_TYPE_R guard_graph_nodes_map_(umrf_graph_map_rw_mutex_);
+    LOCK_GUARD_TYPE_R guard_graphs_map_(umrf_graph_map_rw_mutex_);
     return umrf_json::toUmrfGraphJsonStr(umrf_graph_exec_map_.at(graph_name)->toUmrfGraphCommon());
   }());
 }
@@ -71,13 +81,13 @@ std::vector<std::string> ActionEngine::readFeedbackBuffer()
 
 bool ActionEngine::graphExists(const std::string& graph_name) const
 {
-  LOCK_GUARD_TYPE_R guard_graph_nodes_map_(umrf_graph_map_rw_mutex_);
+  LOCK_GUARD_TYPE_R guard_graph_map_(umrf_graph_map_rw_mutex_);
   return (umrf_graph_exec_map_.find(graph_name) != umrf_graph_exec_map_.end());
 }
 
 void ActionEngine::addUmrfGraph(const std::string& graph_name, const std::vector<UmrfNode>& umrf_nodes)
 {
-  LOCK_GUARD_TYPE_R guard_graph_nodes_map_(umrf_graph_map_rw_mutex_);
+  LOCK_GUARD_TYPE_R guard_graph_map_(umrf_graph_map_rw_mutex_);
   umrf_graph_exec_map_.emplace(graph_name, std::make_shared<UmrfGraphExec>(graph_name, umrf_nodes));
 }
 
@@ -110,7 +120,7 @@ catch(TemotoErrorStack e)
 void ActionEngine::executeUmrfGraph(const std::string& graph_name, const ActionParameters& params, const std::string& result)
 try
 {
-  LOCK_GUARD_TYPE_R guard_graph_nodes_map_(umrf_graph_map_rw_mutex_);
+  LOCK_GUARD_TYPE_R guard_graph_map_(umrf_graph_map_rw_mutex_);
 
   auto runGraph = [&](const std::string& graph_name)
   {
@@ -181,7 +191,7 @@ catch(TemotoErrorStack e)
 
 void ActionEngine::modifyGraph(const std::string& graph_name, const UmrfGraphDiffs& graph_diffs)
 {
-  LOCK_GUARD_TYPE_R guard_graph_nodes_map_(umrf_graph_map_rw_mutex_);
+  LOCK_GUARD_TYPE_R guard_graph_map_(umrf_graph_map_rw_mutex_);
 
   if (!graphExists(graph_name))
   {
@@ -252,7 +262,7 @@ void ActionEngine::modifyGraph(const std::string& graph_name, const UmrfGraphDif
 
 void ActionEngine::stopUmrfGraph(const std::string& umrf_graph_name)
 {
-  LOCK_GUARD_TYPE_R guard_graph_nodes_map_(umrf_graph_map_rw_mutex_);
+  std::unique_lock<std::recursive_mutex> guard_graph_map(umrf_graph_map_rw_mutex_);
 
   // Check if the requested graph exists
   if (umrf_graph_exec_map_.find(umrf_graph_name) == umrf_graph_exec_map_.end())
@@ -272,6 +282,11 @@ void ActionEngine::stopUmrfGraph(const std::string& umrf_graph_name)
   {
     throw CREATE_TEMOTO_ERROR_STACK(e.what());
   }
+
+  guard_graph_map.unlock();
+  onStateChange("", umrf_graph_name);
+
+  guard_graph_map.lock();
   umrf_graph_exec_map_.erase(umrf_graph_name);
 }
 
@@ -294,7 +309,7 @@ catch(TemotoErrorStack e)
 
 bool ActionEngine::stop()
 {
-  LOCK_GUARD_TYPE_R guard_graph_nodes_map_(umrf_graph_map_rw_mutex_);
+  LOCK_GUARD_TYPE_R guard_graph_map_(umrf_graph_map_rw_mutex_);
 
   // Stop all actions
   for (auto& umrf_graph : umrf_graph_exec_map_)
@@ -319,7 +334,7 @@ bool ActionEngine::stop()
 
 std::vector<std::string> ActionEngine::getGraphJsonsRunning() const
 {
-  LOCK_GUARD_TYPE_R guard_graph_nodes_map_(umrf_graph_map_rw_mutex_);
+  LOCK_GUARD_TYPE_R guard_graph_map_(umrf_graph_map_rw_mutex_);
 
   std::vector<std::string> umrf_graph_jsons;
   try

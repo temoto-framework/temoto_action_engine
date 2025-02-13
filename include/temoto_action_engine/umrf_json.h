@@ -45,6 +45,7 @@ static const struct UmrfFields
   const char* type = "type";
   const char* input_parameters = "input_parameters";
   const char* output_parameters = "output_parameters";
+  const char* gui_attributes = "gui_attributes";
 }UMRF_FIELDS;
 
 static const struct PvfFields

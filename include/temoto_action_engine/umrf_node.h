@@ -49,23 +49,23 @@ public:
   /// A convenience datastructure which helps to convert state names to std::string
   const static inline std::map<State, std::string> state_to_str_map_{
     {State::UNINITIALIZED, "UNINITIALIZED"},
-    {State::INITIALIZED, "INITIALIZED"},
-    {State::RUNNING, "RUNNING"},
-    {State::PAUSED, "PAUSED"},
-    {State::STOPPING, "STOPPING"},
-    {State::FINISHED, "FINISHED"},
-    {State::BYPASSED, "BYPASSED"},
-    {State::ERROR, "ERROR"}};
+    {State::INITIALIZED  , "INITIALIZED"},
+    {State::RUNNING      , "RUNNING"},
+    {State::PAUSED       , "PAUSED"},
+    {State::STOPPING     , "STOPPING"},
+    {State::FINISHED     , "FINISHED"},
+    {State::BYPASSED     , "BYPASSED"},
+    {State::ERROR        , "ERROR"}};
 
   const static inline std::map<std::string, State> str_to_state_map_{
     {"UNINITIALIZED", State::UNINITIALIZED},
-    {"INITIALIZED", State::INITIALIZED},
-    {"RUNNING", State::RUNNING},
-    {"PAUSED", State::PAUSED},
-    {"STOPPING", State::STOPPING},
-    {"FINISHED", State::FINISHED},
-    {"BYPASSED", State::BYPASSED},
-    {"ERROR", State::ERROR}};
+    {"INITIALIZED"  , State::INITIALIZED},
+    {"RUNNING"      , State::RUNNING},
+    {"PAUSED"       , State::PAUSED},
+    {"STOPPING"     , State::STOPPING},
+    {"FINISHED"     , State::FINISHED},
+    {"BYPASSED"     , State::BYPASSED},
+    {"ERROR"        , State::ERROR}};
 
   /**
    * @brief Embeds infromation about a parent/child connection
@@ -170,12 +170,12 @@ public:
     {
       if (std::find(valid_preconditions_.begin(), valid_preconditions_.end(), precondition) == valid_preconditions_.end())
       {
-        throw CREATE_TEMOTO_ERROR_STACK("Invalid 'precondition': " + precondition); 
+        throw CREATE_TEMOTO_ERROR_STACK("Invalid 'precondition': " + precondition);
       }
 
       if (std::find(valid_conditions_responses_.begin(), valid_conditions_responses_.end(), response) == valid_conditions_responses_.end())
       {
-        throw CREATE_TEMOTO_ERROR_STACK("Invalid 'response': " + response); 
+        throw CREATE_TEMOTO_ERROR_STACK("Invalid 'response': " + response);
       }
 
       conditions_.at(precondition) = response;
@@ -212,21 +212,21 @@ public:
     }
 
     const static inline std::vector<std::string> valid_preconditions_{
-      "on_true", 
+      "on_true",
       "on_false",
       "on_stopped",
       "on_error"};
 
     /**
      * @brief List of responses an action can have for given preconditions
-     * 
+     *
      * Run    - Run the action
      * Pause  - Pause if running, ignore otherwise
      * Stop   - Stop if running, ignore otherwise
      * Reset  - Reset if running, ignore otherwise
      * Bypass - Skip the action and run its children instead by passing the same return value
      * Ignore - Do nothing
-     * 
+     *
      */
     const static inline std::vector<std::string> valid_conditions_responses_{
       "run",
@@ -238,7 +238,7 @@ public:
 
     std::string name_;
     unsigned int instance_id_;
-    bool required_; // Indicates whether the child can only execute once the parent has finished the execution  
+    bool required_; // Indicates whether the child can only execute once the parent has finished the execution
     bool received_; // Indicates whether the parent has finished execution. Applies only to parent-type relations
     std::map<std::string, std::string> conditions_; // Outlines the conditions of execution
     std::map<std::string, std::string> parameter_remap_;
@@ -293,6 +293,9 @@ public:
   void setActorExecTraits(ActorExecTraits traits);
   ActorExecTraits getActorExecTraits() const;
 
+  void setGuiAttributes(const std::string& gui_attributes);
+  std::string getGuiAttributes() const;
+
 protected:
 
   mutable MUTEX_TYPE parents_rw_mutex_;
@@ -311,6 +314,8 @@ protected:
   GUARDED_VARIABLE(State state_, state_rw_mutex_);
 
   ActorExecTraits actor_exec_traits_;
+
+  std::string gui_attributes_; // JSON object stored as string
 };
 
 inline const UmrfNode::Relation GRAPH_ENTRY = UmrfNode::Relation("graph_entry", 0);

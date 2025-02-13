@@ -7,8 +7,8 @@
 
 using json = nlohmann::json;
 
-TEST(UmrfJsonTest, Compare) 
-{ 
+TEST(UmrfJsonTest, Compare)
+{
   std::string ug_json_str = temoto_action_engine::readFromFile("format_test.graph.json");
   UmrfGraph ug_a = umrf_json::fromUmrfGraphJsonStr(ug_json_str);
   std::string ug_json_str_new = umrf_json::toUmrfGraphJsonStr(ug_a);

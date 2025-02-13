@@ -119,7 +119,7 @@ ActionParameters::Parameters parseParameters(std::string parent_member_name, con
     /*
      * Get value
      */
-    if (parameters_json.contains(PVF_FIELDS.value)) 
+    if (parameters_json.contains(PVF_FIELDS.value))
     try
     {
       pc.setData(toParameterData(pc.getType(), parameters_json.at(PVF_FIELDS.value)));
@@ -141,12 +141,12 @@ ActionParameters::Parameters parseParameters(std::string parent_member_name, con
       {
         member_name = parent_member_name + "::" + member_name;
       }
-      
+
       ActionParameters::Parameters ap_rec = parseParameters(member_name, member_json.value());
       action_parameters.insert(ap_rec.begin(), ap_rec.end());
     }
   }
-  
+
   return action_parameters;
 }
 
@@ -390,6 +390,17 @@ try
     throw FORWARD_TEMOTO_ERROR_STACK_WMSG(e, "Invalid 'output_parameters' in " + un.getName());
   }
 
+  // GET GUI ATTRIBUTES
+  if (uj.contains(UMRF_FIELDS.gui_attributes))
+  try
+  {
+    un.setGuiAttributes(uj.at(UMRF_FIELDS.gui_attributes).dump());
+  }
+  catch(TemotoErrorStack e)
+  {
+    throw FORWARD_TEMOTO_ERROR_STACK_WMSG(e, "Invalid 'gui_attributes' in " + un.getName());
+  }
+
   return un;
 }
 catch(TemotoErrorStack e)
@@ -421,7 +432,7 @@ try
    * Parse graph entry and exit actions
    */
   std::vector<UmrfNode::Relation> graph_entry, graph_exit;
-  
+
   // Graph entry and exit doesn't have to be explicitly defined if graph contains only one action 
   if (umrf_actions.size() == 1)
   {
@@ -442,7 +453,7 @@ try
     graph_exit = parseParentRelations(ug_json[GRAPH_FIELDS.exit]);
   }
 
-  // Create a new action that represents the entry 
+  // Create a new action that represents the entry
   UmrfNode graph_entry_action;
   graph_entry_action.setName(GRAPH_FIELDS.entry);
   graph_entry_action.setChildren(graph_entry);
@@ -463,7 +474,7 @@ try
     {
       throw CREATE_TEMOTO_ERROR_STACK("Graph entry '" + a.getFullName() + "' of graph '" + graph_name + "' not found in the list of actions");
     }
-    
+
     /*
      * TODO: This block currently picks only the parameters that do not
      * have a default value. Whether that's the right way of setting up
@@ -474,7 +485,7 @@ try
       if (ip.getDataSize() == 0)
         graph_entry_action.setInputParameter(ip);
     }
-      
+
     it->addParent(graph_entry_action.asRelation());
   }
 
@@ -514,6 +525,12 @@ try
   /*
    * Parse the optional fields
    */
+
+  // GET STATE
+  if (ug_json.contains(GRAPH_FIELDS.state))
+  {
+    umrf_graph.setState(UmrfGraph::str_to_state_map_.at(ug_json.at(GRAPH_FIELDS.state)));
+  }
 
   // GET DESCRIPTION
   if (ug_json.contains(GRAPH_FIELDS.description))
@@ -769,7 +786,7 @@ json toUmrfJson(const UmrfNode& u)
   // parse children
   const auto& children = u.getChildren();
 
-  if (children.size() > 1 
+  if (children.size() > 1
   || ((children.size() == 1) && std::find(children.begin(), children.end(), GRAPH_EXIT) == children.end()))
   {
     action[UMRF_FIELDS.children] = json::array();
@@ -797,7 +814,13 @@ json toUmrfJson(const UmrfNode& u)
       action[UMRF_FIELDS.children].push_back(child_j);
     }
   }
-  
+
+  // parse GUI attributes
+  if (!u.getGuiAttributes().empty())
+  {
+    action[UMRF_FIELDS.gui_attributes] = json::parse(u.getGuiAttributes());
+  }
+
   return action;
 }
 
@@ -814,7 +837,12 @@ std::string toUmrfGraphJsonStr(const UmrfGraph& ug)
   json ug_json;
   ug_json[GRAPH_FIELDS.name] = ug.getName();
   ug_json[GRAPH_FIELDS.description] = ug.getDescription();
-  
+
+  if (ug.getState() != UmrfGraph::State::UNINITIALIZED)
+  {
+    ug_json[GRAPH_FIELDS.state] = UmrfGraph::state_to_str_map_.at(ug.getState());
+  }
+
   // parse graph entry
   ug_json[GRAPH_FIELDS.entry] = json::array();
   for (const auto& child : ug.getUmrfNode(GRAPH_FIELDS.entry + std::string("_0"))->getChildren())

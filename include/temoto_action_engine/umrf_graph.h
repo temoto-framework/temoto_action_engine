@@ -22,7 +22,7 @@
 
 /**
  * @brief Lightweight class for maintaining a UMRF graph
- * 
+ *
  */
 class UmrfGraph : public UmrfGraphBase<UmrfNode>
 {
