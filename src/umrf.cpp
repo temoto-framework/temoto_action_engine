@@ -24,8 +24,8 @@ Umrf::Umrf()
 Umrf::Umrf(const Umrf& uj)
 : name_(uj.name_)
 , actor_(uj.actor_)
-, description_(uj.description_)
 , type_(uj.type_)
+, description_(uj.description_)
 , input_parameters_(uj.input_parameters_)
 , output_parameters_(uj.output_parameters_)
 {}
@@ -46,7 +46,7 @@ bool Umrf::setName(const std::string& name)
   if (!name.empty())
   {
     name_ = name;
-    return true;  
+    return true;
   }
   else
   {
@@ -94,7 +94,7 @@ bool Umrf::setType(const std::string& type)
   if (!type.empty())
   {
     type_ = type;
-    return true;  
+    return true;
   }
   else
   {
@@ -196,7 +196,7 @@ std::ostream& operator<<( std::ostream& stream, const Umrf& umrf)
     stream << "  input_parameters:" << std::endl;
     for (const auto& ip : umrf.getInputParameters())
     {
-      stream << "   - " 
+      stream << "   - "
       << "name=" << ip.getName() << "; "
       << "type=" << ip.getType() << "; "
       << "required=" << ip.isRequired() << "; "
@@ -210,7 +210,7 @@ std::ostream& operator<<( std::ostream& stream, const Umrf& umrf)
     stream << "  output_parameters:" << std::endl;
     for (const auto& op : umrf.getOutputParameters())
     {
-      stream << "   - " 
+      stream << "   - "
       << "name=" << op.getName() << "; "
       << "type=" << op.getType() << "; "
       << "data_size=" << op.getDataSize() << std::endl;

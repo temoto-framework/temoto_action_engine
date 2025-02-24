@@ -35,6 +35,11 @@ public:
 
   UmrfGraph(const std::string& graph_name, const std::vector<UmrfNode>& umrfs_vec);
 
+  void operator=(const UmrfGraph& ug)
+  {
+      UmrfGraphBase::operator=(ug);
+  }
+
   virtual ~UmrfGraph();
 };
 #endif

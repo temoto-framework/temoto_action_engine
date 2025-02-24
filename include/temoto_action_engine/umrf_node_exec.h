@@ -22,7 +22,6 @@
 #include <thread>
 #include <condition_variable>
 #include <class_loader/class_loader.hpp>
-#include <boost/shared_ptr.hpp>
 #include <functional>
 
 #include "temoto_action_engine/action_engine_handle.h"
@@ -104,7 +103,7 @@ private:
   GUARDED_VARIABLE(std::shared_ptr<class_loader::ClassLoader> class_loader_, class_loader_rw_mutex_);
 
   mutable MUTEX_TYPE_R action_instance_rw_mutex_;
-  GUARDED_VARIABLE(boost::shared_ptr<ActionBase> action_instance_, action_instance_rw_mutex_);
+  GUARDED_VARIABLE(std::shared_ptr<ActionBase> action_instance_, action_instance_rw_mutex_);
 
   mutable MUTEX_TYPE_R action_threads_rw_mutex_;
   GUARDED_VARIABLE(ActionThreads action_threads_, action_threads_rw_mutex_);

@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.5)
 project(temoto_action_engine)
 
-add_compile_options(-std=c++17 -g)
+add_compile_options(-std=gnu++20 -g)
 
 # Check which compiler is required
 if( "$ENV{TEMOTO_COMPILER}" STREQUAL "clang")
@@ -30,12 +30,14 @@ set(headers
   include
   ${Boost_INCLUDE_DIRS}
   ${class_loader_INCLUDE_DIRS}
+  /opt/ros/humble/include/class_loader
   test/actions/ta_example_1/include
 )
 
 set(libraries
   ${boost_libraries}
   ${class_loader_LIBRARIES}
+  /opt/ros/humble/lib/libclass_loader.so
 )
 
 include_directories(

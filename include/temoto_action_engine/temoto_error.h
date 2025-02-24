@@ -17,6 +17,8 @@
 #ifndef TEMOTO_ACTION_ENGINE__TEMOTO_ERROR_H
 #define TEMOTO_ACTION_ENGINE__TEMOTO_ERROR_H
 
+#pragma GCC diagnostic ignored "-Wcatch-value" // TODO: catch TemotoErrors by const reference
+
 #include <vector>
 #include <string>
 #include <exception>
@@ -89,6 +91,12 @@ public:
   , messages_(tes.messages_)
   {}
 
+  void operator=(const TemotoErrorStack& tes)
+  {
+    error_stack_ = tes.error_stack_;
+    messages_ = tes.messages_;
+  }
+
   TemotoErrorStack appendError(std::string error_message, std::string origin)
   {
     error_stack_.emplace_back(error_message, origin);
@@ -103,7 +111,7 @@ public:
   const std::string& getMessage() const
   {
     messages_.clear();
-    
+
     for (unsigned int i=0; i<error_stack_.size(); i++)
     {
       if (i==0)

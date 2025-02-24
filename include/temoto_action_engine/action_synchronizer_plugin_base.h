@@ -63,6 +63,8 @@ public:
     actor_name_ = actor_name;
   }
 
+  virtual ~ActionSynchronizerPluginBase(){}
+
 protected:
 
   std::function<void(const Notification&)> notification_received_cb_;

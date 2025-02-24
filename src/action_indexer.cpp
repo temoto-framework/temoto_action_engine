@@ -55,7 +55,7 @@ try
 
   // Clear the old indexed umrfs frames
   indexed_umrfs_.clear();
-  for (const std::string action_path : action_paths_)
+  for (const std::string& action_path : action_paths_)
   {
     boost::filesystem::directory_entry full_path_b = boost::filesystem::directory_entry(action_path);
 

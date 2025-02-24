@@ -49,7 +49,7 @@ ActionEngine::ActionEngine(const std::string& actor_name, const std::string& syn
   }
 }
 
-void ActionEngine::onStateChange(const std::string& action_name, const std::string& graph_name)
+void ActionEngine::onStateChange([[maybe_unused]] const std::string& action_name, const std::string& graph_name)
 {
   // If graphs are being modified, then do not send any state updates
   if (umrf_graph_map_rw_mutex_.try_lock())
@@ -91,7 +91,7 @@ void ActionEngine::addUmrfGraph(const std::string& graph_name, const std::vector
   umrf_graph_exec_map_.emplace(graph_name, std::make_shared<UmrfGraphExec>(graph_name, umrf_nodes));
 }
 
-void ActionEngine::executeUmrfGraphA(UmrfGraph umrf_graph, const std::string& result, bool name_match_required)
+void ActionEngine::executeUmrfGraphA(UmrfGraph umrf_graph, const std::string& result, [[maybe_unused]] bool name_match_required)
 try
 {
   if (graphExists(umrf_graph.getName()))
@@ -392,7 +392,7 @@ void ActionEngine::notifyFinished(const Waitable& waitable
   if (sync_map_.find(waitable) != sync_map_.end())
   {
     LOCK_GUARD_TYPE_R l_graph(umrf_graph_map_rw_mutex_);
-    const auto& waitable_action = umrf_graph_exec_map_.at(waitable.graph_name)->graph_nodes_map_.at(waitable.action_name);
+    // const auto& waitable_action = umrf_graph_exec_map_.at(waitable.graph_name)->graph_nodes_map_.at(waitable.action_name);
 
     // Notify local actions
     for (const auto& waiter : sync_map_.at(waitable))

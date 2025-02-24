@@ -35,7 +35,7 @@ namespace action_type
 class Umrf
 {
 public:
-  
+
   Umrf();
 
   Umrf(const Umrf& uj);
@@ -59,12 +59,12 @@ public:
   const std::string& getActor() const;
   bool setActor(const std::string& actor);
 
-  const std::string& getDescription() const;
-  bool setDescription(const std::string& description);
-
   const std::string& getType() const;
   std::string& getTypeNc();
   bool setType(const std::string& type);
+
+  const std::string& getDescription() const;
+  bool setDescription(const std::string& description);
 
   const ActionParameters& getInputParameters() const;
   ActionParameters& getInputParametersNc();
@@ -72,7 +72,7 @@ public:
   bool setInputParameter(const ActionParameters::ParameterContainer& param_in);
 
   //bool copyInputParameters(const ActionParameters& action_parameters);
-  
+
   bool inputParametersReceived() const;
 
   const ActionParameters& getOutputParameters() const;
@@ -80,13 +80,13 @@ public:
   bool setOutputParameters(const ActionParameters& params);
 
   bool updateInputParams(const ActionParameters& params_other);
-  
+
   ~Umrf()
   {
   }
 
   friend std::ostream& operator<<( std::ostream& stream, const Umrf& umrf);
-  
+
 protected:
 
   mutable MUTEX_TYPE_R name_rw_mutex_;
@@ -100,7 +100,7 @@ protected:
 
   mutable MUTEX_TYPE_R description_rw_mutex_;
   GUARDED_VARIABLE(std::string description_, description_rw_mutex_);
-  
+
   mutable MUTEX_TYPE_R input_params_rw_mutex_;
   GUARDED_VARIABLE(ActionParameters input_parameters_, input_params_rw_mutex_);
 

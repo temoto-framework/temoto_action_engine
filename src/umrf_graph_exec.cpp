@@ -251,8 +251,6 @@ try
       , result
       , child_node->getInputParameters());
 
-
-
       return;
     }
     else if (child_response == "bypass" && child_node->getName() != GRAPH_EXIT.getName())

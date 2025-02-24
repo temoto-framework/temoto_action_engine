@@ -20,18 +20,18 @@
 // const UmrfNode::Relation GRAPH_EXIT = UmrfNode::Relation("graph_exit", 0);
 
 UmrfNode::UmrfNode()
-: state_(State::UNINITIALIZED)
-, instance_id_(0)
+: instance_id_(0)
+, state_(State::UNINITIALIZED)
 , actor_exec_traits_(UmrfNode::ActorExecTraits::LOCAL)
 {}
 
 UmrfNode::UmrfNode(const UmrfNode& un)
 : Umrf(un)
-, state_(un.state_)
-, instance_id_(un.instance_id_)
 , parents_(un.parents_)
 , children_(un.children_)
+, instance_id_(un.instance_id_)
 , full_name_(un.full_name_)
+, state_(un.state_)
 , actor_exec_traits_(un.actor_exec_traits_)
 , gui_attributes_(un.gui_attributes_)
 {}

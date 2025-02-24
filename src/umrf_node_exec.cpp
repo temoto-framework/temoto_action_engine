@@ -22,22 +22,22 @@
 #include <chrono>
 
 using namespace std;
-  
+
 string camelToSnake(string str_camel_case)
 {
   string str_snake_case = "";
   char c = tolower(str_camel_case[0]);
   str_snake_case+=(char(c));
 
-  for (int i = 1; i < str_camel_case.length(); i++) 
+  for (unsigned int i = 1; i < str_camel_case.length(); i++)
   {
     char ch = str_camel_case[i];
-    if (isupper(ch)) 
+    if (isupper(ch))
     {
       str_snake_case = str_snake_case + '_';
       str_snake_case+=char(tolower(ch));
     }
-    else 
+    else
     {
       str_snake_case = str_snake_case + ch;
     }
@@ -249,8 +249,8 @@ void UmrfNodeExec::run()
       TEMOTO_PRINT_OF("Waiting for '" + getActor() + "' to finish action '" + getFullName() + "'", ENGINE_HANDLE.getActor());
       result = waitUntilFinished(Waitable{
         .action_name = getFullName(),
-        .actor_name = getActor(),
-        .graph_name = parent_graph_name_});
+        .graph_name = parent_graph_name_,
+        .actor_name = getActor()});
     }
 
     /*
@@ -262,7 +262,8 @@ void UmrfNodeExec::run()
       ENGINE_HANDLE.executeUmrfGraph(getName(), getInputParameters());
       result = waitUntilFinished(Waitable{
         .action_name = GRAPH_EXIT.getFullName(),
-        .graph_name = getName()});
+        .graph_name = getName(),
+        .actor_name = getActor()});
     }
 
   } // try end
@@ -303,7 +304,7 @@ void UmrfNodeExec::run()
   if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL ||
       getActorExecTraits() == UmrfNode::ActorExecTraits::GRAPH)
   {
-    Waitable waitable{.action_name = getFullName(), .actor_name = getActor(), .graph_name = parent_graph_name_};
+    Waitable waitable{.action_name = getFullName(), .graph_name = parent_graph_name_, .actor_name = getActor()};
     if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL && getName() == GRAPH_EXIT.getName())
     {
       ENGINE_HANDLE.notifyFinished(waitable, result, getInputParameters());
@@ -606,7 +607,7 @@ void UmrfNodeExec::setGraphName(const std::string& parent_graph_name)
 
 std::string UmrfNodeExec::waitUntilFinished(const Waitable& waitable)
 {
-  Waiter waiter{.action_name = getFullName(), .graph_name = parent_graph_name_};
+  Waiter waiter{.action_name = getFullName(), .graph_name = parent_graph_name_, .actor_name = getActor(),};
   ENGINE_HANDLE.addWaiter(waitable, waiter);
 
   wait_ = true;
