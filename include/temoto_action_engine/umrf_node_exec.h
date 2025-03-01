@@ -1,12 +1,12 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * Copyright 2020 TeMoto Telerobotics
- * 
+ * Copyright 2025 TeMoto Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,7 +21,6 @@
 #include <string>
 #include <thread>
 #include <condition_variable>
-#include <class_loader/class_loader.hpp>
 #include <functional>
 
 #include "temoto_action_engine/action_engine_handle.h"
@@ -29,6 +28,7 @@
 #include "temoto_action_engine/temoto_error.h"
 #include "temoto_action_engine/umrf_node.h"
 #include "temoto_action_engine/action_base.h"
+#include "temoto_action_engine/action_plugin.hpp"
 
 class UmrfNodeExec : public UmrfNode
 {
@@ -56,11 +56,9 @@ public:
 
   /**
    * @brief Initializes the action
-   * 
+   *
    */
   void initializeNode();
-
-
 
   void run();
 
@@ -72,17 +70,15 @@ public:
 
   void bypass(const std::string& result);
 
-
-
   /**
    * @brief Creates an instance of the underlying action
-   * 
+   *
    */
   void instantiate();
 
   /**
    * @brief Stops the action (UmrfNodeExec::stopNode) and destroys the action instance object.
-   * 
+   *
    */
   void clearNode();
 
@@ -99,11 +95,8 @@ public:
 
 private:
 
-  mutable MUTEX_TYPE class_loader_rw_mutex_;
-  GUARDED_VARIABLE(std::shared_ptr<class_loader::ClassLoader> class_loader_, class_loader_rw_mutex_);
-
-  mutable MUTEX_TYPE_R action_instance_rw_mutex_;
-  GUARDED_VARIABLE(std::shared_ptr<ActionBase> action_instance_, action_instance_rw_mutex_);
+  mutable MUTEX_TYPE_R action_plugin_rw_mutex_;
+  GUARDED_VARIABLE(std::shared_ptr<ActionPlugin<ActionBase>> action_plugin_, action_plugin_rw_mutex_);
 
   mutable MUTEX_TYPE_R action_threads_rw_mutex_;
   GUARDED_VARIABLE(ActionThreads action_threads_, action_threads_rw_mutex_);

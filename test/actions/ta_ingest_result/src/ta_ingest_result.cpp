@@ -1,4 +1,4 @@
-#include <class_loader/class_loader.hpp>
+
 #include "ta_ingest_result/temoto_action.hpp"
 
 #include <chrono>
@@ -100,5 +100,9 @@ double timeout;
 
 }; // TaIngestResult class
 
-/* REQUIRED BY CLASS LOADER */
-CLASS_LOADER_REGISTER_CLASS(TaIngestResult, ActionBase);
+boost::shared_ptr<ActionBase> factory()
+{
+    return boost::shared_ptr<TaIngestResult>(new TaIngestResult());
+}
+
+BOOST_DLL_ALIAS(factory, TaIngestResult)

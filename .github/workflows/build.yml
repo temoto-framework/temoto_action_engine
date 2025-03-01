@@ -24,9 +24,6 @@ jobs:
     - name: install boost
       run: sudo apt-get update && sudo apt-get install -yq libboost-all-dev
 
-    - name: install class-loader
-      run: sudo apt install -yq libclass-loader-dev
-
     - name: install nlohmann-json
       run: sudo apt install -yq nlohmann-json3-dev
 
@@ -35,7 +32,7 @@ jobs:
       run: mkdir build
 
     - name: cmake build
-      run: cmake -Bbuild -H.
+      run: cmake -Bbuild -H. -DCMAKE_INSTALL_PREFIX=build/install
 
     - name: cmake make
       run: cmake --build build/
@@ -53,7 +50,7 @@ jobs:
 
     - name: "tests: cmake"
       working-directory: ./test
-      run: cmake -Bbuild -H.
+      run: cmake -Bbuild -H. -DCMAKE_INSTALL_PREFIX=../build/install
 
     - name: "tests: build"
       working-directory: ./test/build
@@ -67,7 +64,7 @@ jobs:
       working-directory: ./test/build
       run: source ../setup.bash && ./tests
 
-    # 
+    #
     # set up and run the multi actor tests
     #
 
@@ -111,7 +108,7 @@ jobs:
 
     - name: "tests::sync-plugin: cmake"
       working-directory: ./test/action_sync_cyclone_dds
-      run: cmake -Bbuild -H.
+      run: cmake -Bbuild -H. -DCMAKE_INSTALL_PREFIX=./../../build/install
 
     - name: "tests::sync-plugin: build"
       working-directory: ./test/action_sync_cyclone_dds
@@ -123,5 +120,5 @@ jobs:
 
 
     - name: "tests: run multi actor test"
-      working-directory: ./test/build
-      run: source ../setup.bash && bash ../src/multi_actor_sync_test.bash
+      working-directory: ./test
+      run: source setup.bash && bash src/multi_actor_sync_test.bash

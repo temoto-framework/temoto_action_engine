@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.5)
 project(temoto_action_engine_tests)
 
-add_compile_options(-std=c++17 -g)
+add_compile_options(-std=c++20 -g)
 
 find_package(temoto_action_engine REQUIRED)
 find_package(GTest REQUIRED)
@@ -10,12 +10,12 @@ find_package(Boost COMPONENTS program_options REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
 
 # Build the main test files
-add_executable(tests 
+add_executable(tests
   src/json_tests.cpp
   src/engine_tests.cpp
 )
 
-target_link_libraries(tests 
+target_link_libraries(tests
   ${GTEST_LIBRARIES}
   gtest_main
   pthread
@@ -64,6 +64,6 @@ target_link_libraries(run_graph_cmd
 )
 
 # Copy the UMRF graphs
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/umrf_graphs/ 
-        DESTINATION ${CMAKE_CURRENT_BINARY_DIR} 
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/umrf_graphs/
+        DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
         FILES_MATCHING PATTERN "*.graph.json" )

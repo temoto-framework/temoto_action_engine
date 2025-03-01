@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.5)
 project(ta_add_string)
 
 add_compile_options(-std=c++17)
@@ -10,10 +10,11 @@ include_directories(include)
 add_library(${PROJECT_NAME} SHARED
   src/${PROJECT_NAME}.cpp
 )
+
 target_link_libraries(${PROJECT_NAME}
   temoto_action_engine
 )
+
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}.umrf.json
   ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.umrf.json COPYONLY
 )
-class_loader_hide_library_symbols(${PROJECT_NAME})

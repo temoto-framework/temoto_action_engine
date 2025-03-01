@@ -1,4 +1,4 @@
-#include <class_loader/class_loader.hpp>
+
 #include "ta_compare_string/temoto_action.hpp"
 
 class TaCompareString : public TemotoAction
@@ -49,5 +49,9 @@ void onStop()
 
 }; // TaCompareString class
 
-/* REQUIRED BY CLASS LOADER */
-CLASS_LOADER_REGISTER_CLASS(TaCompareString, ActionBase);
+boost::shared_ptr<ActionBase> factory()
+{
+    return boost::shared_ptr<TaCompareString>(new TaCompareString());
+}
+
+BOOST_DLL_ALIAS(factory, TaCompareString)

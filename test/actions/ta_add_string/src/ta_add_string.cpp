@@ -1,4 +1,4 @@
-#include <class_loader/class_loader.hpp>
+
 #include "ta_add_string/temoto_action.hpp"
 
 class TaAddString : public TemotoAction
@@ -7,6 +7,7 @@ public:
 
 TaAddString() // REQUIRED
 {
+  TEMOTO_PRINT_OF("Constructed", getName());
 }
 
 void onInit()
@@ -19,7 +20,7 @@ bool onRun() // REQUIRED
   TEMOTO_PRINT_OF("Running", getName());
 
   params_out.result = params_in.str_a + " and " +  params_in.str_b;
-  TEMOTO_PRINT_OF("got: " + params_out.result, getName());
+  TEMOTO_PRINT_OF("got(" + std::to_string(++count) + "): " + params_out.result, getName());
 
   return true;
 }
@@ -43,7 +44,13 @@ void onStop()
 {
 }
 
+int count{0};
+
 }; // TaAddString class
 
-/* REQUIRED BY CLASS LOADER */
-CLASS_LOADER_REGISTER_CLASS(TaAddString, ActionBase);
+boost::shared_ptr<ActionBase> factory()
+{
+    return boost::shared_ptr<TaAddString>(new TaAddString());
+}
+
+BOOST_DLL_ALIAS(factory, TaAddString)

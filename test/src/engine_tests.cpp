@@ -3,8 +3,8 @@
 #include <math.h>
 #include <temoto_action_engine/action_engine.h>
 
-TEST(EngineTest, Lifecycle) 
-{ 
+TEST(EngineTest, Lifecycle)
+{
   ActionEngine ae("ae_instance_1");
 }
 

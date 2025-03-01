@@ -1,5 +1,7 @@
 #!/bin/bash
 
+pushd build
+
 # Run commands concurrently
 ./run_graph_cmd --actor "Actor A" --actions-path . --graph-name engine_test_8 --sync-plugin action_sync_cyclone_dds &
 pid1=$!
@@ -24,6 +26,8 @@ status3=$?
 echo "Command 1 exit status: $status1"
 echo "Command 2 exit status: $status2"
 echo "Command 3 exit status: $status3"
+
+popd
 
 if [ $status1 -eq 0 ] && [ $status2 -eq 0 ] && [ $status3 -eq 0 ]; then
     exit 0

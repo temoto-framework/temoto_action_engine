@@ -21,69 +21,24 @@
 
 #include <chrono>
 
-using namespace std;
-
-string camelToSnake(string str_camel_case)
-{
-  string str_snake_case = "";
-  char c = tolower(str_camel_case[0]);
-  str_snake_case+=(char(c));
-
-  for (unsigned int i = 1; i < str_camel_case.length(); i++)
-  {
-    char ch = str_camel_case[i];
-    if (isupper(ch))
-    {
-      str_snake_case = str_snake_case + '_';
-      str_snake_case+=char(tolower(ch));
-    }
-    else
-    {
-      str_snake_case = str_snake_case + ch;
-    }
-  }
-  return str_snake_case;
-}
-
 UmrfNodeExec::UmrfNodeExec(const UmrfNode& umrf_node)
 : UmrfNode(umrf_node)
 {
-  if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL && 
+  if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL &&
       getName() != "graph_entry" &&
       getName() != "graph_exit")
   try
   {
-    LOCK_GUARD_TYPE guard_class_loader(class_loader_rw_mutex_);
-    std::string library_name = "lib" + camelToSnake(getName()) + ".so";
-    class_loader_ = std::make_shared<class_loader::ClassLoader>(library_name, false);
+    LOCK_GUARD_TYPE_R guard_action_plugin(action_plugin_rw_mutex_);
+    action_plugin_ = std::make_shared<ActionPlugin<ActionBase>>(getName());
 
-    // Check if the classloader actually contains the required action
-    std::vector<std::string> classes_in_classloader = class_loader_->getAvailableClasses<ActionBase>();
-    bool class_found = [&]{
-    for (const auto& class_in_classloader : classes_in_classloader)
-    {
-      if (class_in_classloader == getName())
-      {
-        return true;
-      }
-    }
-    return false;
-    }();
-
-    if (!class_found)
-    {
-      TEMOTO_PRINT("Failed to initialize the Action Handle because the action class name is incorrect");
-      setState(State::ERROR);
-      ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
-      return;
-    }
     setLatestUmrfJsonStr(umrf_json::toUmrfJsonStr(*this));
   }
   catch(const std::exception& e)
   {
     setState(State::ERROR);
-    ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
     std::cerr << "Failed to initialize the Action Handle because: " << e.what() << '\n';
+    ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
   }
   else if (getActorExecTraits() == UmrfNode::ActorExecTraits::REMOTE)
   {
@@ -147,16 +102,15 @@ try
     return;
   }
 
-  LOCK_GUARD_TYPE_R guard_action_instance(action_instance_rw_mutex_);
-  LOCK_GUARD_TYPE guard_class_loader(class_loader_rw_mutex_);
+  LOCK_GUARD_TYPE_R guard_action_plugin(action_plugin_rw_mutex_);
 
   if (getState() != State::UNINITIALIZED)
   {
     throw CREATE_TEMOTO_ERROR_STACK("Cannot instantiate the action because it's not in UNINITIALIZED state");
   }
 
-  action_instance_ = class_loader_->createInstance<ActionBase>(getName());
-  action_instance_->setUmrf(UmrfNode(*this));
+  action_plugin_->load();
+  action_plugin_->get()->setUmrf(UmrfNode(*this));
 }
 catch(const std::exception& e)
 {
@@ -203,7 +157,7 @@ void UmrfNodeExec::run()
     LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
     action_threads_[UmrfNode::State::RUNNING].is_running = true;
   }
-  
+
   do // do-while loop for 'spontaneous' actions
   {
 
@@ -211,7 +165,7 @@ void UmrfNodeExec::run()
   try
   {
     // Move to the error state if the action is not in the following states
-    if (getState() != UmrfNode::State::UNINITIALIZED && 
+    if (getState() != UmrfNode::State::UNINITIALIZED &&
         getState() != UmrfNode::State::INITIALIZED &&
         getState() != UmrfNode::State::PAUSED &&
         getState() != UmrfNode::State::FINISHED)
@@ -220,12 +174,12 @@ void UmrfNodeExec::run()
     }
 
     // Initialize the action
-    if (getState() == UmrfNode::State::UNINITIALIZED && 
+    if (getState() == UmrfNode::State::UNINITIALIZED &&
         getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
     {
-      LOCK_GUARD_TYPE_R guard_action_instance(action_instance_rw_mutex_);
+      LOCK_GUARD_TYPE_R quard_action_plugin(action_plugin_rw_mutex_);
       instantiate();
-      action_instance_->onInit();
+      action_plugin_->get()->onInit();
       setState(State::INITIALIZED);
     }
 
@@ -237,8 +191,8 @@ void UmrfNodeExec::run()
      */
     if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
     {
-      result = (action_instance_->executeActionWrapped()) ? "on_true" : "on_false"; // Blocking call, returns when finished
-      setOutputParameters(action_instance_->getUmrfNodeConst().getOutputParameters());
+      result = (action_plugin_->get()->executeActionWrapped()) ? "on_true" : "on_false"; // Blocking call, returns when finished
+      setOutputParameters(action_plugin_->get()->getUmrfNodeConst().getOutputParameters());
     }
 
     /*
@@ -295,9 +249,9 @@ void UmrfNodeExec::run()
   // Clear the parameters if local
   if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
   {
-    LOCK_GUARD_TYPE_R guard_action_instance(action_instance_rw_mutex_);
-    action_instance_->getUmrfNode().getInputParametersNc().clearData();
-    action_instance_->getUmrfNode().getOutputParametersNc().clearData();
+    LOCK_GUARD_TYPE_R quard_action_plugin(action_plugin_rw_mutex_);
+    action_plugin_->get()->getUmrfNode().getInputParametersNc().clearData();
+    action_plugin_->get()->getUmrfNode().getOutputParametersNc().clearData();
   }
 
   // Let the waiters know that the action (LOCAL or GRAPH) is finished
@@ -392,7 +346,7 @@ void UmrfNodeExec::stop(bool ignore_result)
      */
     if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
     {
-      action_instance_->stopAction(); // Blocking call, returns when finished
+      action_plugin_->get()->stopAction(); // Blocking call, returns when finished
     }
 
     /*
@@ -488,8 +442,8 @@ void UmrfNodeExec::pause()
      */
     if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
     {
-      LOCK_GUARD_TYPE_R guard_action_instance(action_instance_rw_mutex_);
-      action_instance_->onPause(); // Blocking call, returns when finished
+      LOCK_GUARD_TYPE_R quard_action_plugin(action_plugin_rw_mutex_);
+      action_plugin_->get()->onPause(); // Blocking call, returns when finished
     }
 
     /*
