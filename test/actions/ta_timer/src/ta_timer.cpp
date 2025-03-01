@@ -1,4 +1,4 @@
-#include <class_loader/class_loader.hpp>
+
 #include "ta_timer/temoto_action.hpp"
 
 #include <chrono>
@@ -93,5 +93,9 @@ bool action_pause;
 
 }; // TaTimer class
 
-/* REQUIRED BY CLASS LOADER */
-CLASS_LOADER_REGISTER_CLASS(TaTimer, ActionBase);
+boost::shared_ptr<ActionBase> factory()
+{
+    return boost::shared_ptr<TaTimer>(new TaTimer());
+}
+
+BOOST_DLL_ALIAS(factory, TaTimer)

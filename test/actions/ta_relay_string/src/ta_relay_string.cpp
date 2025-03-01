@@ -1,4 +1,4 @@
-#include <class_loader/class_loader.hpp>
+
 #include "ta_relay_string/temoto_action.hpp"
 
 class TaRelayString : public TemotoAction
@@ -43,5 +43,9 @@ void onStop()
 
 }; // TaRelayString class
 
-/* REQUIRED BY CLASS LOADER */
-CLASS_LOADER_REGISTER_CLASS(TaRelayString, ActionBase);
+boost::shared_ptr<ActionBase> factory()
+{
+    return boost::shared_ptr<TaRelayString>(new TaRelayString());
+}
+
+BOOST_DLL_ALIAS(factory, TaRelayString)

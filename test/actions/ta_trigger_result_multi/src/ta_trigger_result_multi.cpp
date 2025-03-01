@@ -1,4 +1,4 @@
-#include <class_loader/class_loader.hpp>
+
 #include "ta_trigger_result_multi/temoto_action.hpp"
 
 #include <chrono>
@@ -105,5 +105,9 @@ bool stop = false;
 
 }; // TaTriggerResultMulti class
 
-/* REQUIRED BY CLASS LOADER */
-CLASS_LOADER_REGISTER_CLASS(TaTriggerResultMulti, ActionBase);
+boost::shared_ptr<ActionBase> factory()
+{
+    return boost::shared_ptr<TaTriggerResultMulti>(new TaTriggerResultMulti());
+}
+
+BOOST_DLL_ALIAS(factory, TaTriggerResultMulti)

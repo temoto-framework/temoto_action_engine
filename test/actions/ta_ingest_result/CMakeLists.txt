@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(ta_ingest_result)
 
-add_compile_options(-std=c++17)
+add_compile_options(-std=c++20)
 
 find_package(temoto_action_engine REQUIRED)
 
@@ -16,4 +16,3 @@ target_link_libraries(${PROJECT_NAME}
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}.umrf.json
   ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.umrf.json COPYONLY
 )
-class_loader_hide_library_symbols(${PROJECT_NAME})

@@ -17,8 +17,8 @@
 #ifndef TEMOTO_ACTION_ENGINE__ACTION_BASE_H
 #define TEMOTO_ACTION_ENGINE__ACTION_BASE_H
 
-#include <memory>
-#include <iostream>
+#include <boost/config.hpp>
+
 #include "temoto_action_engine/umrf_node.h"
 #include "temoto_action_engine/temoto_error.h"
 #include "temoto_action_engine/messaging.h"
@@ -27,7 +27,7 @@
  * @brief This is the abstract base action that every action has to inherit and implement
  *
  */
-class ActionBase
+class BOOST_SYMBOL_VISIBLE ActionBase
 {
 friend class UmrfNodeExec;
 

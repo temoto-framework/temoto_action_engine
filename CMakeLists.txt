@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(temoto_action_engine)
 
-add_compile_options(-std=gnu++20 -g)
+add_compile_options(-std=gnu++20 -g -fPIC)
 
 # Check which compiler is required
 if( "$ENV{TEMOTO_COMPILER}" STREQUAL "clang")
@@ -11,8 +11,7 @@ endif()
 
 option(TESTS "Build tests" OFF)
 
-find_package(Boost COMPONENTS filesystem program_options REQUIRED)
-find_package(class_loader REQUIRED)
+find_package(Boost REQUIRED COMPONENTS filesystem system program_options )
 find_package(nlohmann_json REQUIRED)
 
 set(boost_libraries)
@@ -29,15 +28,10 @@ endif()
 set(headers
   include
   ${Boost_INCLUDE_DIRS}
-  ${class_loader_INCLUDE_DIRS}
-  /opt/ros/humble/include/class_loader
-  test/actions/ta_example_1/include
 )
 
 set(libraries
   ${boost_libraries}
-  ${class_loader_LIBRARIES}
-  /opt/ros/humble/lib/libclass_loader.so
 )
 
 include_directories(
@@ -45,7 +39,7 @@ include_directories(
 )
 
 # Library that combines core components of the action engine
-add_library(${PROJECT_NAME} SHARED
+add_library(${PROJECT_NAME}
   src/umrf.cpp
   src/umrf_node.cpp
   src/umrf_node_exec.cpp
@@ -58,7 +52,7 @@ add_library(${PROJECT_NAME} SHARED
   src/umrf_json.cpp
   src/umrf_graph_fs.cpp
 )
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(${PROJECT_NAME} PUBLIC
   ${libraries}
 )
 
@@ -80,6 +74,7 @@ install(TARGETS ${PROJECT_NAME}
   ARCHIVE DESTINATION bin
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
+  INCLUDES DESTINATION include
 )
 
 install(

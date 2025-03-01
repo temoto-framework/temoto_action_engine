@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <boost/config.hpp>
 
 struct Notification
 {
@@ -38,7 +39,7 @@ struct GraphDescriptor
   std::string result;
 };
 
-class ActionSynchronizerPluginBase
+class BOOST_SYMBOL_VISIBLE ActionSynchronizerPluginBase
 {
 public:
 

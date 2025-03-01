@@ -7,6 +7,10 @@
 #include "ta_relay_string/input_parameters.hpp"
 #include "ta_relay_string/output_parameters.hpp"
 
+#include <boost/config.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/dll/alias.hpp>
+
 /**
  * @brief Class that integrates TeMoto Base Subsystem specific and Action Engine specific codebases.
  *
