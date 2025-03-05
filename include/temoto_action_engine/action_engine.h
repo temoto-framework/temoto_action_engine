@@ -59,6 +59,8 @@ public:
 
   std::vector<std::string> getGraphJsonsRunning() const;
 
+  std::vector<std::string> getUmrfJsons() const;
+
   std::string waitForGraph(const std::string& graph_name);
 
   std::vector<std::string> readFeedbackBuffer();

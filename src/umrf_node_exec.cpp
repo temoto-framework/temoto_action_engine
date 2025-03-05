@@ -111,6 +111,8 @@ try
 
   action_plugin_->load();
   action_plugin_->get()->setUmrf(UmrfNode(*this));
+  action_plugin_->get()->onInit();
+  setState(State::INITIALIZED);
 }
 catch(const std::exception& e)
 {
@@ -174,13 +176,10 @@ void UmrfNodeExec::run()
     }
 
     // Initialize the action
-    if (getState() == UmrfNode::State::UNINITIALIZED &&
-        getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
+    if (getState() == UmrfNode::State::UNINITIALIZED && getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
     {
       LOCK_GUARD_TYPE_R quard_action_plugin(action_plugin_rw_mutex_);
       instantiate();
-      action_plugin_->get()->onInit();
-      setState(State::INITIALIZED);
     }
 
     setState(State::RUNNING);
