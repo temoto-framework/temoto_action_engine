@@ -81,6 +81,42 @@ void UmrfGraphExec::startGraph(const std::string& result, const ActionParameters
   graph_entry->getOutputParametersNc().clearData();
 }
 
+void UmrfGraphExec::pauseGraph()
+{
+  if (getState() != State::RUNNING)
+  {
+    return;
+  }
+
+  LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
+
+  // Pause all nodes
+  for (auto& graph_node : graph_nodes_map_)
+  {
+    graph_node.second->pause();
+  }
+
+  setState(State::PAUSED);
+}
+
+void UmrfGraphExec::resumeGraph()
+{
+  if (getState() != State::PAUSED)
+  {
+    return;
+  }
+
+  LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
+
+  // Pause all nodes
+  for (auto& graph_node : graph_nodes_map_)
+  {
+    graph_node.second->resume();
+  }
+
+  setState(State::RUNNING);
+}
+
 std::string UmrfGraphExec::stopGraph()
 {
   if (getState() == State::UNINITIALIZED ||

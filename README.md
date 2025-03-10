@@ -15,7 +15,7 @@ This repository contains ROS independent *core C++ implementation* of the TeMoto
 
 ```bash
 # Get the dependencies
-sudo apt install libboost-all-dev libclass-loader-dev nlohmann-json3-dev
+sudo apt install libboost-all-dev nlohmann-json3-dev
 
 # Download this repo
 git clone --recursive https://github.com/temoto-framework/temoto_action_engine

@@ -21,6 +21,19 @@
 
 #include <chrono>
 
+void UmrfNodeExec::CvWrapper::wait()
+{
+  wait_ = true;
+  std::unique_lock<std::mutex> lock(cv_mutex_);
+  cv_.wait(lock, [&]{return !wait_;});
+}
+
+void UmrfNodeExec::CvWrapper::stopWaiting()
+{
+  wait_ = false;
+  cv_.notify_all();
+}
+
 UmrfNodeExec::UmrfNodeExec(const UmrfNode& umrf_node)
 : UmrfNode(umrf_node)
 {
@@ -164,15 +177,15 @@ void UmrfNodeExec::run()
   {
 
   std::string result;
+  bool action_threw_error{false};
   try
   {
     // Move to the error state if the action is not in the following states
     if (getState() != UmrfNode::State::UNINITIALIZED &&
         getState() != UmrfNode::State::INITIALIZED &&
-        getState() != UmrfNode::State::PAUSED &&
         getState() != UmrfNode::State::FINISHED)
     {
-      throw CREATE_TEMOTO_ERROR_STACK("Action has to be in the following states to run: UNINITIALIZED; INITIALIZED; PAUSED; FINISHED.");
+      throw CREATE_TEMOTO_ERROR_STACK("Action has to be in the following states to run: UNINITIALIZED; INITIALIZED; FINISHED.");
     }
 
     // Initialize the action
@@ -224,22 +237,30 @@ void UmrfNodeExec::run()
   {
     LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
     action_threads_[UmrfNode::State::RUNNING].error_messages.appendError(FORWARD_TEMOTO_ERROR_STACK(e));
-    setState(State::ERROR);
-    ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
-    result = "on_error";
+    action_threw_error = true;
   }
   catch(const std::exception& e)
   {
     LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
     action_threads_[UmrfNode::State::RUNNING].error_messages = CREATE_TEMOTO_ERROR_STACK(std::string(e.what()));
-    setState(State::ERROR);
-    ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
-    result = "on_error";
+    action_threw_error = true;
   }
   catch(...)
   {
     LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
     action_threads_[UmrfNode::State::RUNNING].error_messages = CREATE_TEMOTO_ERROR_STACK("Caught an unhandled error.");
+    action_threw_error = true;
+  }
+
+  // If the action was paused, then wait until it is resumed, even if the action threw an error
+  if (getState() == State::PAUSED)
+  {
+    wait_for_resume_local_.wait();
+  }
+
+  // If the action threw an error, change the state
+  if (action_threw_error)
+  {
     setState(State::ERROR);
     ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
     result = "on_error";
@@ -389,6 +410,7 @@ void UmrfNodeExec::stop(bool ignore_result)
 
   if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
   {
+    // TODO: engine_handle.stopGraph( TODO )
     // TODO: sync_handle.syncState(getFullName(), getState());
   }
 
@@ -406,12 +428,7 @@ void UmrfNodeExec::stop(bool ignore_result)
 
 void UmrfNodeExec::pause()
 {
-  if (getName() == "graph_entry" || getName() == "graph_exit")
-  {
-    return;
-  }
-
-  if (getState() == UmrfNode::State::PAUSED)
+  if (getState() != UmrfNode::State::RUNNING)
   {
     return;
   }
@@ -427,38 +444,40 @@ void UmrfNodeExec::pause()
   {
   try
   {
-    // Move to the error state if the action is not in the following states
-    if (getState() != UmrfNode::State::RUNNING)
-    {
-      throw CREATE_TEMOTO_ERROR_STACK("Action has to be in the following states to be paused: RUNNING.");
-    }
-
     setState(State::PAUSED);
-    ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
+    // ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
 
     /*
-     * LOCALLY STOPPED
+     * LOCALLY PAUSED
      */
     if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
     {
       LOCK_GUARD_TYPE_R quard_action_plugin(action_plugin_rw_mutex_);
       action_plugin_->get()->onPause(); // Blocking call, returns when finished
+
+      // Wait until the action is externally unpaused
+      wait_for_resume_.wait();
+      setState(State::RUNNING);
+
+      // Tell the local run() thread to stop waiting
+      wait_for_resume_local_.stopWaiting();
     }
 
     /*
-     * REMOTELY_STOPPED
+     * REMOTELY PAUSED
      */
     else if (getActorExecTraits() == UmrfNode::ActorExecTraits::REMOTE)
     {
-      // TODO: sync_handle.waitForPause(getFullName())
+      wait_for_resume_.wait(); // Wait until the action is externally unpaused
     }
 
     /*
-     * STOP THE SUBGRAPH
+     * PAUSE THE SUBGRAPH
      */
     else if (getActorExecTraits() == UmrfNode::ActorExecTraits::GRAPH)
     {
       // TODO: engine_handle.pauseGraph( TODO )
+      // wait_for_resume_.wait(); // Wait until the action is externally unpaused
     }
 
   } // try end
@@ -499,6 +518,16 @@ void UmrfNodeExec::pause()
     action_threads_[UmrfNode::State::PAUSED].is_running = false;
   }
   });
+}
+
+void UmrfNodeExec::resume()
+{
+  if (getState() != UmrfNode::State::PAUSED)
+  {
+    return;
+  }
+
+  wait_for_resume_.stopWaiting();
 }
 
 void UmrfNodeExec::bypass(const std::string& result)
@@ -563,9 +592,7 @@ std::string UmrfNodeExec::waitUntilFinished(const Waitable& waitable)
   Waiter waiter{.action_name = getFullName(), .graph_name = parent_graph_name_, .actor_name = getActor(),};
   ENGINE_HANDLE.addWaiter(waitable, waiter);
 
-  wait_ = true;
-  std::unique_lock<std::mutex> lock(wait_cv_mutex_);
-  wait_cv_.wait(lock, [&]{return !wait_;});
+  wait_for_result_.wait();
 
   if (getActor() != ENGINE_HANDLE.getActor() && !ENGINE_HANDLE.getActor().empty())
     ENGINE_HANDLE.acknowledge(remote_notification_id_);
@@ -575,9 +602,8 @@ std::string UmrfNodeExec::waitUntilFinished(const Waitable& waitable)
 
 void UmrfNodeExec::notifyFinished(const std::string& remote_notification_id)
 {
-  wait_ = false;
   remote_notification_id_ = remote_notification_id;
-  wait_cv_.notify_all();
+  wait_for_result_.stopWaiting();
 }
 
 void UmrfNodeExec::setRemoteResult(const std::string& remote_result)

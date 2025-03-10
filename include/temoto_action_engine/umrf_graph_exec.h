@@ -45,6 +45,10 @@ public:
 
   void startGraph(const std::string& result, const ActionParameters& params);
 
+  void pauseGraph();
+
+  void resumeGraph();
+
   std::string stopGraph();
 
   void clearGraph();
@@ -56,7 +60,7 @@ public:
   std::set<std::string> getLinkedActions(const UmrfNode::Relation& parent) const;
 
   void startChildNodes(const UmrfNode::Relation& parent_node_relation, const std::string& result);
-  
+
 };
 
 #endif

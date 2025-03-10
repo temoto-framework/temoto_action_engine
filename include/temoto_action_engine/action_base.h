@@ -69,13 +69,6 @@ public:
 protected:
 
   /**
-   * @brief Method that is invoked when action is initilized. Has to be implemented by an action that
-   * inherits this class.
-   *
-   */
-  virtual void onInit(){}
-
-  /**
    * @brief Method that is invoked when action is executed. Has to be implemented by an action that
    * inherits this class.
    *
@@ -83,18 +76,28 @@ protected:
   virtual bool onRun() = 0;
 
   /**
-   * @brief Method that is invoked when action is paused. Has to be implemented by an action that
-   * inherits this class.
+   * @brief Method that is invoked when action is initilized.
    *
    */
-  virtual void onPause() = 0;
+  virtual void onInit(){}
 
   /**
-   * @brief Method that is invoked when action is stopped. Has to be implemented by an action that
-   * inherits this class.
+   * @brief Method that is invoked when action is paused.
    *
    */
-  virtual void onStop() = 0;
+  virtual void onPause(){};
+
+    /**
+   * @brief Method that is invoked when action is resumed.
+   *
+   */
+  virtual void onResume(){};
+
+  /**
+   * @brief Method that is invoked when action is stopped.
+   *
+   */
+  virtual void onStop(){};
 
   /**
    * @brief Fetches the input parameters and stores them to convenience data structures

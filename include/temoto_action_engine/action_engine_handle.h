@@ -30,9 +30,9 @@
 class EngineHandle
 {
 friend class ActionEngine;
-typedef std::function<void(const std::string&, const ActionParameters&, const std::string&)> ExecuteGraphT;
-typedef std::function<void(const std::string&)> AcknowledgeT;
-typedef std::function<void(const std::string&, const std::string&)> StateChangeT;
+using ExecuteGraphT = std::function<void(const std::string&, const ActionParameters&, const std::string&)>;
+using AcknowledgeT  = std::function<void(const std::string&)>;
+using StateChangeT  = std::function<void(const std::string&, const std::string&)>;
 
 public:
 

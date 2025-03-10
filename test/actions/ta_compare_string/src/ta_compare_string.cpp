@@ -33,7 +33,7 @@ void onPause()
   TEMOTO_PRINT_OF("Pausing", getName());
 }
 
-void onContinue()
+void onResume()
 {
   TEMOTO_PRINT_OF("Continuing", getName());
 }

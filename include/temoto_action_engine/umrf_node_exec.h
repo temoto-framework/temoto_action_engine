@@ -41,6 +41,18 @@ struct ThreadWrapper
   TemotoErrorStack error_messages;
 };
 
+struct CvWrapper
+{
+  void wait();
+  void stopWaiting();
+
+private:
+
+  std::condition_variable cv_;
+  std::mutex cv_mutex_;
+  bool wait_{false};
+};
+
 typedef std::map<State, ThreadWrapper> ActionThreads;
 typedef std::function<void(const UmrfNode::Relation&, const std::string&)> StartChildNodesCb;
 
@@ -63,6 +75,8 @@ public:
   void run();
 
   void pause();
+
+  void resume();
 
   // void restart();
 
@@ -112,9 +126,10 @@ private:
 
   StartChildNodesCb start_child_nodes_cb_ = NULL;
 
-  std::condition_variable wait_cv_;
-  std::mutex wait_cv_mutex_;
-  bool wait_ = false;
+  CvWrapper wait_for_result_;
+  CvWrapper wait_for_resume_;
+  CvWrapper wait_for_resume_local_;
+
   std::string remote_result_;
   std::string remote_notification_id_;
 

@@ -4,11 +4,15 @@
 #include <chrono>
 #include <thread>
 
+using namespace std::chrono;
+
 class TaTimer : public TemotoAction
 {
 public:
 
 TaTimer() // REQUIRED
+: action_stop{false}
+, action_pause{false}
 {
 }
 
@@ -19,39 +23,27 @@ void onInit()
 
 bool onRun() // REQUIRED
 {
-  // Input parameters
-  const auto& count_until = params_in.count_until;
-
-  double starting_count = current_count;
   auto start = std::chrono::high_resolution_clock::now();
-  action_stop = false;
-  action_pause = false;
-
-  if (starting_count < 0)
-  {
-    TEMOTO_PRINT_OF("continuing the timer from: " + std::to_string(current_count) + " s", getName());
-  }
 
   while (true)
   {
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    current_count = starting_count + std::chrono::duration_cast<std::chrono::milliseconds>(
-      std::chrono::high_resolution_clock::now() - start).count() / 1000.0;
+    std::this_thread::sleep_for(milliseconds(100));
+    current_count = duration_cast<milliseconds>(high_resolution_clock::now() - start).count() / 1000.0;
 
-    if (action_stop || action_pause)
+    if (action_stop)
+    {
       break;
+    }
 
-    if (count_until > 0 && current_count >= count_until)
+    if (params_in.count_until > 0 && current_count >= params_in.count_until)
+    {
       break;
+    }
   }
 
   if (action_stop)
   {
     TEMOTO_PRINT_OF("stopping the timer on: " + std::to_string(current_count) + " s", getName());
-  }
-  else if (action_pause)
-  {
-    TEMOTO_PRINT_OF("pausing the timer on: " + std::to_string(current_count) + " s", getName());
   }
   else
   {
@@ -69,7 +61,7 @@ void onPause()
   action_pause = true;
 }
 
-void onContinue()
+void onResume()
 {
   TEMOTO_PRINT_OF("Continuing", getName());
 }

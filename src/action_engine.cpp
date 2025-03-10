@@ -295,7 +295,7 @@ try
 {
   if (ai_.containsActions(action_packages_path))
   {
-    ai_.addActionPath(action_packages_path); 
+    ai_.addActionPath(action_packages_path);
     auto [nr_of_actions, nr_of_graphs] {ai_.indexActions()};
     TEMOTO_PRINT("Found '" + std::to_string(nr_of_actions) + "' actions and '" + std::to_string(nr_of_graphs) + "' graphs");
     return true;
@@ -551,4 +551,52 @@ std::string ActionEngine::waitForGraph(const std::string& graph_name)
 bool ActionEngine::synchronizerAvailable() const
 {
   return as_ ? true : false;
+}
+
+void ActionEngine::pauseUmrfGraph(const std::string& umrf_graph_name)
+{
+  std::unique_lock<std::recursive_mutex> guard_graph_map(umrf_graph_map_rw_mutex_);
+
+  // Check if the requested graph exists
+  if (umrf_graph_exec_map_.find(umrf_graph_name) == umrf_graph_exec_map_.end())
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("Cannot pause UMRF graph '" + umrf_graph_name + "' because it doesn't exist.");
+  }
+
+  try
+  {
+    umrf_graph_exec_map_.at(umrf_graph_name)->pauseGraph();
+  }
+  catch (TemotoErrorStack e)
+  {
+    throw FORWARD_TEMOTO_ERROR_STACK(e);
+  }
+  catch (std::exception& e)
+  {
+    throw CREATE_TEMOTO_ERROR_STACK(e.what());
+  }
+}
+
+void ActionEngine::resumeUmrfGraph(const std::string& umrf_graph_name)
+{
+  std::unique_lock<std::recursive_mutex> guard_graph_map(umrf_graph_map_rw_mutex_);
+
+  // Check if the requested graph exists
+  if (umrf_graph_exec_map_.find(umrf_graph_name) == umrf_graph_exec_map_.end())
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("Cannot resume UMRF graph '" + umrf_graph_name + "' because it doesn't exist.");
+  }
+
+  try
+  {
+    umrf_graph_exec_map_.at(umrf_graph_name)->resumeGraph();
+  }
+  catch (TemotoErrorStack e)
+  {
+    throw FORWARD_TEMOTO_ERROR_STACK(e);
+  }
+  catch (std::exception& e)
+  {
+    throw CREATE_TEMOTO_ERROR_STACK(e.what());
+  }
 }

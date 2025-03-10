@@ -51,6 +51,10 @@ public:
    */
   void modifyGraph(const std::string& graph_name, const UmrfGraphDiffs& graph_diffs);
 
+  void pauseUmrfGraph(const std::string& umrf_graph_name);
+
+  void resumeUmrfGraph(const std::string& umrf_graph_name);
+
   void stopUmrfGraph(const std::string& umrf_graph_name);
 
   bool addActionsPath(const std::string& action_packages_path);
