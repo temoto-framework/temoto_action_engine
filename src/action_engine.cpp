@@ -94,23 +94,30 @@ void ActionEngine::addUmrfGraph(const std::string& graph_name, const std::vector
 void ActionEngine::executeUmrfGraphA(UmrfGraph umrf_graph, const std::string& result, [[maybe_unused]] bool name_match_required)
 try
 {
-  if (graphExists(umrf_graph.getName()))
+  LOCK_GUARD_TYPE_R guard_graph_map_(umrf_graph_map_rw_mutex_);
+
+  const auto& graph_name = umrf_graph.getName();
+
+  if (!graphExists(graph_name))
   {
-    TEMOTO_PRINT("UMRF graph '" + umrf_graph.getName() + "' is already running.");
-    return;
+    if (!matchGraph(umrf_graph, {graph_name}))
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Could not resolve graph '" + graph_name + "'");
+    }
+
+    TEMOTO_PRINT("All actions in graph '" + graph_name + "' found.");
+  }
+  else if (umrf_graph_exec_map_.at(graph_name)->getState() == UmrfGraphExec::State::FINISHED)
+  {
+    finished_graphs_.erase(graph_name);
+    umrf_graph_exec_map_.erase(graph_name);
   }
 
-  if (!matchGraph(umrf_graph, {umrf_graph.getName()}))
-  {
-    throw CREATE_TEMOTO_ERROR_STACK("Could not resolve graph '" + umrf_graph.getName() + "'");
-  }
-  TEMOTO_PRINT("All actions in graph '" + umrf_graph.getName() + "' found.");
+  umrf_graph_exec_map_.emplace(graph_name, std::make_shared<UmrfGraphExec>(umrf_graph));
+  TEMOTO_PRINT("UMRF graph '" + graph_name + "' initialized.");
 
-  umrf_graph_exec_map_.emplace(umrf_graph.getName(), std::make_shared<UmrfGraphExec>(umrf_graph));
-  TEMOTO_PRINT("UMRF graph '" + umrf_graph.getName() + "' initialized.");
-
-  executeUmrfGraph(umrf_graph.getName(), ActionParameters{}, result);
-  TEMOTO_PRINT("UMRF graph '" + umrf_graph.getName() + "' invoked successfully.");
+  executeUmrfGraph(graph_name, ActionParameters{}, result);
+  TEMOTO_PRINT("UMRF graph '" + graph_name + "' invoked successfully.");
 }
 catch(TemotoErrorStack e)
 {
@@ -122,7 +129,7 @@ try
 {
   LOCK_GUARD_TYPE_R guard_graph_map_(umrf_graph_map_rw_mutex_);
 
-  auto runGraph = [&](const std::string& graph_name)
+  auto insertIndexedGraph = [&](const std::string& graph_name)
   {
     const auto& indexed_graphs = ai_.getGraphs();
     const auto known_graph = std::find_if(indexed_graphs.begin(), indexed_graphs.end(),
@@ -148,15 +155,15 @@ try
 
   if (!graphExists(graph_name))
   {
-    runGraph(graph_name);
+    insertIndexedGraph(graph_name);
   }
   else if (umrf_graph_exec_map_.at(graph_name)->getState() == UmrfGraphExec::State::FINISHED)
   {
     finished_graphs_.erase(graph_name);
     umrf_graph_exec_map_.erase(graph_name);
-    runGraph(graph_name);
+    insertIndexedGraph(graph_name);
   }
-  else
+  else if (umrf_graph_exec_map_.at(graph_name)->getState() != UmrfGraphExec::State::UNINITIALIZED)
   {
     throw CREATE_TEMOTO_ERROR_STACK("Cannot execute UMRF graph '" + graph_name + "' because it's already active.");
   }
