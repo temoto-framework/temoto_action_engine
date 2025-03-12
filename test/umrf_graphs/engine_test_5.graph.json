@@ -1,6 +1,6 @@
 {
   "graph_name": "engine_test_5",
-  "graph_description": "tests the functionality execute actions sequentially",
+  "graph_description": "tests the capability of on action being able to stop other actions",
   "graph_entry": [
     {
       "name": "TaTimer",

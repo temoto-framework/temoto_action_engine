@@ -105,3 +105,31 @@ TEST(EngineTest, SimpleReactiveBehavior)
 
   ASSERT_EQ(result, expected_result);
 }
+
+TEST(EngineTest, PauseResume)
+{
+  std::string graph_name = "engine_test_8";
+  std::string expected_result = "on_true";
+
+  ActionEngine ae("ae_instance_1");
+  ae.addActionsPath(".");
+
+  ae.executeUmrfGraph(graph_name);
+
+  // Pause the graph for two seconds
+  std::thread pause_resume_thread([&]
+  {
+    // Give the graph some time to initialize before pausing
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    ae.pauseUmrfGraph(graph_name);
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+
+    ae.resumeUmrfGraph(graph_name);
+  });
+
+  std::string result = ae.waitForGraph(graph_name);
+  pause_resume_thread.join();
+
+  ASSERT_EQ(result, expected_result);
+}

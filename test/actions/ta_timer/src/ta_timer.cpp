@@ -1,5 +1,6 @@
 
 #include "ta_timer/temoto_action.hpp"
+#include "ta_timer/conditional_wait.hpp"
 
 #include <chrono>
 #include <thread>
@@ -8,6 +9,7 @@ using namespace std::chrono;
 
 class TaTimer : public TemotoAction
 {
+
 public:
 
 TaTimer() // REQUIRED
@@ -25,10 +27,25 @@ bool onRun() // REQUIRED
 {
   auto start = std::chrono::high_resolution_clock::now();
 
+  if (params_in.count_until == 0)
+  {
+    TEMOTO_PRINT_OF("Starting the timer in stopwatch mode", getName());
+  }
+  else
+  {
+    TEMOTO_PRINT_OF("Setting the timer to count until '" + std::to_string(params_in.count_until) + "'", getName());
+  }
+
   while (true)
   {
     std::this_thread::sleep_for(milliseconds(100));
     current_count = duration_cast<milliseconds>(high_resolution_clock::now() - start).count() / 1000.0;
+
+    if (action_pause)
+    {
+      wait_for_resume.wait();
+      current_count = duration_cast<milliseconds>(high_resolution_clock::now() - start).count() / 1000.0;
+    }
 
     if (action_stop)
     {
@@ -63,7 +80,9 @@ void onPause()
 
 void onResume()
 {
-  TEMOTO_PRINT_OF("Continuing", getName());
+  TEMOTO_PRINT_OF("Resuming", getName());
+  action_pause = false;
+  wait_for_resume.stopWaiting();
 }
 
 void onStop()
@@ -82,6 +101,7 @@ double current_count = 0;
 double count_until;
 bool action_stop;
 bool action_pause;
+CvWrapper wait_for_resume;
 
 }; // TaTimer class
 

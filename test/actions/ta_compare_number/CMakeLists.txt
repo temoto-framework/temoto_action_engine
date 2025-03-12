@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
-project(ta_timer)
+project(ta_compare_number)
 
-add_compile_options(-std=c++20)
+add_compile_options(-std=c++17)
 
 find_package(temoto_action_engine REQUIRED)
 
@@ -9,7 +9,6 @@ include_directories(include)
 
 add_library(${PROJECT_NAME} SHARED
   src/${PROJECT_NAME}.cpp
-  src/conditional_wait.cpp
 )
 target_link_libraries(${PROJECT_NAME}
   temoto_action_engine

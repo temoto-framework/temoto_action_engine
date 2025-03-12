@@ -42,6 +42,7 @@ endfunction()
 
 # Add actions
 build_action(ta_add_string)
+build_action(ta_compare_number)
 build_action(ta_compare_string)
 build_action(ta_relay_string)
 build_action(ta_ingest_result)

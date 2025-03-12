@@ -460,6 +460,7 @@ void UmrfNodeExec::pause()
       setState(State::RUNNING);
 
       // Tell the local run() thread to stop waiting
+      action_plugin_->get()->onResume();
       wait_for_resume_local_.stopWaiting();
     }
 

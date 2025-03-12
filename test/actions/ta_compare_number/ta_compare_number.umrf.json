@@ -1,0 +1,15 @@
+{
+  "name": "TaCompareNumber",
+  "type": "sync",
+  "input_parameters": {
+    "num_a": {
+      "pvf_type": "number"
+    },
+    "num_b": {
+      "pvf_type": "number"
+    },
+    "operation": {
+      "pvf_type": "string"
+    }
+  }
+}
