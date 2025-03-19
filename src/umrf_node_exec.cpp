@@ -1,12 +1,12 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * Copyright 2023 TeMoto Telerobotics
- * 
+ * Copyright 2025 TeMoto Telerobotics
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,8 +14,8 @@
  * limitations under the License.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#include "temoto_action_engine/basic_timer.h"
-#include "temoto_action_engine/messaging.h"
+#include "temoto_action_engine/util/basic_timer.hpp"
+#include "temoto_action_engine/util/logging.hpp"
 #include "temoto_action_engine/umrf_json.h"
 #include "temoto_action_engine/umrf_node_exec.h"
 
@@ -89,7 +89,7 @@ try
     stop(true);
   }
 
-  for (auto& action_thread : action_threads_)
+  for (auto& action_thread : state_threads_)
   {
     action_thread.second.thread->join();
   }
@@ -159,19 +159,11 @@ void UmrfNodeExec::run()
     return;
   }
 
-  clearThread(UmrfNode::State::RUNNING);
-  LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
-
   /*
    * Run the action in a thread
    */
-  action_threads_[UmrfNode::State::RUNNING] = UmrfNodeExec::ThreadWrapper();
-  action_threads_[UmrfNode::State::RUNNING].thread = std::make_shared<std::thread>([&]()
+  state_threads_.start(UmrfNode::State::RUNNING, std::make_shared<std::thread>([&]()
   {
-  {
-    LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
-    action_threads_[UmrfNode::State::RUNNING].is_running = true;
-  }
 
   do // do-while loop for 'spontaneous' actions
   {
@@ -235,20 +227,17 @@ void UmrfNodeExec::run()
   } // try end
   catch(TemotoErrorStack e)
   {
-    LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
-    action_threads_[UmrfNode::State::RUNNING].error_messages.appendError(FORWARD_TEMOTO_ERROR_STACK(e));
+    state_threads_.addErrorMessage(UmrfNode::State::RUNNING, FORWARD_TEMOTO_ERROR_STACK(e));
     action_threw_error = true;
   }
   catch(const std::exception& e)
   {
-    LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
-    action_threads_[UmrfNode::State::RUNNING].error_messages = CREATE_TEMOTO_ERROR_STACK(std::string(e.what()));
+    state_threads_.addErrorMessage(UmrfNode::State::RUNNING, CREATE_TEMOTO_ERROR_STACK(std::string(e.what())));
     action_threw_error = true;
   }
   catch(...)
   {
-    LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
-    action_threads_[UmrfNode::State::RUNNING].error_messages = CREATE_TEMOTO_ERROR_STACK("Caught an unhandled error.");
+    state_threads_.addErrorMessage(UmrfNode::State::RUNNING, CREATE_TEMOTO_ERROR_STACK("Caught an unhandled error."));
     action_threw_error = true;
   }
 
@@ -291,8 +280,7 @@ void UmrfNodeExec::run()
 
   if (getState() == UmrfNode::State::ERROR)
   {
-    LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
-    TEMOTO_PRINT(action_threads_[UmrfNode::State::RUNNING].error_messages.what());
+    TEMOTO_PRINT(state_threads_.getErrorMessages(UmrfNode::State::RUNNING));
   }
 
   if (getState() == UmrfNode::State::RUNNING || getState() == UmrfNode::State::ERROR)
@@ -319,10 +307,7 @@ void UmrfNodeExec::run()
   getInputParametersNc().clearData();
   getOutputParametersNc().clearData();
 
-  {
-    LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
-    action_threads_[UmrfNode::State::RUNNING].is_running = false;
-  }
+  state_threads_.done(UmrfNode::State::RUNNING);
 
   if (getState() != UmrfNode::State::ERROR)
   {
@@ -330,7 +315,7 @@ void UmrfNodeExec::run()
     ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
   }
 
-  });
+  }));
 }
 
 void UmrfNodeExec::stop(bool ignore_result)
@@ -347,14 +332,10 @@ void UmrfNodeExec::stop(bool ignore_result)
     return;
   }
 
-  clearThread(UmrfNode::State::STOPPING);
-  LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
-
   /*
    * Run the stopping procedure in a thread
    */
-  action_threads_[UmrfNode::State::STOPPING] = UmrfNodeExec::ThreadWrapper();
-  action_threads_[UmrfNode::State::STOPPING].thread = std::make_shared<std::thread>([&]()
+  state_threads_.start(UmrfNode::State::STOPPING, std::make_shared<std::thread>([&]()
   {
   try
   {
@@ -388,22 +369,19 @@ void UmrfNodeExec::stop(bool ignore_result)
   } // try end
   catch(TemotoErrorStack e)
   {
-    LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
-    action_threads_[UmrfNode::State::STOPPING].error_messages.appendError(FORWARD_TEMOTO_ERROR_STACK(e));
+    state_threads_.addErrorMessage(UmrfNode::State::STOPPING, FORWARD_TEMOTO_ERROR_STACK(e));
     setState(State::ERROR);
     ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
   }
   catch(const std::exception& e)
   {
-    LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
-    action_threads_[UmrfNode::State::STOPPING].error_messages = CREATE_TEMOTO_ERROR_STACK(std::string(e.what()));
+    state_threads_.addErrorMessage(UmrfNode::State::STOPPING, CREATE_TEMOTO_ERROR_STACK(std::string(e.what())));
     setState(State::ERROR);
     ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
   }
   catch(...)
   {
-    LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
-    action_threads_[UmrfNode::State::STOPPING].error_messages = CREATE_TEMOTO_ERROR_STACK("Caught an unhandled error.");
+    state_threads_.addErrorMessage(UmrfNode::State::STOPPING, CREATE_TEMOTO_ERROR_STACK("Caught an unhandled error."));
     setState(State::ERROR);
     ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
   }
@@ -419,28 +397,27 @@ void UmrfNodeExec::stop(bool ignore_result)
     start_child_nodes_cb_(asRelation(), "on_error");
   }
 
-  {
-    LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
-    action_threads_[UmrfNode::State::STOPPING].is_running = false;
-  }
-  });
+  state_threads_.done(UmrfNode::State::STOPPING);
+
+  }));
 }
 
 void UmrfNodeExec::pause()
 {
+  if (getName() == "graph_entry" || getName() == "graph_exit")
+  {
+    return;
+  }
+
   if (getState() != UmrfNode::State::RUNNING)
   {
     return;
   }
 
-  clearThread(UmrfNode::State::PAUSED);
-  LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
-
   /*
-   * Run the stopping procedure in a thread
+   * Run the pausing procedure in a thread
    */
-  action_threads_[UmrfNode::State::PAUSED] = UmrfNodeExec::ThreadWrapper();
-  action_threads_[UmrfNode::State::PAUSED].thread = std::make_shared<std::thread>([&]()
+  state_threads_.start(UmrfNode::State::PAUSED, std::make_shared<std::thread>([&]()
   {
   try
   {
@@ -484,22 +461,19 @@ void UmrfNodeExec::pause()
   } // try end
   catch(TemotoErrorStack e)
   {
-    LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
-    action_threads_[UmrfNode::State::PAUSED].error_messages.appendError(FORWARD_TEMOTO_ERROR_STACK(e));
+    state_threads_.addErrorMessage(UmrfNode::State::PAUSED, FORWARD_TEMOTO_ERROR_STACK(e));
     setState(State::ERROR);
     ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
   }
   catch(const std::exception& e)
   {
-    LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
-    action_threads_[UmrfNode::State::PAUSED].error_messages = CREATE_TEMOTO_ERROR_STACK(std::string(e.what()));
+    state_threads_.addErrorMessage(UmrfNode::State::PAUSED, CREATE_TEMOTO_ERROR_STACK(std::string(e.what())));
     setState(State::ERROR);
     ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
   }
   catch(...)
   {
-    LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
-    action_threads_[UmrfNode::State::PAUSED].error_messages = CREATE_TEMOTO_ERROR_STACK("Caught an unhandled error.");
+    state_threads_.addErrorMessage(UmrfNode::State::PAUSED, CREATE_TEMOTO_ERROR_STACK("Caught an unhandled error."));
     setState(State::ERROR);
     ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
   }
@@ -514,11 +488,9 @@ void UmrfNodeExec::pause()
     start_child_nodes_cb_(asRelation(), "on_error");
   }
 
-  {
-    LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
-    action_threads_[UmrfNode::State::PAUSED].is_running = false;
-  }
-  });
+  state_threads_.done(UmrfNode::State::PAUSED);
+
+  }));
 }
 
 void UmrfNodeExec::resume()
@@ -538,49 +510,14 @@ void UmrfNodeExec::bypass(const std::string& result)
    * For example what if the action is already running or stopping
    */
 
-  clearThread(UmrfNode::State::BYPASSED);
-  LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
-
   /*
    * Run the bypass procedure in a thread
    */
-  action_threads_[UmrfNode::State::BYPASSED] = UmrfNodeExec::ThreadWrapper();
-  action_threads_[UmrfNode::State::BYPASSED].thread = std::make_shared<std::thread>([&]()
+  state_threads_.start(UmrfNode::State::BYPASSED, std::make_shared<std::thread>([&]()
   {
     start_child_nodes_cb_(asRelation(), result);
-
-    LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
-    action_threads_[UmrfNode::State::BYPASSED].is_running = false;
-  });
-}
-
-void UmrfNodeExec::clearThread(const UmrfNode::State state_name)
-{
-  if (getName() == "graph_entry" || getName() == "graph_exit")
-  {
-    return;
-  }
-
-  LOCK_GUARD_TYPE_R l(action_threads_rw_mutex_);
-
-  auto it = action_threads_.find(state_name);
-  if (it == action_threads_.end())
-  {
-    return;
-  }
-
-  if (it->second.is_running)
-  {
-    throw CREATE_TEMOTO_ERROR_STACK("Cannot clear thread '" + state_to_str_map_.at(state_name) +
-      "' of '" + getFullName() + "' because it's running");
-  }
-
-  if (it->second.thread->joinable())
-  {
-    it->second.thread->join();
-  }
-
-  action_threads_.erase(it);
+    state_threads_.done(UmrfNode::State::BYPASSED);
+  }));
 }
 
 void UmrfNodeExec::setGraphName(const std::string& parent_graph_name)

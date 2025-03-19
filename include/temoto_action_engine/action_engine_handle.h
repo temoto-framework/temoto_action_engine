@@ -18,9 +18,9 @@
 #define TEMOTO_ACTION_ENGINE__ACTION_ENGINE_HANDLE_H
 
 #include "temoto_action_engine/action_parameters.h"
-#include "temoto_action_engine/mutex.h"
-#include "temoto_action_engine/temoto_error.h"
-#include "temoto_action_engine/waitlist.h"
+#include "temoto_action_engine/util/mutex.hpp"
+#include "temoto_action_engine/util/error.hpp"
+#include "temoto_action_engine/util/waitlist.hpp"
 
 #include <functional>
 #include <map>

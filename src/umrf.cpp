@@ -15,7 +15,7 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "temoto_action_engine/umrf.h"
-#include "temoto_action_engine/temoto_error.h"
+#include "temoto_action_engine/util/error.hpp"
 #include <iostream>
 
 Umrf::Umrf()

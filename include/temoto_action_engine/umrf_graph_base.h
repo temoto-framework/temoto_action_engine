@@ -27,7 +27,7 @@
 #include <vector>
 #include <map>
 #include <iostream>
-#include "compiler_macros.h"
+#include "temoto_action_engine/util/compiler_macros.hpp"
 #include "temoto_action_engine/umrf_node.h"
 
 class UmrfGraphCommon
@@ -145,8 +145,8 @@ protected:
 };
 
 /**
- * @brief 
- * 
+ * @brief
+ *
  * @tparam UMRF_NODE_T Type of UMRF nodes maintained in this class
  */
 template <class UMRF_NODE_T>
@@ -229,103 +229,60 @@ public:
   /*
    * Methods for modifying the graph
    */
-
-  void addUmrf(const UmrfNode& umrf_node)
+  void modifyGraph(const UmrfGraphBase& new_graph)
   {
     LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);
 
-    if (partOfGraph(umrf_node.getFullName()))
+    if (getState() != State::PAUSED)
     {
-      throw CREATE_TEMOTO_ERROR_STACK("Cannot add UMRF '" + umrf_node.getFullName() + "', as it is already part of graph '" 
-        + graph_name_ + "'");
+      throw CREATE_TEMOTO_ERROR_STACK("Cannot modify graph '" + graph_name_ + "' because it is not in PAUSED state");
     }
 
-    graph_nodes_map_.emplace(umrf_node.getFullName(), std::make_shared<UMRF_NODE_T>(umrf_node));
-
-    // If the new UMRF has parents then modify the parent UMRFs accordingly
-    for (const auto& parent_umrf_relation : umrf_node.getParents())
+    /*
+     * Find out if any actions are to be deleted.
+     * If the action to-be-deleted is in an active state, then abort the graph modification process
+     */
+    std::vector<std::string> actions_to_be_deleted;
+    for (const auto& action_current : getUmrfNodes())
     {
-      auto parent_node_itr = graph_nodes_map_.find(parent_umrf_relation.getFullName());
-      parent_node_itr->second->addChild(umrf_node.asRelation());
+      if (new_graph.partOfGraph(action_current.getFullName()))
+      {
+        continue;
+      }
+
+      if (action_current.getState() == UmrfNode::State::PAUSED || action_current.getState() == UmrfNode::State::RUNNING)
+      {
+        throw CREATE_TEMOTO_ERROR_STACK("Cannot modify graph '" + graph_name_ + "': Action '"
+          + action_current.getFullName() + "' cannot be deleted, because it is in an active state ("
+          + UmrfNode::state_to_str_map_.at(action_current.getState()) + ")");
+      }
+
+      actions_to_be_deleted.push_back(action_current.getFullName());
     }
 
-    // If the new UMRF has children then modify the child UMRFs accordingly
-    for (const auto& child_umrf_relation : umrf_node.getChildren())
-    {
-      auto child_node_itr = graph_nodes_map_.find(child_umrf_relation.getFullName());
-      child_node_itr->second->addParent(umrf_node.asRelation());
-    }
-    return;
-  }
+    /*
+     * Apply the modifications by overwriting the UMRF's
+     */
 
-  void removeUmrf(const UmrfNode& umrf_node)
-  {
-    LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);
-
-    if (!partOfGraph(umrf_node.getFullName()))
+    // Delete actions
+    for (const auto& action_to_be_deleted : actions_to_be_deleted)
     {
-      throw CREATE_TEMOTO_ERROR_STACK("UMRF graph '" + graph_name_ + "' does not contain node named '" 
-        + umrf_node.getFullName() + "'");
+      graph_nodes_map_.erase(action_to_be_deleted);
     }
 
-    auto umrf_node_itr = graph_nodes_map_.find(umrf_node.getFullName());
-
-    // Detach this umrf_node as a parent of any children
-    for (const auto& child_umrf_relation : umrf_node_itr->second->getChildren())
+    // Update / Add actions
+    for (const auto& action_new : new_graph.getUmrfNodes())
     {
-      auto child_node_itr = graph_nodes_map_.find(child_umrf_relation.getFullName());
-      child_node_itr->second->removeParent(umrf_node_itr->second->asRelation());
-    }
-
-    // Detach this umrf_node as a child of any parents
-    for (const auto& parent_umrf_relation : umrf_node_itr->second->getParents())
-    {
-      auto parent_node_itr = graph_nodes_map_.find(parent_umrf_relation.getFullName());
-      parent_node_itr->second->removeChild(umrf_node_itr->second->asRelation());
-    }
-
-    //Remove the umrf_node node
-    graph_nodes_map_.erase(umrf_node_itr);
-  }
-
-  void addChild(const UmrfNode& umrf_node)
-  {
-    LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);
-
-    if (!partOfGraph(umrf_node.getFullName()))
-    {
-      throw CREATE_TEMOTO_ERROR_STACK("UMRF graph '" + graph_name_ + "' does not contain node named '" 
-        + umrf_node.getFullName() + "'");
-    }
-
-    auto umrf_node_itr = graph_nodes_map_.find(umrf_node.getFullName());
-
-    for (const auto& child_umrf_relation : umrf_node.getChildren())
-    {
-      umrf_node_itr->second->addChild(child_umrf_relation);
-      auto child_node_itr = graph_nodes_map_.find(child_umrf_relation.getFullName());
-      child_node_itr->second->addParent(umrf_node.asRelation());
-    }
-  }
-
-  void removeChild(const UmrfNode& umrf_node)
-  {
-    // TODO check if both locks are actually needed
-    LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);
-
-    if (!partOfGraph(umrf_node.getFullName()))
-    {
-      throw CREATE_TEMOTO_ERROR_STACK("UMRF graph '" + graph_name_ + "' does not contain node named '" 
-        + umrf_node.getFullName() + "'");
-    }
-
-    auto umrf_node_itr = graph_nodes_map_.find(umrf_node.getFullName());
-
-    for (const auto& child_umrf_relation : umrf_node.getChildren())
-    {
-      umrf_node_itr->second->removeChild(child_umrf_relation);
-      auto child_node_itr = graph_nodes_map_.find(child_umrf_relation.getFullName());
-      child_node_itr->second->removeParent(umrf_node.asRelation());
+      if (!partOfGraph(action_new.getFullName()))
+      {
+        graph_nodes_map_.emplace(action_new.getFullName(), std::make_shared<UMRF_NODE_T>(action_new));
+      }
+      else
+      {
+        auto action_current_itr = graph_nodes_map_.find(action_new.getFullName());
+        action_current_itr->setParents(action_new.getParents());
+        action_current_itr->setChildren(action_new.getChildren());
+      }
     }
   }
 

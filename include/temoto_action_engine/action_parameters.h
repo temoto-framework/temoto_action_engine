@@ -22,7 +22,7 @@
 #include <string>
 #include <algorithm>
 #include "temoto_action_engine/action_parameter.h"
-#include "temoto_action_engine/temoto_error.h"
+#include "temoto_action_engine/util/error.hpp"
 #include "boost/any.hpp"
 #include <iostream> // TODO remove
 
@@ -98,8 +98,8 @@ public:
       {
         param.setData(parameter_in.getData());
       }
-      
-      parameters_.erase(parameters_.find(parameter_in));          
+
+      parameters_.erase(parameters_.find(parameter_in));
       parameters_.insert(param);
     }
     return true;

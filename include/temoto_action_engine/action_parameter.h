@@ -20,7 +20,7 @@
 #include <vector>
 #include <string>
 #include <map>
-#include "temoto_action_engine/temoto_error.h"
+#include "temoto_action_engine/util/error.hpp"
 #include <boost/algorithm/string.hpp>
 
 /*

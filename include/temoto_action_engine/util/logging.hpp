@@ -1,5 +1,5 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * Copyright 2020 TeMoto Telerobotics
+ * Copyright 2023 TeMoto Framework
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,33 +14,27 @@
  * limitations under the License.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef TEMOTO_ACTION_ENGINE__UMRF_GRAPH_DIFF_H
-#define TEMOTO_ACTION_ENGINE__UMRF_GRAPH_DIFF_H
+#ifndef TEMOTO_ACTION_ENGINE__MESSAGING_H
+#define TEMOTO_ACTION_ENGINE__MESSAGING_H
 
 #include <string>
-#include <vector>
-#include "temoto_action_engine/umrf_node.h"
+#include <iostream>
+#include "temoto_action_engine/util/threadsafe_print.hpp"
 
-struct UmrfGraphDiff
+#define TEMOTO_PRINT(message) temoto_messaging::print(message, __func__)
+#define TEMOTO_PRINT_OF(message, of) temoto_messaging::printOf(message, __func__, of)
+
+namespace temoto_messaging
 {
-  static struct Operation
+  inline void print(const std::string& message, const std::string& prefix)
   {
-    static constexpr const char* add_umrf = "add umrf";
-    static constexpr const char* add_child = "add child";
-    static constexpr const char* remove_umrf = "remove umrf";
-    static constexpr const char* remove_child = "remove child";
-  }OP;
-
-  UmrfGraphDiff(const std::string& operation_in, const UmrfNode& umrf_in)
-  : operation(operation_in)
-  , umrf_node(umrf_in)
-  {  
+    PrintThread{} << "[" << prefix << "] " << message << std::endl;
   }
 
-  std::string operation;
-  UmrfNode umrf_node;
-};
-
-typedef std::vector<UmrfGraphDiff> UmrfGraphDiffs;
+  inline void printOf(const std::string& message, const std::string& prefix, const std::string& of)
+  {
+    PrintThread{} << "[" << of << "::" << prefix << "] " << message << std::endl;
+  }
+}
 
 #endif

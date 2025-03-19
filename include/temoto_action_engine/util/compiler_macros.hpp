@@ -19,7 +19,7 @@
 
 // Define the mutex and lock guard according to the compiler type
 #if defined(__clang__)
-  #include "temoto_action_engine/mutex.h"
+  #include "temoto_action_engine/util/mutex.hpp"
   #define MUTEX_TYPE action_engine::Mutex
   #define MUTEX_TYPE_R action_engine::RecursiveMutex
   #define LOCK_GUARD_TYPE action_engine::LockGuard

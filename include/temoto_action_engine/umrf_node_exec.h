@@ -23,23 +23,17 @@
 #include <condition_variable>
 #include <functional>
 
-#include "temoto_action_engine/action_engine_handle.h"
-#include "temoto_action_engine/compiler_macros.h"
-#include "temoto_action_engine/temoto_error.h"
-#include "temoto_action_engine/umrf_node.h"
 #include "temoto_action_engine/action_base.h"
+#include "temoto_action_engine/action_engine_handle.h"
 #include "temoto_action_engine/action_plugin.hpp"
+#include "temoto_action_engine/umrf_node.h"
+#include "temoto_action_engine/util/compiler_macros.hpp"
+#include "temoto_action_engine/util/thread_wrapper.hpp"
+#include "temoto_action_engine/util/error.hpp"
 
 class UmrfNodeExec : public UmrfNode
 {
 friend class UmrfGraphExec;
-
-struct ThreadWrapper
-{
-  std::shared_ptr<std::thread> thread;
-  bool is_running;
-  TemotoErrorStack error_messages;
-};
 
 struct CvWrapper
 {
@@ -53,8 +47,7 @@ private:
   bool wait_{false};
 };
 
-typedef std::map<State, ThreadWrapper> ActionThreads;
-typedef std::function<void(const UmrfNode::Relation&, const std::string&)> StartChildNodesCb;
+using StartChildNodesCb = std::function<void(const UmrfNode::Relation&, const std::string&)>;
 
 public:
 
@@ -78,11 +71,11 @@ public:
 
   void resume();
 
-  // void restart();
-
   void stop(bool ignore_result = false);
 
   void bypass(const std::string& result);
+
+  // void restart();
 
   /**
    * @brief Creates an instance of the underlying action
@@ -112,11 +105,10 @@ private:
   mutable MUTEX_TYPE_R action_plugin_rw_mutex_;
   GUARDED_VARIABLE(std::shared_ptr<ActionPlugin<ActionBase>> action_plugin_, action_plugin_rw_mutex_);
 
-  mutable MUTEX_TYPE_R action_threads_rw_mutex_;
-  GUARDED_VARIABLE(ActionThreads action_threads_, action_threads_rw_mutex_);
-
   mutable MUTEX_TYPE latest_umrf_json_str_rw_mutex_;
   GUARDED_VARIABLE(std::string latest_umrf_json_str_, latest_umrf_json_str_rw_mutex_);
+
+  temoto::util::Threads<UmrfNode::State> state_threads_;
 
   std::string parent_graph_name_;
 
@@ -135,9 +127,6 @@ private:
 
   std::string waitUntilFinished(const Waitable& waitable);
 
-  void setToError();
-
-  void clearThread(const UmrfNode::State state_name);
 };
 
 #endif

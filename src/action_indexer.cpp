@@ -15,8 +15,8 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "temoto_action_engine/action_indexer.h"
-#include "temoto_action_engine/messaging.h"
-#include "temoto_action_engine/temoto_error.h"
+#include "temoto_action_engine/util/logging.hpp"
+#include "temoto_action_engine/util/error.hpp"
 #include "temoto_action_engine/umrf_json.h"
 #include <algorithm>
 #include <sstream>

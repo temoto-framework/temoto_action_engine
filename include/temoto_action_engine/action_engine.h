@@ -21,10 +21,10 @@
 #include "temoto_action_engine/action_indexer.h"
 #include "temoto_action_engine/action_match_finder.h"
 #include "temoto_action_engine/action_synchronizer.h"
-#include "temoto_action_engine/temoto_error.h"
 #include "temoto_action_engine/umrf_graph.h"
 #include "temoto_action_engine/umrf_graph_exec.h"
-#include "temoto_action_engine/umrf_graph_diff.h"
+#include "temoto_action_engine/util/error.hpp"
+
 #include <condition_variable>
 #include <thread>
 
@@ -46,13 +46,13 @@ public:
   void executeUmrfGraph(const std::string& graph_name, const ActionParameters& params = ActionParameters()
   , const std::string& result = "on_true");
 
-  /**
-   * @brief Modifies a UMRF graph according to the graph_diffs
-   *
-   * @param graph_name
-   * @param graph_diffs
-   */
-  void modifyGraph(const std::string& graph_name, const UmrfGraphDiffs& graph_diffs);
+  // /**
+  //  * @brief Modifies a UMRF graph according to the graph_diffs
+  //  *
+  //  * @param graph_name
+  //  * @param graph_diffs
+  //  */
+  // void modifyGraph(const std::string& graph_name);
 
   void pauseUmrfGraph(const std::string& umrf_graph_name);
 

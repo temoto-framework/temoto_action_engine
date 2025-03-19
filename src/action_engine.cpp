@@ -15,7 +15,7 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "temoto_action_engine/action_engine.h"
-#include "temoto_action_engine/messaging.h"
+#include "temoto_action_engine/util/logging.hpp"
 #include "temoto_action_engine/umrf_json.h"
 
 #include <boost/circular_buffer.hpp>
@@ -200,76 +200,76 @@ catch(TemotoErrorStack e)
   throw FORWARD_TEMOTO_ERROR_STACK(e);
 }
 
-void ActionEngine::modifyGraph(const std::string& graph_name, const UmrfGraphDiffs& graph_diffs)
-{
-  LOCK_GUARD_TYPE_R guard_graph_map_(umrf_graph_map_rw_mutex_);
+// void ActionEngine::modifyGraph(const std::string& graph_name, const UmrfGraphDiffs& graph_diffs)
+// {
+//   LOCK_GUARD_TYPE_R guard_graph_map_(umrf_graph_map_rw_mutex_);
 
-  if (!graphExists(graph_name))
-  {
-    TEMOTO_PRINT("Cannot modify graph '" + graph_name + "' because it does not exist.");
-    return;
-  }
+//   if (!graphExists(graph_name))
+//   {
+//     TEMOTO_PRINT("Cannot modify graph '" + graph_name + "' because it does not exist.");
+//     return;
+//   }
 
-  TEMOTO_PRINT("Received a request to modify UMRF graph '" + graph_name + "' ...");
-  std::shared_ptr<UmrfGraphExec> ugh = umrf_graph_exec_map_.at(graph_name);
+//   TEMOTO_PRINT("Received a request to modify UMRF graph '" + graph_name + "' ...");
+//   std::shared_ptr<UmrfGraphExec> ugh = umrf_graph_exec_map_.at(graph_name);
 
-  /*
-   * Before modyfing the graph, check if the graph contains the UMRFs which are menitoned in the diffs
-   */ 
-  for (const auto& graph_diff : graph_diffs)
-  {
-    if (graph_diff.operation == UmrfGraphDiff::Operation::add_umrf)
-    {
-      if (ugh->partOfGraph(graph_diff.umrf_node.getFullName()))
-      {
-        throw CREATE_TEMOTO_ERROR_STACK("Cannot add UMRF '" + graph_diff.umrf_node.getFullName()
-          + "', as it is already part of graph '" + graph_name + "'");
-      }
-    }
-    else
-    {
-      if (!ugh->partOfGraph(graph_diff.umrf_node.getFullName()))
-      {
-        throw CREATE_TEMOTO_ERROR_STACK("Cannot perform operation '" + graph_diff.operation
-        + "' because UMRF graph '" + graph_name + "' does not contain node named '"
-        + graph_diff.umrf_node.getFullName() + "'");
-      }
-    }
-  }
+//   /*
+//    * Before modyfing the graph, check if the graph contains the UMRFs which are menitoned in the diffs
+//    */
+//   for (const auto& graph_diff : graph_diffs)
+//   {
+//     if (graph_diff.operation == UmrfGraphDiff::Operation::add_umrf)
+//     {
+//       if (ugh->partOfGraph(graph_diff.umrf_node.getFullName()))
+//       {
+//         throw CREATE_TEMOTO_ERROR_STACK("Cannot add UMRF '" + graph_diff.umrf_node.getFullName()
+//           + "', as it is already part of graph '" + graph_name + "'");
+//       }
+//     }
+//     else
+//     {
+//       if (!ugh->partOfGraph(graph_diff.umrf_node.getFullName()))
+//       {
+//         throw CREATE_TEMOTO_ERROR_STACK("Cannot perform operation '" + graph_diff.operation
+//         + "' because UMRF graph '" + graph_name + "' does not contain node named '"
+//         + graph_diff.umrf_node.getFullName() + "'");
+//       }
+//     }
+//   }
 
-  /*
-   * Apply the diffs
-   */
-  for (const auto& graph_diff : graph_diffs)
-  {
-    if (graph_diff.operation == UmrfGraphDiff::Operation::add_umrf)
-    {
-      TEMOTO_PRINT("Applying an '" + graph_diff.operation + "' operation to UMRF '" + graph_diff.umrf_node.getFullName() + "' ...");
-      ugh->addUmrf(graph_diff.umrf_node);
-    }
-    else if (graph_diff.operation == UmrfGraphDiff::Operation::remove_umrf)
-    {
-      TEMOTO_PRINT("Applying an '" + graph_diff.operation + "' operation to UMRF '" + graph_diff.umrf_node.getFullName() + "' ...");
-      ugh->stopNode(graph_diff.umrf_node.getFullName());
-      ugh->removeUmrf(graph_diff.umrf_node);
-    }
-    else if (graph_diff.operation == UmrfGraphDiff::Operation::add_child)
-    {
-      TEMOTO_PRINT("Applying an '" + graph_diff.operation + "' operation to UMRF '" + graph_diff.umrf_node.getFullName() + "' ...");
-      ugh->addChild(graph_diff.umrf_node);
-    }
-    else if (graph_diff.operation == UmrfGraphDiff::Operation::remove_child)
-    {
-      TEMOTO_PRINT("Applying an '" + graph_diff.operation + "' operation to UMRF '" + graph_diff.umrf_node.getFullName() + "' ...");
-      ugh->removeChild(graph_diff.umrf_node);
-    }
-    else
-    {
-      throw CREATE_TEMOTO_ERROR_STACK("No such operation as " + graph_diff.operation);
-    }
-    TEMOTO_PRINT("Finished with the '" + graph_diff.operation + "' operation.");
-  }
-}
+//   /*
+//    * Apply the diffs
+//    */ 
+//   for (const auto& graph_diff : graph_diffs)
+//   {
+//     if (graph_diff.operation == UmrfGraphDiff::Operation::add_umrf)
+//     {
+//       TEMOTO_PRINT("Applying an '" + graph_diff.operation + "' operation to UMRF '" + graph_diff.umrf_node.getFullName() + "' ...");
+//       ugh->addUmrf(graph_diff.umrf_node);
+//     }
+//     else if (graph_diff.operation == UmrfGraphDiff::Operation::remove_umrf)
+//     {
+//       TEMOTO_PRINT("Applying an '" + graph_diff.operation + "' operation to UMRF '" + graph_diff.umrf_node.getFullName() + "' ...");
+//       ugh->stopNode(graph_diff.umrf_node.getFullName());
+//       ugh->removeUmrf(graph_diff.umrf_node);
+//     }
+//     else if (graph_diff.operation == UmrfGraphDiff::Operation::add_child)
+//     {
+//       TEMOTO_PRINT("Applying an '" + graph_diff.operation + "' operation to UMRF '" + graph_diff.umrf_node.getFullName() + "' ...");
+//       ugh->addChild(graph_diff.umrf_node);
+//     }
+//     else if (graph_diff.operation == UmrfGraphDiff::Operation::remove_child)
+//     {
+//       TEMOTO_PRINT("Applying an '" + graph_diff.operation + "' operation to UMRF '" + graph_diff.umrf_node.getFullName() + "' ...");
+//       ugh->removeChild(graph_diff.umrf_node);
+//     }
+//     else
+//     {
+//       throw CREATE_TEMOTO_ERROR_STACK("No such operation as " + graph_diff.operation);
+//     }
+//     TEMOTO_PRINT("Finished with the '" + graph_diff.operation + "' operation.");
+//   }
+// }
 
 void ActionEngine::stopUmrfGraph(const std::string& umrf_graph_name)
 {

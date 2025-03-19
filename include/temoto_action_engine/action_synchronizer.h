@@ -17,7 +17,7 @@
 #ifndef TEMOTO_ACTION_ENGINE__ACTION_SYNCHRONIZER_H
 #define TEMOTO_ACTION_ENGINE__ACTION_SYNCHRONIZER_H
 
-#include "temoto_action_engine/waitlist.h"
+#include "temoto_action_engine/util/waitlist.hpp"
 #include "temoto_action_engine/action_synchronizer_plugin_base.h"
 #include "temoto_action_engine/action_engine_handle.h"
 #include "temoto_action_engine/umrf_json.h"

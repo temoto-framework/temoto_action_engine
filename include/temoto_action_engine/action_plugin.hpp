@@ -8,7 +8,7 @@
 #include <filesystem>
 #include <optional>
 
-#include "temoto_action_engine/temoto_error.h"
+#include "temoto_action_engine/util/error.hpp"
 
 template <typename T>
 class ActionPlugin

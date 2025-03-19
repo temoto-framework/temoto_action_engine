@@ -20,8 +20,8 @@
 #include <boost/config.hpp>
 
 #include "temoto_action_engine/umrf_node.h"
-#include "temoto_action_engine/temoto_error.h"
-#include "temoto_action_engine/messaging.h"
+#include "temoto_action_engine/util/error.hpp"
+#include "temoto_action_engine/util/logging.hpp"
 
 /**
  * @brief This is the abstract base action that every action has to inherit and implement

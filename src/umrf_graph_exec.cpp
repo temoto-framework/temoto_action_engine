@@ -128,8 +128,14 @@ std::string UmrfGraphExec::stopGraph()
     return (getState() == State::ERROR ? "on_error" : "on_true");
   }
 
-  setState(State::STOPPING);
+  /*
+   * Stop the graph in a separate thread, so that the call would not block
+   */
+
+  // TODO
+
   LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
+  setState(State::STOPPING);
 
   // Stop all nodes
   for (auto& graph_node : graph_nodes_map_)
@@ -329,8 +335,6 @@ try
       ENGINE_HANDLE.notifyFinished(Waitable{.action_name = GRAPH_EXIT.getFullName(), .graph_name = getName()}
       , result
       , child_node->getInputParameters());
-
-
 
       return;
     }
