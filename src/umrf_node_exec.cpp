@@ -14,25 +14,10 @@
  * limitations under the License.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+#include "temoto_action_engine/umrf_node_exec.h"
+#include "temoto_action_engine/umrf_json.h"
 #include "temoto_action_engine/util/basic_timer.hpp"
 #include "temoto_action_engine/util/logging.hpp"
-#include "temoto_action_engine/umrf_json.h"
-#include "temoto_action_engine/umrf_node_exec.h"
-
-#include <chrono>
-
-void UmrfNodeExec::CvWrapper::wait()
-{
-  wait_ = true;
-  std::unique_lock<std::mutex> lock(cv_mutex_);
-  cv_.wait(lock, [&]{return !wait_;});
-}
-
-void UmrfNodeExec::CvWrapper::stopWaiting()
-{
-  wait_ = false;
-  cv_.notify_all();
-}
 
 UmrfNodeExec::UmrfNodeExec(const UmrfNode& umrf_node)
 : UmrfNode(umrf_node)
@@ -242,7 +227,7 @@ void UmrfNodeExec::run()
   }
 
   // If the action was paused, then wait until it is resumed, even if the action threw an error
-  if (getState() == State::PAUSED)
+  if (getState() == State::PAUSE_REQUESTED || getState() == State::PAUSED)
   {
     wait_for_resume_local_.wait();
   }
@@ -264,8 +249,7 @@ void UmrfNodeExec::run()
   }
 
   // Let the waiters know that the action (LOCAL or GRAPH) is finished
-  if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL ||
-      getActorExecTraits() == UmrfNode::ActorExecTraits::GRAPH)
+  if (getActorExecTraits() != UmrfNode::ActorExecTraits::REMOTE)
   {
     Waitable waitable{.action_name = getFullName(), .graph_name = parent_graph_name_, .actor_name = getActor()};
     if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL && getName() == GRAPH_EXIT.getName())
@@ -304,6 +288,7 @@ void UmrfNodeExec::run()
         getState() != UmrfNode::State::ERROR);
 
   // Delete any input and output data due to std::any virtual deleter
+
   getInputParametersNc().clearData();
   getOutputParametersNc().clearData();
 
@@ -421,8 +406,7 @@ void UmrfNodeExec::pause()
   {
   try
   {
-    setState(State::PAUSED);
-    // ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
+    setState(State::PAUSE_REQUESTED);
 
     /*
      * LOCALLY PAUSED
@@ -431,6 +415,15 @@ void UmrfNodeExec::pause()
     {
       LOCK_GUARD_TYPE_R quard_action_plugin(action_plugin_rw_mutex_);
       action_plugin_->get()->onPause(); // Blocking call, returns when finished
+
+      /*
+       * If the pause is handled by the action plugin (onPause method overridden). If not
+       * then the state will be changed to PAUSED after the action has finished
+       */
+      if (!action_plugin_->get()->pause_not_handled_)
+      {
+        setState(State::PAUSED);
+      }
 
       // Wait until the action is externally unpaused
       wait_for_resume_.wait();

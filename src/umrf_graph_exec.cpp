@@ -1,5 +1,5 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * Copyright 2020 TeMoto Telerobotics
+ * Copyright 2025 TeMoto Telerobotics
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "temoto_action_engine/umrf_graph_exec.h"
+#include "temoto_action_engine/action_engine_handle.h"
 
 UmrfGraphExec::UmrfGraphExec(const std::string& graph_name)
 : UmrfGraphBase(graph_name)
@@ -33,7 +34,6 @@ UmrfGraphExec::UmrfGraphExec(const std::string& graph_name, const std::vector<Um
 
 UmrfGraphExec::~UmrfGraphExec()
 {
-  stopGraph();
   clearGraph();
 }
 
@@ -81,22 +81,45 @@ void UmrfGraphExec::startGraph(const std::string& result, const ActionParameters
   graph_entry->getOutputParametersNc().clearData();
 }
 
-void UmrfGraphExec::pauseGraph()
+std::future<bool> UmrfGraphExec::pauseGraph()
 {
+  std::promise<bool> pause_promise;
+  std::future<bool> pause_future = pause_promise.get_future();
+
   if (getState() != State::RUNNING)
   {
-    return;
+    pause_promise.set_value(true);
+    return pause_future;
   }
 
-  LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
-
-  // Pause all nodes
-  for (auto& graph_node : graph_nodes_map_)
+  state_threads_.start(State::PAUSED, std::make_shared<std::thread>([&, promise = std::move(pause_promise)] () mutable
   {
-    graph_node.second->pause();
-  }
+    LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
 
-  setState(State::PAUSED);
+    // Pause all nodes
+    for (auto& graph_node : graph_nodes_map_)
+    {
+      graph_node.second->pause();
+    }
+
+    // Wait for all running nodes to stop
+    while ([&]
+      {
+        for (const auto& graph_node : graph_nodes_map_)
+        {
+          if (graph_node.second->getState() == UmrfNode::State::RUNNING ||
+              graph_node.second->getState() == UmrfNode::State::PAUSE_REQUESTED){return true;}
+        }
+        return false;
+      }()
+    )
+    {std::this_thread::sleep_for(std::chrono::milliseconds(100));}
+
+    setState(State::PAUSED);
+    promise.set_value(true);
+  }));
+
+  return pause_future;
 }
 
 void UmrfGraphExec::resumeGraph()
@@ -117,64 +140,81 @@ void UmrfGraphExec::resumeGraph()
   setState(State::RUNNING);
 }
 
-std::string UmrfGraphExec::stopGraph()
+std::future<std::string> UmrfGraphExec::stopGraph()
 {
+  std::promise<std::string> stop_result_promise;
+  std::future<std::string> stop_result_future = stop_result_promise.get_future();
+
   if (getState() == State::UNINITIALIZED ||
       getState() == State::STOPPING ||
       getState() == State::STOPPED ||
       getState() == State::FINISHED ||
       getState() == State::ERROR)
   {
-    return (getState() == State::ERROR ? "on_error" : "on_true");
+    stop_result_promise.set_value(getState() == State::ERROR ? "on_error" : "on_true");
+    return stop_result_future;
   }
 
   /*
    * Stop the graph in a separate thread, so that the call would not block
    */
-
-  // TODO
-
-  LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
-  setState(State::STOPPING);
-
-  // Stop all nodes
-  for (auto& graph_node : graph_nodes_map_)
+  state_threads_.start(State::STOPPING, std::make_shared<std::thread>([&, promise = std::move(stop_result_promise)] () mutable
   {
-    graph_node.second->stop(true);
-  }
+    LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
+    setState(State::STOPPING);
 
-  // Make sure to remove the parameters from the graph exit first. Entry has already been
-  // cleared after the graph was started
-  graph_nodes_map_.at(GRAPH_EXIT.getFullName())->getInputParametersNc().clearData();
-  graph_nodes_map_.at(GRAPH_EXIT.getFullName())->getOutputParametersNc().clearData();
-
-  // Wait until all nodes finish
-  bool had_error = false;
-  for (auto& graph_node : graph_nodes_map_)
-  {
-    while (graph_node.second->getState() != UmrfNode::State::FINISHED &&
-      graph_node.second->getState() != UmrfNode::State::ERROR &&
-      graph_node.second->getState() != UmrfNode::State::UNINITIALIZED)
+    // Stop all nodes
+    for (auto& graph_node : graph_nodes_map_)
     {
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      graph_node.second->stop(true);
     }
 
-    if (graph_node.second->getState() == UmrfNode::State::ERROR)
-    {
-      had_error = true;
-    }
-  }
+    // Make sure to remove the parameters from the graph exit first. Entry has already been
+    // cleared after the graph was started
+    graph_nodes_map_.at(GRAPH_EXIT.getFullName())->getInputParametersNc().clearData();
+    graph_nodes_map_.at(GRAPH_EXIT.getFullName())->getOutputParametersNc().clearData();
 
-  if (had_error)
-  {
-    setState(State::ERROR);
-    return "on_error";
-  }
-  else
-  {
-    setState(State::STOPPED);
-    return "on_true";
-  }
+    // Wait until all nodes finish
+    bool had_error = false;
+    for (auto& graph_node : graph_nodes_map_)
+    {
+      while (graph_node.second->getState() != UmrfNode::State::FINISHED &&
+             graph_node.second->getState() != UmrfNode::State::ERROR &&
+             graph_node.second->getState() != UmrfNode::State::UNINITIALIZED)
+      {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      }
+
+      if (graph_node.second->getState() == UmrfNode::State::ERROR)
+      {
+        had_error = true;
+      }
+    }
+
+    std::string result;
+    if (had_error)
+    {
+      setState(State::ERROR);
+      result = "on_error";
+    }
+    else
+    {
+      setState(State::STOPPED);
+      result = "on_stopped";
+    }
+
+    // Notify the other graphs that this graphs has finished
+    ENGINE_HANDLE.notifyFinished(Waitable{.action_name = GRAPH_EXIT.getFullName(), .graph_name = getName()}
+    , result
+    , ActionParameters());
+
+    // Signal the action ActionEngine::stopGraph to continue
+    promise.set_value(result);
+
+    state_threads_.done(State::STOPPING);
+  }));
+
+  return stop_result_future;
 }
 
 void UmrfGraphExec::clearGraph()
@@ -183,7 +223,12 @@ void UmrfGraphExec::clearGraph()
   {
     return;
   }
-  stopGraph();
+  stopGraph().get();
+
+  for (auto& state_thread : state_threads_)
+  {
+    state_thread.second.thread->join();
+  }
 
   LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
   graph_nodes_map_.clear();

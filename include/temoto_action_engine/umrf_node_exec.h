@@ -19,8 +19,6 @@
 
 #include <memory>
 #include <string>
-#include <thread>
-#include <condition_variable>
 #include <functional>
 
 #include "temoto_action_engine/action_base.h"
@@ -28,24 +26,16 @@
 #include "temoto_action_engine/action_plugin.hpp"
 #include "temoto_action_engine/umrf_node.h"
 #include "temoto_action_engine/util/compiler_macros.hpp"
+#include "temoto_action_engine/util/conditional_waiter.hpp"
 #include "temoto_action_engine/util/thread_wrapper.hpp"
 #include "temoto_action_engine/util/error.hpp"
+
+#include <thread>
+#include <condition_variable>
 
 class UmrfNodeExec : public UmrfNode
 {
 friend class UmrfGraphExec;
-
-struct CvWrapper
-{
-  void wait();
-  void stopWaiting();
-
-private:
-
-  std::condition_variable cv_;
-  std::mutex cv_mutex_;
-  bool wait_{false};
-};
 
 using StartChildNodesCb = std::function<void(const UmrfNode::Relation&, const std::string&)>;
 
@@ -118,9 +108,9 @@ private:
 
   StartChildNodesCb start_child_nodes_cb_ = NULL;
 
-  CvWrapper wait_for_result_;
-  CvWrapper wait_for_resume_;
-  CvWrapper wait_for_resume_local_;
+  temoto::util::ConditionalWaiter wait_for_result_;
+  temoto::util::ConditionalWaiter wait_for_resume_;
+  temoto::util::ConditionalWaiter wait_for_resume_local_;
 
   std::string remote_result_;
   std::string remote_notification_id_;

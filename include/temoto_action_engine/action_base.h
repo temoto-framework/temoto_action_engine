@@ -85,19 +85,19 @@ protected:
    * @brief Method that is invoked when action is paused.
    *
    */
-  virtual void onPause(){};
+  virtual void onPause(){pause_not_handled_ = true;}
 
-    /**
+  /**
    * @brief Method that is invoked when action is resumed.
    *
    */
-  virtual void onResume(){};
+  virtual void onResume(){}
 
   /**
    * @brief Method that is invoked when action is stopped.
    *
    */
-  virtual void onStop(){};
+  virtual void onStop(){}
 
   /**
    * @brief Fetches the input parameters and stores them to convenience data structures
@@ -196,5 +196,6 @@ private:
   bool STOP_REQUESTED_ = false;
   UmrfNode umrf_node_;
   bool umrf_set_ = false;
+  bool pause_not_handled_ = false;
 };
 #endif

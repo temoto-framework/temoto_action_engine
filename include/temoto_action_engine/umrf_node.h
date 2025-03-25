@@ -39,6 +39,7 @@ public:
     UNINITIALIZED,
     INITIALIZED,
     RUNNING,
+    PAUSE_REQUESTED,
     PAUSED,
     STOPPING,
     FINISHED,
@@ -48,24 +49,26 @@ public:
 
   /// A convenience datastructure which helps to convert state names to std::string
   const static inline std::map<State, std::string> state_to_str_map_{
-    {State::UNINITIALIZED, "UNINITIALIZED"},
-    {State::INITIALIZED  , "INITIALIZED"},
-    {State::RUNNING      , "RUNNING"},
-    {State::PAUSED       , "PAUSED"},
-    {State::STOPPING     , "STOPPING"},
-    {State::FINISHED     , "FINISHED"},
-    {State::BYPASSED     , "BYPASSED"},
-    {State::ERROR        , "ERROR"}};
+    {State::UNINITIALIZED  , "UNINITIALIZED"},
+    {State::INITIALIZED    , "INITIALIZED"},
+    {State::RUNNING        , "RUNNING"},
+    {State::PAUSE_REQUESTED, "PAUSE_REQUESTED"},
+    {State::PAUSED         , "PAUSED"},
+    {State::STOPPING       , "STOPPING"},
+    {State::FINISHED       , "FINISHED"},
+    {State::BYPASSED       , "BYPASSED"},
+    {State::ERROR          , "ERROR"}};
 
   const static inline std::map<std::string, State> str_to_state_map_{
-    {"UNINITIALIZED", State::UNINITIALIZED},
-    {"INITIALIZED"  , State::INITIALIZED},
-    {"RUNNING"      , State::RUNNING},
-    {"PAUSED"       , State::PAUSED},
-    {"STOPPING"     , State::STOPPING},
-    {"FINISHED"     , State::FINISHED},
-    {"BYPASSED"     , State::BYPASSED},
-    {"ERROR"        , State::ERROR}};
+    {"UNINITIALIZED"  , State::UNINITIALIZED},
+    {"INITIALIZED"    , State::INITIALIZED},
+    {"RUNNING"        , State::RUNNING},
+    {"PAUSE_REQUESTED", State::PAUSE_REQUESTED},
+    {"PAUSED"         , State::PAUSED},
+    {"STOPPING"       , State::STOPPING},
+    {"FINISHED"       , State::FINISHED},
+    {"BYPASSED"       , State::BYPASSED},
+    {"ERROR"          , State::ERROR}};
 
   /**
    * @brief Embeds infromation about a parent/child connection

@@ -20,9 +20,7 @@
 #include "temoto_action_engine/umrf_node_exec.h"
 #include "temoto_action_engine/util/thread_wrapper.hpp"
 
-#include <condition_variable>
-#include <memory>
-#include <mutex>
+#include <future>
 
 /**
  * @brief Implements the functions needed for executing a UMRF graph
@@ -46,11 +44,11 @@ public:
 
   void startGraph(const std::string& result, const ActionParameters& params);
 
-  void pauseGraph();
+  std::future<bool> pauseGraph();
 
   void resumeGraph();
 
-  std::string stopGraph();
+  std::future<std::string> stopGraph();
 
   void clearGraph();
 
@@ -64,6 +62,6 @@ public:
 
 private:
 
-  // StateThreads state_threads_;
+  temoto::util::Threads<UmrfGraphCommon::State> state_threads_;
 
 };

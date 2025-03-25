@@ -342,11 +342,12 @@ public:
   {
     for (const ParameterContainer& p : parameters_)
     {
-      if (!p.getNativeData())
-      {
-        ParameterContainer& p_nc = const_cast<ParameterContainer&>(p);
-        p_nc.clearData();
-      }
+      const_cast<ParameterContainer&>(p).clearData();
+      // if (!p.getNativeData())
+      // {
+      //   ParameterContainer& p_nc = const_cast<ParameterContainer&>(p);
+      //   p_nc.clearData();
+      // }
     }
   }
 

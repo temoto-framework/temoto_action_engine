@@ -280,8 +280,8 @@ public:
       else
       {
         auto action_current_itr = graph_nodes_map_.find(action_new.getFullName());
-        action_current_itr->setParents(action_new.getParents());
-        action_current_itr->setChildren(action_new.getChildren());
+        action_current_itr->second->setParents(action_new.getParents());
+        action_current_itr->second->setChildren(action_new.getChildren());
       }
     }
   }

@@ -200,107 +200,6 @@ catch(TemotoErrorStack e)
   throw FORWARD_TEMOTO_ERROR_STACK(e);
 }
 
-// void ActionEngine::modifyGraph(const std::string& graph_name, const UmrfGraphDiffs& graph_diffs)
-// {
-//   LOCK_GUARD_TYPE_R guard_graph_map_(umrf_graph_map_rw_mutex_);
-
-//   if (!graphExists(graph_name))
-//   {
-//     TEMOTO_PRINT("Cannot modify graph '" + graph_name + "' because it does not exist.");
-//     return;
-//   }
-
-//   TEMOTO_PRINT("Received a request to modify UMRF graph '" + graph_name + "' ...");
-//   std::shared_ptr<UmrfGraphExec> ugh = umrf_graph_exec_map_.at(graph_name);
-
-//   /*
-//    * Before modyfing the graph, check if the graph contains the UMRFs which are menitoned in the diffs
-//    */
-//   for (const auto& graph_diff : graph_diffs)
-//   {
-//     if (graph_diff.operation == UmrfGraphDiff::Operation::add_umrf)
-//     {
-//       if (ugh->partOfGraph(graph_diff.umrf_node.getFullName()))
-//       {
-//         throw CREATE_TEMOTO_ERROR_STACK("Cannot add UMRF '" + graph_diff.umrf_node.getFullName()
-//           + "', as it is already part of graph '" + graph_name + "'");
-//       }
-//     }
-//     else
-//     {
-//       if (!ugh->partOfGraph(graph_diff.umrf_node.getFullName()))
-//       {
-//         throw CREATE_TEMOTO_ERROR_STACK("Cannot perform operation '" + graph_diff.operation
-//         + "' because UMRF graph '" + graph_name + "' does not contain node named '"
-//         + graph_diff.umrf_node.getFullName() + "'");
-//       }
-//     }
-//   }
-
-//   /*
-//    * Apply the diffs
-//    */ 
-//   for (const auto& graph_diff : graph_diffs)
-//   {
-//     if (graph_diff.operation == UmrfGraphDiff::Operation::add_umrf)
-//     {
-//       TEMOTO_PRINT("Applying an '" + graph_diff.operation + "' operation to UMRF '" + graph_diff.umrf_node.getFullName() + "' ...");
-//       ugh->addUmrf(graph_diff.umrf_node);
-//     }
-//     else if (graph_diff.operation == UmrfGraphDiff::Operation::remove_umrf)
-//     {
-//       TEMOTO_PRINT("Applying an '" + graph_diff.operation + "' operation to UMRF '" + graph_diff.umrf_node.getFullName() + "' ...");
-//       ugh->stopNode(graph_diff.umrf_node.getFullName());
-//       ugh->removeUmrf(graph_diff.umrf_node);
-//     }
-//     else if (graph_diff.operation == UmrfGraphDiff::Operation::add_child)
-//     {
-//       TEMOTO_PRINT("Applying an '" + graph_diff.operation + "' operation to UMRF '" + graph_diff.umrf_node.getFullName() + "' ...");
-//       ugh->addChild(graph_diff.umrf_node);
-//     }
-//     else if (graph_diff.operation == UmrfGraphDiff::Operation::remove_child)
-//     {
-//       TEMOTO_PRINT("Applying an '" + graph_diff.operation + "' operation to UMRF '" + graph_diff.umrf_node.getFullName() + "' ...");
-//       ugh->removeChild(graph_diff.umrf_node);
-//     }
-//     else
-//     {
-//       throw CREATE_TEMOTO_ERROR_STACK("No such operation as " + graph_diff.operation);
-//     }
-//     TEMOTO_PRINT("Finished with the '" + graph_diff.operation + "' operation.");
-//   }
-// }
-
-void ActionEngine::stopUmrfGraph(const std::string& umrf_graph_name)
-{
-  std::unique_lock<std::recursive_mutex> guard_graph_map(umrf_graph_map_rw_mutex_);
-
-  // Check if the requested graph exists
-  if (umrf_graph_exec_map_.find(umrf_graph_name) == umrf_graph_exec_map_.end())
-  {
-    throw CREATE_TEMOTO_ERROR_STACK("Cannot stop UMRF graph '" + umrf_graph_name + "' because it doesn't exist.");
-  }
-
-  try
-  {
-    umrf_graph_exec_map_.at(umrf_graph_name)->stopGraph();
-  }
-  catch (TemotoErrorStack e)
-  {
-    throw FORWARD_TEMOTO_ERROR_STACK(e);
-  }
-  catch (std::exception& e)
-  {
-    throw CREATE_TEMOTO_ERROR_STACK(e.what());
-  }
-
-  guard_graph_map.unlock();
-  onStateChange("", umrf_graph_name);
-
-  guard_graph_map.lock();
-  umrf_graph_exec_map_.erase(umrf_graph_name);
-}
-
 bool ActionEngine::addActionsPath(const std::string& action_packages_path)
 try
 {
@@ -318,16 +217,30 @@ catch(TemotoErrorStack e)
 
 bool ActionEngine::stop()
 {
-  LOCK_GUARD_TYPE_R guard_graph_map_(umrf_graph_map_rw_mutex_);
+  std::unique_lock<std::recursive_mutex> guard_graph_map(umrf_graph_map_rw_mutex_);
 
-  // Stop all actions
+  // Stop all graphs
+  std::vector<std::future<std::string>> graph_futures;
   for (auto& umrf_graph : umrf_graph_exec_map_)
   {
     TEMOTO_PRINT_OF("Stopping umrf graph " + umrf_graph.second->getName(), actor_name_);
-    umrf_graph.second->stopGraph();
+    graph_futures.push_back(umrf_graph.second->stopGraph());
   }
 
-  // Clear all actions
+  // Release the graph map mutex and wait until all graphs are stopped
+  guard_graph_map.unlock();
+  for (auto& future : graph_futures)
+  try
+  {
+    future.get();
+  }
+  catch (const std::exception& ex)
+  {
+    std::cout << "Caught exception: " << ex.what() << std::endl;
+  }
+
+  // Clear all graphs
+  guard_graph_map.lock();
   for (auto& umrf_graph : umrf_graph_exec_map_)
   {
     TEMOTO_PRINT_OF("Clearing umrf graph " + umrf_graph.second->getName(), actor_name_);
@@ -551,7 +464,10 @@ std::string ActionEngine::waitForGraph(const std::string& graph_name)
   notify_cv_.wait(notify_cv_lock, [&]
   {
     LOCK_GUARD_TYPE_R l(umrf_graph_map_rw_mutex_);
-    return umrf_graph_exec_map_.at(graph_name)->getState() == UmrfGraph::State::FINISHED;
+    const auto& graph_state = umrf_graph_exec_map_.at(graph_name)->getState();
+    return graph_state == UmrfGraph::State::FINISHED ||
+           graph_state == UmrfGraph::State::STOPPED  ||
+           graph_state == UmrfGraph::State::ERROR;
   });
 
   return finished_graphs_.at(graph_name);
@@ -564,17 +480,19 @@ bool ActionEngine::synchronizerAvailable() const
 
 void ActionEngine::pauseUmrfGraph(const std::string& umrf_graph_name)
 {
-  std::unique_lock<std::recursive_mutex> guard_graph_map(umrf_graph_map_rw_mutex_);
-
-  // Check if the requested graph exists
-  if (umrf_graph_exec_map_.find(umrf_graph_name) == umrf_graph_exec_map_.end())
+  if (!graphExists(umrf_graph_name))
   {
     throw CREATE_TEMOTO_ERROR_STACK("Cannot pause UMRF graph '" + umrf_graph_name + "' because it doesn't exist.");
   }
 
   try
   {
-    umrf_graph_exec_map_.at(umrf_graph_name)->pauseGraph();
+    std::unique_lock<std::recursive_mutex> guard_graph_map(umrf_graph_map_rw_mutex_);
+    auto future{umrf_graph_exec_map_.at(umrf_graph_name)->pauseGraph()};
+
+    // Unlock the mutex and wait until the graph is paused
+    guard_graph_map.unlock();
+    future.get();
   }
   catch (TemotoErrorStack e)
   {
@@ -588,16 +506,14 @@ void ActionEngine::pauseUmrfGraph(const std::string& umrf_graph_name)
 
 void ActionEngine::resumeUmrfGraph(const std::string& umrf_graph_name)
 {
-  std::unique_lock<std::recursive_mutex> guard_graph_map(umrf_graph_map_rw_mutex_);
-
-  // Check if the requested graph exists
-  if (umrf_graph_exec_map_.find(umrf_graph_name) == umrf_graph_exec_map_.end())
+  if (!graphExists(umrf_graph_name))
   {
     throw CREATE_TEMOTO_ERROR_STACK("Cannot resume UMRF graph '" + umrf_graph_name + "' because it doesn't exist.");
   }
 
   try
   {
+    std::unique_lock<std::recursive_mutex> guard_graph_map(umrf_graph_map_rw_mutex_);
     umrf_graph_exec_map_.at(umrf_graph_name)->resumeGraph();
   }
   catch (TemotoErrorStack e)
@@ -608,4 +524,64 @@ void ActionEngine::resumeUmrfGraph(const std::string& umrf_graph_name)
   {
     throw CREATE_TEMOTO_ERROR_STACK(e.what());
   }
+}
+
+void ActionEngine::stopUmrfGraph(const std::string& umrf_graph_name)
+{
+  std::unique_lock<std::recursive_mutex> guard_graph_map(umrf_graph_map_rw_mutex_);
+
+  if (!graphExists(umrf_graph_name))
+  {
+    throw CREATE_TEMOTO_ERROR_STACK("Cannot stop UMRF graph '" + umrf_graph_name + "' because it doesn't exist.");
+  }
+
+  try
+  {
+    auto future{umrf_graph_exec_map_.at(umrf_graph_name)->stopGraph()};
+
+    // Unlock the mutex and wait until the graph is stopped
+    guard_graph_map.unlock();
+    future.get();
+  }
+  catch (TemotoErrorStack e)
+  {
+    throw FORWARD_TEMOTO_ERROR_STACK(e);
+  }
+  catch (std::exception& e)
+  {
+    throw CREATE_TEMOTO_ERROR_STACK(e.what());
+  }
+
+  onStateChange("", umrf_graph_name);
+
+  guard_graph_map.lock();
+  umrf_graph_exec_map_.erase(umrf_graph_name);
+}
+
+void ActionEngine::modifyGraph(const UmrfGraph& graph_new)
+try
+{
+  if (!graphExists(graph_new.getName()))
+  {
+    TEMOTO_PRINT("Cannot modify graph '" + graph_new.getName() + "' because it does not exist.");
+    return;
+  }
+
+  pauseUmrfGraph(graph_new.getName());
+
+  // Modify the graph
+  {
+    std::lock_guard<std::recursive_mutex> guard_graph_map(umrf_graph_map_rw_mutex_);
+    umrf_graph_exec_map_.at(graph_new.getName())->modifyGraph(graph_new);
+  }
+
+  resumeUmrfGraph(graph_new.getName());
+}
+catch (TemotoErrorStack e)
+{
+  throw FORWARD_TEMOTO_ERROR_STACK(e);
+}
+catch (std::exception& e)
+{
+  throw CREATE_TEMOTO_ERROR_STACK(e.what());
 }

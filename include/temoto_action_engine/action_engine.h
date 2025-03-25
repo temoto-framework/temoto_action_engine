@@ -46,13 +46,7 @@ public:
   void executeUmrfGraph(const std::string& graph_name, const ActionParameters& params = ActionParameters()
   , const std::string& result = "on_true");
 
-  // /**
-  //  * @brief Modifies a UMRF graph according to the graph_diffs
-  //  *
-  //  * @param graph_name
-  //  * @param graph_diffs
-  //  */
-  // void modifyGraph(const std::string& graph_name);
+  void modifyGraph(const UmrfGraph& graph_new);
 
   void pauseUmrfGraph(const std::string& umrf_graph_name);
 
