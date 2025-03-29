@@ -22,18 +22,54 @@
 #include <sstream>
 #include <fstream>
 
-ActionIndexer::ActionIndexer()
-{}
+ActionIndexer::ActionIndexer(unsigned int indexing_rate)
+: indexing_rate_{indexing_rate}
+{
+  run_indexing_thread_ = indexing_rate_ > 0;
+
+  if (run_indexing_thread_)
+  {
+    indexing_thread_ = std::thread(std::bind(&ActionIndexer::indexingLoop, this));
+  }
+}
+
+ActionIndexer::~ActionIndexer()
+{
+  run_indexing_thread_ = false;
+
+  if (indexing_thread_.joinable())
+  {
+    indexing_thread_.join();
+  }
+}
+
+void ActionIndexer::indexingLoop()
+{
+  while (run_indexing_thread_)
+  {
+    if (!action_paths_.empty())
+    {
+      indexActions();
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(indexing_rate_ * 1000));
+  }
+}
 
 void ActionIndexer::addActionPath(const std::string& path)
 {
   // Lock the mutex
-  LOCK_GUARD_TYPE l(action_paths_mutex_);
+  LOCK_GUARD_TYPE_R l(action_paths_mutex_);
 
   // Add the path if it does not exist
   if (std::find(action_paths_.begin(), action_paths_.end(), path) == action_paths_.end())
   {
     action_paths_.push_back(path);
+  }
+
+  if (!run_indexing_thread_)
+  {
+    indexActions();
   }
 }
 
@@ -49,12 +85,59 @@ ActionIndexer::Summary ActionIndexer::indexActions()
 try
 {
   // Lock the mutex
-  LOCK_GUARD_TYPE l_actions(action_sfs_mutex_);
-  LOCK_GUARD_TYPE l_graphs(graphs_mutex_);
-  LOCK_GUARD_TYPE l_paths(action_paths_mutex_);
+  LOCK_GUARD_TYPE_R l_actions(action_sfs_mutex_);
+  LOCK_GUARD_TYPE_R l_graphs(graphs_mutex_);
+  LOCK_GUARD_TYPE_R l_paths(action_paths_mutex_);
+
+  auto getActionNames = [&]
+  {
+    LOCK_GUARD_TYPE_R l(action_sfs_mutex_);
+    std::vector<std::string> action_names;
+
+    for (const auto& action : indexed_umrfs_)
+    {
+      action_names.push_back(action.getName());
+    }
+
+    return action_names;
+  };
+
+  auto getGraphNames = [&]
+  {
+    LOCK_GUARD_TYPE_R l(graphs_mutex_);
+    std::vector<std::string> graph_names;
+
+    for (const auto& graph : indexed_graphs_)
+    {
+      graph_names.push_back(graph.getName());
+    }
+
+    return graph_names;
+  };
+
+  auto newEntries = [](const std::vector<std::string>& as, const std::vector<std::string>& bs)
+  {
+    std::vector<std::string> new_entries;
+
+    for (const auto& b : bs)
+    {
+        if (std::find(as.begin(), as.end(), b) == as.end())
+        {
+            // If the string 'b' is not found in vector 'as', add it to new_entries
+            new_entries.push_back(b);
+        }
+    }
+
+    return new_entries;
+  };
+
+  const std::vector<std::string> actions_before_indexing{getActionNames()};
+  const std::vector<std::string> graphs_before_indexing{getGraphNames()};
 
   // Clear the old indexed umrfs frames
   indexed_umrfs_.clear();
+  indexed_graphs_.clear();
+
   for (const std::string& action_path : action_paths_)
   {
     boost::filesystem::directory_entry full_path_b = boost::filesystem::directory_entry(action_path);
@@ -65,6 +148,26 @@ try
     std::vector<UmrfGraph> indexed_graphs_local = findGraphs(full_path_b, 2);
     indexed_graphs_.insert(indexed_graphs_.end(), indexed_graphs_local.begin(), indexed_graphs_local.end());
   }
+
+  const std::vector<std::string> new_actions = newEntries(actions_before_indexing, getActionNames());
+  const std::vector<std::string> new_graphs  = newEntries(graphs_before_indexing, getGraphNames());
+
+  if (!new_actions.empty())
+  {
+    for (const auto& a : new_actions)
+    {
+      TEMOTO_PRINT("Added action '" + a + "'");
+    }
+  }
+
+  if (!new_graphs.empty())
+  {
+    for (const auto& g : new_graphs)
+    {
+      TEMOTO_PRINT("Added graph '" + g + "'");
+    }
+  }
+
   return {.actions = indexed_umrfs_.size(), .graphs = indexed_graphs_.size()};
 }
 catch(TemotoErrorStack e)
@@ -174,12 +277,12 @@ catch(...)
 const std::vector<UmrfNode>& ActionIndexer::getUmrfs() const
 {
   // Lock the mutex
-  LOCK_GUARD_TYPE l(action_sfs_mutex_);
+  LOCK_GUARD_TYPE_R l(action_sfs_mutex_);
   return indexed_umrfs_;
 }
 
 const std::vector<UmrfGraph>& ActionIndexer::getGraphs() const
 {
-  LOCK_GUARD_TYPE l(graphs_mutex_);
+  LOCK_GUARD_TYPE_R l(graphs_mutex_);
   return indexed_graphs_;
 }

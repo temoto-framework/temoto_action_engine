@@ -28,6 +28,7 @@ ArgParser::ArgParser(int argc, char** argv)
 	description_.add_options()
 		("actor-name", po::value<std::string>(), "Required. Main wake word.")
 		("actions-path", po::value<std::string>(), "Required. Action packages base path")
+		("indexing-rate", po::value<unsigned int>(), "Optional. How often action engine looks for new actions/graphs. Default = every 2 sec")
 		("extra-wake-words", po::value<std::string>(), "Optional. Additional wake words. Indicates to which wake words the action engine will respond to.");
 
 	po::store(po::parse_command_line(argc, argv, description_), vm_);
@@ -59,6 +60,17 @@ bool ArgParser::parseExtraWakeWords()
 	return false;
 }
 
+bool ArgParser::parseIndexingRate(unsigned int default_value)
+{
+	indexing_rate_ = default_value;
+
+	if (vm_.count("indexing-rate"))
+	{
+		indexing_rate_ = vm_["indexing-rate"].as<unsigned int>();
+	}
+	return true;
+}
+
 bool ArgParser::parseActionsPath()
 {
 	if (vm_.count("actions-path"))
@@ -71,10 +83,9 @@ bool ArgParser::parseActionsPath()
 
 void ArgParser::parseArgs()
 {
-	if (!parseExtraWakeWords())
-	{
-		// No extra wake words
-	}
+	parseExtraWakeWords();
+	parseIndexingRate();
+
 	if (!parseActorName())
 	{
 		std::stringstream ss;
@@ -98,4 +109,10 @@ const std::vector<std::string>& ArgParser::getActionPaths() const
 {
 	return action_paths_;
 }
+
+const unsigned int& ArgParser::getIndexingRate() const
+{
+	return indexing_rate_;
+}
+
 }

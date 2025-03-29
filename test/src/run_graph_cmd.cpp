@@ -95,7 +95,7 @@ try
 
   if (!sync_plugin.empty())
   {
-    action_engine = std::make_unique<ActionEngine>(actor, sync_plugin);
+    action_engine = std::make_unique<ActionEngine>(actor, 0, sync_plugin);
   }
   else
   {
@@ -120,4 +120,3 @@ catch (const std::exception& e)
   std::cerr << e.what() << std::endl;
   return 1;
 }
-

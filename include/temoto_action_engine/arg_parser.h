@@ -36,16 +36,22 @@ public:
 
 	bool parseActionsPath();
 
+	bool parseIndexingRate(unsigned int default_value = 2);
+
 	void parseArgs();
 
 	const std::vector<std::string>& getWakeWords() const;
 
 	const std::vector<std::string>& getActionPaths() const;
 
+	const unsigned int& getIndexingRate() const;
+
 private:
+
 	std::string actor_name_;
 	std::vector<std::string> wake_words_;
 	std::vector<std::string> action_paths_;
+	unsigned int indexing_rate_;
 	po::variables_map vm_;
 	po::options_description description_;
 };

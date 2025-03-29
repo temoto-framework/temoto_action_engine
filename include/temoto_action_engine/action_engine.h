@@ -35,7 +35,10 @@
 class ActionEngine
 {
 public:
-  ActionEngine(const std::string& actor_name, const std::string& sync_plugin_name = "");
+  ActionEngine(
+    const std::string& actor_name,
+    const unsigned int& indexing_rate = 0,
+    const std::string& sync_plugin_name = "");
 
   void executeUmrfGraphA(UmrfGraph umrf_graph, const std::string& result = "on_true"
   , bool name_match_required = false);

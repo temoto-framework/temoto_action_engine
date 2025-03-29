@@ -1,12 +1,12 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * Copyright 2023 TeMoto Framework
- * 
+ * Copyright 2025 TeMoto Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,8 +23,12 @@
 boost::circular_buffer<std::string> feedback_buffer(100);
 std::mutex feedback_buffer_m;
 
-ActionEngine::ActionEngine(const std::string& actor_name, const std::string& sync_plugin_name)
+ActionEngine::ActionEngine(
+  const std::string& actor_name,
+  const unsigned int& indexing_rate,
+  const std::string& sync_plugin_name)
 : actor_name_(actor_name)
+, ai_{indexing_rate}
 {
   ENGINE_HANDLE.actor_name_ = actor_name_;
 
@@ -235,7 +239,7 @@ void ActionEngine::modifyGraph(const std::string& graph_name, const UmrfGraphDif
 
   /*
    * Apply the diffs
-   */ 
+   */
   for (const auto& graph_diff : graph_diffs)
   {
     if (graph_diff.operation == UmrfGraphDiff::Operation::add_umrf)
@@ -303,8 +307,6 @@ try
   if (ai_.containsActions(action_packages_path))
   {
     ai_.addActionPath(action_packages_path);
-    auto [nr_of_actions, nr_of_graphs] {ai_.indexActions()};
-    TEMOTO_PRINT("Found '" + std::to_string(nr_of_actions) + "' actions and '" + std::to_string(nr_of_graphs) + "' graphs");
     return true;
   }
   return false;
