@@ -85,10 +85,11 @@ public:
   : ActionParameter(name, "undef")
   {}
 
-  void setData(const T& data)
+  void setData(const T& data, const bool native = false)
   {
     data_.clear();
     data_.push_back(data);
+    setNativeData(native);
   }
 
   const T& getData() const

@@ -62,6 +62,12 @@ public:
     return threads_.at(key).error_messages.what();
   }
 
+  TemotoErrorStack getErrorStack(const T& key) const
+  {
+    LOCK_GUARD_TYPE_R l(threads_rw_mutex_);
+    return threads_.at(key).error_messages;
+  }
+
   void done(const T& key)
   {
     LOCK_GUARD_TYPE_R l(threads_rw_mutex_);

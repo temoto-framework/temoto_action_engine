@@ -60,9 +60,13 @@ jobs:
       working-directory: ./test/build
       run: cmake --install .
 
-    - name: "tests: run"
+    - name: "tests: run semantics tests"
       working-directory: ./test/build
-      run: source ../setup.bash && ./tests
+      run: source ../setup.bash && ./test_semantics
+
+    - name: "tests: run external changes tests"
+      working-directory: ./test/build
+      run: source ../setup.bash && ./test_external_changes
 
     #
     # set up and run the multi actor tests

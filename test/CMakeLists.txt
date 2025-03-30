@@ -10,12 +10,23 @@ find_package(Boost COMPONENTS program_options REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
 
 # Build the main test files
-add_executable(tests
-  src/json_tests.cpp
-  src/engine_tests.cpp
+add_executable(test_semantics
+  src/test_json.cpp
+  src/test_semantics.cpp
 )
 
-target_link_libraries(tests
+target_link_libraries(test_semantics
+  ${GTEST_LIBRARIES}
+  gtest_main
+  pthread
+  temoto_action_engine
+)
+
+add_executable(test_external_changes
+  src/test_external_changes.cpp
+)
+
+target_link_libraries(test_external_changes
   ${GTEST_LIBRARIES}
   gtest_main
   pthread

@@ -159,17 +159,26 @@ void UmrfNodeExec::run()
   {
     // Move to the error state if the action is not in the following states
     if (getState() != UmrfNode::State::UNINITIALIZED &&
-        getState() != UmrfNode::State::INITIALIZED &&
-        getState() != UmrfNode::State::FINISHED)
+        getState() != UmrfNode::State::INITIALIZED   &&
+        getState() != UmrfNode::State::FINISHED      &&
+        getState() != UmrfNode::State::ERROR)
     {
-      throw CREATE_TEMOTO_ERROR_STACK("Action has to be in the following states to run: UNINITIALIZED; INITIALIZED; FINISHED.");
+      throw CREATE_TEMOTO_ERROR_STACK("Action has to be in the following states to run: UNINITIALIZED; INITIALIZED; FINISHED. Current state: "
+      + state_to_str_map_.at(getState()));
     }
 
     // Initialize the action
-    if (getState() == UmrfNode::State::UNINITIALIZED && getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
+    if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
     {
-      LOCK_GUARD_TYPE_R quard_action_plugin(action_plugin_rw_mutex_);
-      instantiate();
+      if (getState() == UmrfNode::State::UNINITIALIZED)
+      {
+        // Initialize the action
+        instantiate();
+      }
+      else if (getState() == UmrfNode::State::ERROR)
+      {
+        // Should the action be reset?
+      }
     }
 
     setState(State::RUNNING);
@@ -180,6 +189,7 @@ void UmrfNodeExec::run()
      */
     if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
     {
+      action_plugin_->get()->setUmrf(UmrfNode(*this));
       result = (action_plugin_->get()->executeActionWrapped()) ? "on_true" : "on_false"; // Blocking call, returns when finished
       setOutputParameters(action_plugin_->get()->getUmrfNodeConst().getOutputParameters());
     }
@@ -303,24 +313,30 @@ void UmrfNodeExec::run()
   }));
 }
 
-void UmrfNodeExec::stop(bool ignore_result)
+std::future<void> UmrfNodeExec::stop(bool ignore_result)
 {
+  std::promise<void> promise;
+  std::future<void> future = promise.get_future();
+
   if (getName() == "graph_entry" || getName() == "graph_exit")
   {
-    return;
+    promise.set_value();
+    return future;
   }
 
   if (getState() == UmrfNode::State::STOPPING ||
       getState() == UmrfNode::State::FINISHED ||
+      getState() == UmrfNode::State::ERROR    ||
       getState() == UmrfNode::State::UNINITIALIZED)
   {
-    return;
+    promise.set_value();
+    return future;
   }
 
   /*
    * Run the stopping procedure in a thread
    */
-  state_threads_.start(UmrfNode::State::STOPPING, std::make_shared<std::thread>([&]()
+  state_threads_.start(UmrfNode::State::STOPPING, std::make_shared<std::thread>([&, promise_ = std::move(promise)] () mutable
   {
   try
   {
@@ -382,9 +398,21 @@ void UmrfNodeExec::stop(bool ignore_result)
     start_child_nodes_cb_(asRelation(), "on_error");
   }
 
+  if (getState() == UmrfNode::State::ERROR)
+  {
+    try { throw(state_threads_.getErrorStack(UmrfNode::State::STOPPING)); }
+    catch(...) {promise_.set_exception(std::current_exception()); }
+  }
+  else
+  {
+    promise_.set_value();
+  }
+
   state_threads_.done(UmrfNode::State::STOPPING);
 
   }));
+
+  return future;
 }
 
 void UmrfNodeExec::pause()

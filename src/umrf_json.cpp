@@ -122,8 +122,7 @@ ActionParameters::Parameters parseParameters(std::string parent_member_name, con
     if (parameters_json.contains(PVF_FIELDS.value))
     try
     {
-      pc.setData(toParameterData(pc.getType(), parameters_json.at(PVF_FIELDS.value)));
-      pc.setNativeData(true);
+      pc.setData(toParameterData(pc.getType(), parameters_json.at(PVF_FIELDS.value)), true);
     }
     catch(TemotoErrorStack e)
     {

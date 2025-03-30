@@ -42,7 +42,9 @@ public:
     STOPPING,
     STOPPED,
     FINISHED,
-    ERROR
+    ERROR,
+    HALTED,
+    CLEARING
   };
 
   const static inline std::map<State, std::string> state_to_str_map_{
@@ -53,7 +55,9 @@ public:
     {State::STOPPING, "STOPPING"},
     {State::STOPPED, "STOPPED"},
     {State::FINISHED, "FINISHED"},
-    {State::ERROR, "ERROR"}};
+    {State::ERROR, "ERROR"},
+    {State::HALTED, "HALTED"},
+    {State::CLEARING, "CLEARING"}};
 
   const static inline std::map<std::string, State> str_to_state_map_{
     {"UNINITIALIZED", State::UNINITIALIZED},
@@ -63,7 +67,9 @@ public:
     {"STOPPING", State::STOPPING},
     {"STOPPED", State::STOPPED},
     {"FINISHED", State::FINISHED},
-    {"ERROR", State::ERROR}};
+    {"ERROR", State::ERROR},
+    {"HALTED", State::HALTED},
+    {"CLEARING", State::CLEARING}};
 
   UmrfGraphCommon(const std::string& graph_name)
   : graph_name_(graph_name)
@@ -215,7 +221,6 @@ public:
   // TODO: https://github.com/temoto-telerobotics/temoto_action_engine/issues/1
   const std::vector<UmrfNode>& getUmrfNodes() const
   {
-    LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);
     updateUmrfNodes();
     return umrf_nodes_vec_;
   }
@@ -233,9 +238,11 @@ public:
   {
     LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);
 
-    if (getState() != State::PAUSED)
+    if (getState() != State::PAUSED && getState() != State::HALTED)
     {
-      throw CREATE_TEMOTO_ERROR_STACK("Cannot modify graph '" + graph_name_ + "' because it is not in PAUSED state");
+      throw CREATE_TEMOTO_ERROR_STACK("Cannot modify graph '" + graph_name_
+      + "' because it is not in PAUSED state. Current state: '"
+      + state_to_str_map_.at(getState()) + "'");
     }
 
     /*
@@ -282,6 +289,7 @@ public:
         auto action_current_itr = graph_nodes_map_.find(action_new.getFullName());
         action_current_itr->second->setParents(action_new.getParents());
         action_current_itr->second->setChildren(action_new.getChildren());
+        action_current_itr->second->updateInputParams(action_new.getInputParameters());
       }
     }
   }
@@ -335,8 +343,6 @@ protected:
 
   void updateUmrfNodes() const
   {
-    LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);
-
     if (!graph_nodes_map_.empty())
     {
       umrf_nodes_vec_.clear();

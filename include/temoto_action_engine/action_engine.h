@@ -46,11 +46,11 @@ public:
   void executeUmrfGraph(const std::string& graph_name, const ActionParameters& params = ActionParameters()
   , const std::string& result = "on_true");
 
-  void modifyGraph(const UmrfGraph& graph_new);
+  void modifyGraph(const UmrfGraph& graph_new, const std::string& continue_from = "");
 
   void pauseUmrfGraph(const std::string& umrf_graph_name);
 
-  void resumeUmrfGraph(const std::string& umrf_graph_name);
+  void resumeUmrfGraph(const std::string& umrf_graph_name, const std::string& continue_from = "");
 
   void stopUmrfGraph(const std::string& umrf_graph_name);
 

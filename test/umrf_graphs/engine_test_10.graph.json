@@ -1,0 +1,67 @@
+{
+  "graph_name": "engine_test_10",
+  "graph_description": "tests the functionality to modify the graph and set a new execution point",
+  "graph_entry": [
+    {
+      "name": "TaRelayString",
+      "instance_id": 0
+    }
+  ],
+  "graph_exit": [
+    {
+      "name": "TaTriggerResult",
+      "instance_id": 0,
+      "conditions": [
+        "on_true -> run",
+        "on_false -> run",
+        "on_error -> ignore"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "name": "TaRelayString",
+      "instance_id": 0,
+      "type": "sync",
+      "input_parameters": {
+        "string_in": {
+          "pvf_value": "on_error",
+          "pvf_type": "string"
+        }
+      },
+      "output_parameters": {
+        "string_out": {
+          "pvf_type": "string"
+        }
+      },
+      "children": [
+        {
+          "name": "TaTriggerResult",
+          "instance_id": 0,
+          "remap": [
+            {
+              "from": "string_out",
+              "to": "result"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TaTriggerResult",
+      "instance_id": 0,
+      "type": "sync",
+      "input_parameters": {
+        "result": {
+          "pvf_type": "string"
+        }
+      },
+      "parents": [
+        {
+          "name": "TaRelayString",
+          "instance_id": 0
+        }
+      ]
+    }
+  ]
+}

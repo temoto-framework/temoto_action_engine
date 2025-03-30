@@ -46,11 +46,11 @@ public:
 
   std::future<bool> pauseGraph();
 
-  void resumeGraph();
+  void resumeGraph(const std::string& continue_from);
 
   std::future<std::string> stopGraph();
 
-  void clearGraph();
+  std::future<bool> clearGraph();
 
   void stopNode(const std::string& umrf_name);
 

@@ -30,6 +30,7 @@
 #include "temoto_action_engine/util/thread_wrapper.hpp"
 #include "temoto_action_engine/util/error.hpp"
 
+#include <future>
 #include <thread>
 #include <condition_variable>
 
@@ -61,7 +62,7 @@ public:
 
   void resume();
 
-  void stop(bool ignore_result = false);
+  std::future<void> stop(bool ignore_result = false);
 
   void bypass(const std::string& result);
 
