@@ -130,6 +130,11 @@ protected:
     return umrf_node_;
   }
 
+  void writeLog(const std::string& message)
+  {
+    umrf_node_.writeLog(message);
+  }
+
 private:
 
   /**

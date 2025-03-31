@@ -17,9 +17,11 @@
 #ifndef TEMOTO_ACTION_ENGINE__UMRF_NODE_H
 #define TEMOTO_ACTION_ENGINE__UMRF_NODE_H
 
+#include "temoto_action_engine/umrf.h"
+
+#include <boost/circular_buffer.hpp>
 #include <memory>
 #include <optional>
-#include "temoto_action_engine/umrf.h"
 
 class UmrfNode : public Umrf
 {
@@ -247,6 +249,14 @@ public:
     std::map<std::string, std::string> parameter_remap_;
   };
 
+  struct LogEntry
+  {
+    std::string message;
+    std::chrono::time_point<std::chrono::system_clock> timestamp;
+  };
+
+  using Log = boost::circular_buffer<LogEntry>;
+
   UmrfNode();
 
   UmrfNode(const UmrfNode& un);
@@ -264,6 +274,7 @@ public:
     full_name_ = un.full_name_;
     state_ = un.state_;
     actor_exec_traits_ = un.actor_exec_traits_;
+    log_ = un.getLog();
   }
 
   const unsigned int& getInstanceId() const;
@@ -299,6 +310,10 @@ public:
   void setGuiAttributes(const std::string& gui_attributes);
   std::string getGuiAttributes() const;
 
+  const Log& getLog() const;
+  void writeLog(const std::string& message);
+  void writeLog(const LogEntry& log_entry);
+
 protected:
 
   mutable MUTEX_TYPE parents_rw_mutex_;
@@ -315,6 +330,9 @@ protected:
 
   mutable MUTEX_TYPE state_rw_mutex_;
   GUARDED_VARIABLE(State state_, state_rw_mutex_);
+
+  mutable MUTEX_TYPE log_rw_mutex_;
+  GUARDED_VARIABLE(Log log_, log_rw_mutex_);
 
   ActorExecTraits actor_exec_traits_;
 

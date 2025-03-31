@@ -1,8 +1,9 @@
+#include <temoto_action_engine/action_engine.h>
+#include <temoto_action_engine/umrf_graph_fs.h>
 
 #include <gtest/gtest.h>
 #include <math.h>
-#include <temoto_action_engine/action_engine.h>
-#include <temoto_action_engine/umrf_graph_fs.h>
+#include <nlohmann/json.hpp>
 
 TEST(EngineTest, Lifecycle)
 {
@@ -21,6 +22,52 @@ TEST(EngineTest, SimpleAction)
   std::string result = ae.waitForGraph(graph_name);
 
   ASSERT_EQ(result, expected_result);
+}
+
+TEST(EngineTest, Messages)
+{
+  std::string graph_name = "engine_test_11";
+  std::string expected_result = "on_true";
+
+  ActionEngine ae("ae_instance_1");
+  ae.addActionsPath(".");
+
+  ae.executeUmrfGraph(graph_name);
+  std::string result = ae.waitForGraph(graph_name);
+
+  std::string graph_str = ae.getGraphJsonsRunning().at(0);
+  nlohmann::json graph_json = nlohmann::json::parse(graph_str);
+
+  auto messages_str = graph_json.at("actions").at(0).at("input_parameters").at("messages").at("pvf_value").get<std::vector<std::string>>();
+  auto messages_str_json = [&]
+  {
+    std::vector<std::string> v;
+    for (const auto& m_j :  graph_json.at("actions").at(0).at("runtime").at("messages"))
+    {
+      v.push_back(m_j.at("message"));
+    }
+    return v;
+  }();
+
+  bool all_messages_correct = [&]
+  {
+    for (const auto m_s : messages_str)
+    {
+      std::cout << " * Checking message: '" << m_s << "'" << std::endl;
+      if (std::find(messages_str_json.begin(), messages_str_json.end(), m_s) == messages_str_json.end())
+      {
+        return false;
+      }
+    }
+    return true;
+  }();
+
+  if (all_messages_correct)
+  {
+    std::cout << "All messages are properly stored" << std::endl;
+  }
+
+  EXPECT_TRUE(all_messages_correct);
 }
 
 TEST(EngineTest, SimpleSequence)

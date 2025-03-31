@@ -10,8 +10,18 @@ find_package(Boost COMPONENTS program_options REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
 
 # Build the main test files
-add_executable(test_semantics
+add_executable(test_json
   src/test_json.cpp
+)
+
+target_link_libraries(test_json
+  ${GTEST_LIBRARIES}
+  gtest_main
+  pthread
+  temoto_action_engine
+)
+
+add_executable(test_semantics
   src/test_semantics.cpp
 )
 
@@ -60,6 +70,7 @@ build_action(ta_ingest_result)
 build_action(ta_trigger_result)
 build_action(ta_trigger_result_multi)
 build_action(ta_timer)
+build_action(ta_logger)
 
 # Build the commandline graph executor
 add_executable(run_graph_cmd

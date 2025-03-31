@@ -236,6 +236,12 @@ void UmrfNodeExec::run()
     action_threw_error = true;
   }
 
+  // Get the log
+  if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
+  {
+    log_ = action_plugin_->get()->getUmrfNodeConst().getLog();
+  }
+
   // If the action was paused, then wait until it is resumed, even if the action threw an error
   if (getState() == State::PAUSE_REQUESTED || getState() == State::PAUSED)
   {

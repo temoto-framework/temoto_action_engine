@@ -121,6 +121,8 @@ std::future<bool> UmrfGraphExec::pauseGraph()
 
     setState(State::PAUSED);
     promise.set_value(true);
+
+    state_threads_.done(State::PAUSED);
   }));
 
   return pause_future;

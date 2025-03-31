@@ -1,0 +1,32 @@
+{
+  "graph_name": "engine_test_11",
+  "graph_description": "tests the logging functionality",
+  "graph_entry": [
+    {
+      "name": "TaLogger",
+      "instance_id": 0
+    }
+  ],
+  "graph_exit": [
+    {
+      "name": "TaLogger",
+      "instance_id": 0
+    }
+  ],
+  "actions": [
+    {
+      "name": "TaLogger",
+      "instance_id": 0,
+      "type": "sync",
+      "input_parameters": {
+        "messages": {
+          "pvf_type": "strings",
+          "pvf_value": [
+            "some message 1",
+            "some message 2",
+            "some message 3"]
+        }
+      }
+    }
+  ]
+}

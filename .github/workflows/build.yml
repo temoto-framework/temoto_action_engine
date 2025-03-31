@@ -60,6 +60,10 @@ jobs:
       working-directory: ./test/build
       run: cmake --install .
 
+    - name: "tests: run json tests"
+      working-directory: ./test/build
+      run: source ../setup.bash && ./test_json
+
     - name: "tests: run semantics tests"
       working-directory: ./test/build
       run: source ../setup.bash && ./test_semantics

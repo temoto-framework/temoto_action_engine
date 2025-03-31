@@ -1,0 +1,9 @@
+{
+  "name": "TaLogger",
+  "type": "sync",
+  "input_parameters": {
+    "messages": {
+      "pvf_type": "strings"
+    }
+  }
+}

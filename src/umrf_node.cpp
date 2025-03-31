@@ -23,6 +23,7 @@ UmrfNode::UmrfNode()
 : instance_id_(0)
 , state_(State::UNINITIALIZED)
 , actor_exec_traits_(UmrfNode::ActorExecTraits::LOCAL)
+, log_{UmrfNode::Log(10)}
 {}
 
 UmrfNode::UmrfNode(const UmrfNode& un)
@@ -34,6 +35,7 @@ UmrfNode::UmrfNode(const UmrfNode& un)
 , state_(un.state_)
 , actor_exec_traits_(un.actor_exec_traits_)
 , gui_attributes_(un.gui_attributes_)
+, log_(un.getLog())
 {}
 
 UmrfNode UmrfNode::asUmrfNode() const
@@ -252,4 +254,24 @@ void UmrfNode::setGuiAttributes(const std::string& gui_attributes)
 std::string UmrfNode::getGuiAttributes() const
 {
   return gui_attributes_;
+}
+
+const UmrfNode::Log& UmrfNode::getLog() const
+{
+  LOCK_GUARD_TYPE guard_parents(log_rw_mutex_);
+  return log_;
+}
+
+void UmrfNode::writeLog(const std::string& message)
+{
+  LOCK_GUARD_TYPE l(log_rw_mutex_);
+  log_.push_front({
+    .message = message,
+    .timestamp = std::chrono::system_clock::now()});
+}
+
+void UmrfNode::writeLog(const UmrfNode::LogEntry& log_entry)
+{
+  LOCK_GUARD_TYPE l(log_rw_mutex_);
+  log_.push_front(log_entry);
 }

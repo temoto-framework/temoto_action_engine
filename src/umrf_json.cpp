@@ -23,6 +23,7 @@
 #include "temoto_action_engine/umrf_graph_fs.h"
 
 using json = nlohmann::json;
+using namespace std::chrono;
 
 namespace umrf_json
 {
@@ -398,6 +399,25 @@ try
   catch(TemotoErrorStack e)
   {
     throw FORWARD_TEMOTO_ERROR_STACK_WMSG(e, "Invalid 'gui_attributes' in " + un.getName());
+  }
+
+  // GET RUNTIME ATTRIBUTES
+  if (uj.contains(UMRF_FIELDS.runtime))
+  try
+  {
+    for (const auto& m_j : uj.at(UMRF_FIELDS.runtime).at("messages"))
+    {
+      std::chrono::milliseconds time_ms(m_j.at("timestamp").get<size_t>());
+
+      un.writeLog({
+        .message = m_j.at("message"),
+        .timestamp = system_clock::time_point(duration_cast<system_clock::duration>(time_ms))
+      });
+    }
+  }
+  catch(TemotoErrorStack e)
+  {
+    throw FORWARD_TEMOTO_ERROR_STACK_WMSG(e, "Invalid format under 'runtime' key in " + un.getName());
   }
 
   return un;
@@ -820,6 +840,23 @@ json toUmrfJson(const UmrfNode& u)
     action[UMRF_FIELDS.gui_attributes] = json::parse(u.getGuiAttributes());
   }
 
+  // parse log
+  if (!u.getLog().empty())
+  {
+    action[UMRF_FIELDS.runtime]["messages"] = json::array();
+
+    // Copy the messsages
+    UmrfNode::Log log_cpy{u.getLog()};
+
+    for (const auto& m : log_cpy)
+    {
+      json m_j;
+      m_j["timestamp"] = std::chrono::duration_cast<std::chrono::milliseconds>(m.timestamp.time_since_epoch()).count();
+      m_j["message"] = m.message;
+      action[UMRF_FIELDS.runtime]["messages"].push_back(m_j);
+    }
+  }
+
   return action;
 }
 
@@ -864,6 +901,7 @@ std::string toUmrfGraphJsonStr(const UmrfGraph& ug)
   }
 
   // parse the actions
+  int count = 0;
   ug_json[GRAPH_FIELDS.actions] = json::array();
   for (const auto& u : ug.getUmrfNodes())
   {
