@@ -453,7 +453,7 @@ try
   std::vector<UmrfNode::Relation> graph_entry, graph_exit;
 
   // Graph entry and exit doesn't have to be explicitly defined if graph contains only one action 
-  if (umrf_actions.size() == 1)
+  if (umrf_actions.size() == 1 && !ug_json.contains(GRAPH_FIELDS.entry) && !ug_json.contains(GRAPH_FIELDS.exit))
   {
     UmrfNode::Relation r_entry, r_exit;
 

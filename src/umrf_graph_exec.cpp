@@ -334,6 +334,9 @@ try
   /*
    * Update the child nodes and check which children are ready
    */
+  auto nr_of_children{parent_node->getChildren().size()};
+  auto nr_of_children_halted{0};
+
   for (const auto& child_node_relation : parent_node->getChildren())
   {
     std::shared_ptr<UmrfNodeExec> child_node = graph_nodes_map_.at(child_node_relation.getFullName());
@@ -370,27 +373,7 @@ try
     }
     else if (child_response == "ignore")
     {
-      /*
-       * If no other actions are running, set the graph to halted state
-       */
-      bool graph_halted = [&]
-      {
-        for (const auto& node : graph_nodes_map_)
-        {
-          if (node.second->getState() == UmrfNode::State::RUNNING){return false;}
-        }
-
-        return true;
-      }();
-
-      if (graph_halted)
-      {
-        setState(State::HALTED);
-        ENGINE_HANDLE.notifyFinished(Waitable{.action_name = child_node->getFullName(), .graph_name = getName()}
-        , "on_halted"
-        , ActionParameters{});
-      }
-
+      nr_of_children_halted++;
       continue;
     }
 
@@ -440,6 +423,31 @@ try
     else if (child_response == "pause")
     {
       child_node->pause();
+    }
+  }
+
+  if (nr_of_children_halted == nr_of_children)
+  {
+    /*
+     * If no other actions are running, set the graph to halted state
+     */
+    bool graph_halted = [&]
+    {
+      for (const auto& node : graph_nodes_map_)
+      {
+        if (node.second->getFullName() == parent_node_relation.getFullName()) continue;
+        if (node.second->getState() == UmrfNode::State::RUNNING) return false;
+      }
+
+      return true;
+    }();
+
+    if (graph_halted)
+    {
+      setState(State::HALTED);
+      ENGINE_HANDLE.notifyFinished(Waitable{.action_name = parent_node_relation.getFullName(), .graph_name = getName()}
+      , "on_halted"
+      , ActionParameters{});
     }
   }
 

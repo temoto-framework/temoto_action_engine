@@ -73,3 +73,17 @@ TEST(EngineTest, ModifyGraphAndSet)
   result = ae.waitForGraph(graph_name);
   ASSERT_EQ(result, expected_result_after);
 }
+
+TEST(EngineTest, HaltOnTrue)
+{
+  std::string graph_name = "engine_test_10_b";
+  std::string expected_result_before = "on_halted";
+
+  ActionEngine ae("ae_instance_1");
+  ae.addActionsPath(".");
+  std::string result;
+
+  ae.executeUmrfGraph(graph_name);
+  result = ae.waitForGraph(graph_name);
+  ASSERT_EQ(result, expected_result_before);
+}

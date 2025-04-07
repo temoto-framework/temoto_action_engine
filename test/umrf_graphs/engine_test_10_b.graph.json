@@ -1,0 +1,34 @@
+{
+  "graph_name": "engine_test_10_b",
+  "graph_description": "tests the functionality to modify the graph and set a new execution point",
+  "graph_entry": [
+    {
+      "name": "TaTriggerResult",
+      "instance_id": 0
+    }
+  ],
+  "graph_exit": [
+    {
+      "name": "TaTriggerResult",
+      "instance_id": 0,
+      "conditions": [
+        "on_true -> ignore",
+        "on_false -> ignore",
+        "on_error -> ignore"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "name": "TaTriggerResult",
+      "instance_id": 0,
+      "type": "sync",
+      "input_parameters": {
+        "result": {
+          "pvf_type": "string",
+          "pvf_value": "on_true"
+        }
+      }
+    }
+  ]
+}
