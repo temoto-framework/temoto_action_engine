@@ -46,7 +46,7 @@ public:
 
     threads_[key] = ThreadWrapper{
       .thread = thread,
-      .is_running = false
+      .is_running = true
     };
   }
 
@@ -72,6 +72,12 @@ public:
   {
     LOCK_GUARD_TYPE_R l(threads_rw_mutex_);
     threads_.at(key).is_running = false;
+  }
+
+  bool hasThread(const T& key)
+  {
+    LOCK_GUARD_TYPE_R l(threads_rw_mutex_);
+    return threads_.find(key) != threads_.end();
   }
 
   typename std::map<T, ThreadWrapper>::iterator begin()

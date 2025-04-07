@@ -6,7 +6,7 @@
 
 TEST(EngineTest, PauseResume)
 {
-  std::string graph_name = "engine_test_8";
+  std::string graph_name = "external_changes_test_1";
   std::string expected_result = "on_true";
 
   ActionEngine ae("ae_instance_1");
@@ -34,10 +34,10 @@ TEST(EngineTest, PauseResume)
 
 TEST(EngineTest, ModifyGraph)
 {
-  std::string graph_name = "engine_test_9";
+  std::string graph_name = "external_changes_test_2";
   std::string expected_result = "on_true";
 
-  std::string modified_graph_json_str{temoto_action_engine::readFromFile("engine_test_9_modified.graph.json")};
+  std::string modified_graph_json_str{temoto_action_engine::readFromFile("external_changes_test_2_b.graph.json")};
   UmrfGraph modified_graph{umrf_json::fromUmrfGraphJsonStr(modified_graph_json_str)};
 
   ActionEngine ae("ae_instance_1");
@@ -54,11 +54,11 @@ TEST(EngineTest, ModifyGraph)
 
 TEST(EngineTest, ModifyGraphAndSet)
 {
-  std::string graph_name = "engine_test_10";
+  std::string graph_name = "external_changes_test_3";
   std::string expected_result_before = "on_halted";
   std::string expected_result_after = "on_true";
 
-  std::string modified_graph_json_str{temoto_action_engine::readFromFile("engine_test_10_modified.graph.json")};
+  std::string modified_graph_json_str{temoto_action_engine::readFromFile("external_changes_test_3_b.graph.json")};
   UmrfGraph modified_graph{umrf_json::fromUmrfGraphJsonStr(modified_graph_json_str)};
 
   ActionEngine ae("ae_instance_1");
@@ -76,7 +76,7 @@ TEST(EngineTest, ModifyGraphAndSet)
 
 TEST(EngineTest, HaltOnTrue)
 {
-  std::string graph_name = "engine_test_10_b";
+  std::string graph_name = "external_changes_test_3_c";
   std::string expected_result_before = "on_halted";
 
   ActionEngine ae("ae_instance_1");

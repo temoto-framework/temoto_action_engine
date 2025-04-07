@@ -39,6 +39,7 @@ class UmrfNodeExec : public UmrfNode
 friend class UmrfGraphExec;
 
 using StartChildNodesCb = std::function<void(const UmrfNode::Relation&, const std::string&)>;
+using NotifyStateChangeCb = std::function<void(const std::string&)>;
 
 public:
 
@@ -108,6 +109,7 @@ private:
   TemotoErrorStack error_messages_;
 
   StartChildNodesCb start_child_nodes_cb_ = NULL;
+  NotifyStateChangeCb notify_state_change_cb_ = NULL;
 
   temoto::util::ConditionalWaiter wait_for_result_;
   temoto::util::ConditionalWaiter wait_for_resume_;

@@ -1,67 +1,67 @@
 {
-  "graph_name": "engine_test_2",
-  "graph_description": "tests the functionality execute actions sequentially",
+  "graph_name": "external_changes_test_1",
+  "graph_description": "tests the graph pause / resume functionality",
   "graph_entry": [
     {
-      "name": "TaAddString",
+      "name": "TaTimer",
       "instance_id": 0
     }
   ],
   "graph_exit": [
     {
-      "name": "TaCompareString",
+      "name": "TaCompareNumber",
       "instance_id": 0
     }
   ],
   "actions": [
     {
-      "name": "TaAddString",
+      "name": "TaTimer",
       "instance_id": 0,
       "type": "sync",
       "input_parameters": {
-        "str_a": {
-          "pvf_type": "string",
-          "pvf_value": "Input A"
-        },
-        "str_b": {
-          "pvf_type": "string",
-          "pvf_value": "Input B"
+        "count_until": {
+          "pvf_type": "number",
+          "pvf_value": 1.0
         }
       },
       "output_parameters": {
-        "result": {
-          "pvf_type": "string"
+        "final_count": {
+          "pvf_type": "number"
         }
       },
       "children": [
         {
-          "name": "TaCompareString",
+          "name": "TaCompareNumber",
           "instance_id": 0,
           "remap": [
             {
-              "from": "result",
-              "to": "str_a"
+              "from": "final_count",
+              "to": "num_a"
             }
           ]
         }
       ]
     },
     {
-      "name": "TaCompareString",
+      "name": "TaCompareNumber",
       "instance_id": 0,
       "type": "sync",
       "input_parameters": {
-        "str_a": {
-          "pvf_type": "string"
+        "num_a": {
+          "pvf_type": "number"
         },
-        "str_b": {
+        "num_b": {
+          "pvf_type": "number",
+          "pvf_value": 1.5
+        },
+        "operation": {
           "pvf_type": "string",
-          "pvf_value": "Input A and Input B"
+          "pvf_value": ">"
         }
       },
       "parents": [
         {
-          "name": "TaAddString",
+          "name": "TaTimer",
           "instance_id": 0,
           "required": true,
           "conditions": [

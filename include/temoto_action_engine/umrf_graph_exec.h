@@ -64,4 +64,6 @@ private:
 
   temoto::util::Threads<UmrfGraphCommon::State> state_threads_;
 
+  void notifyStateChange(const std::string& umrf_name);
+
 };

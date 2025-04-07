@@ -1,6 +1,6 @@
 {
-  "graph_name": "engine_test_3",
-  "graph_description": "tests the functionality run concurrent actions",
+  "graph_name": "semantics_test_3",
+  "graph_description": "Tests the functionality run concurrent actions",
   "graph_entry": [
     {
       "name": "TaAddString",

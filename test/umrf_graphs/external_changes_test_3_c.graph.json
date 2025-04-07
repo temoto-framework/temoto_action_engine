@@ -1,5 +1,5 @@
 {
-  "graph_name": "engine_test_10_b",
+  "graph_name": "external_changes_test_3_c",
   "graph_description": "tests the functionality to modify the graph and set a new execution point",
   "graph_entry": [
     {

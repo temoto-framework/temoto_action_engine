@@ -343,6 +343,7 @@ protected:
 
   void updateUmrfNodes() const
   {
+    LOCK_GUARD_TYPE_R guard_graph_nodes_map_(graph_nodes_map_rw_mutex_);
     if (!graph_nodes_map_.empty())
     {
       umrf_nodes_vec_.clear();
@@ -351,6 +352,7 @@ protected:
         umrf_nodes_vec_.push_back(graph_node_it.second->asUmrfNode());
       }
     }
+
   }
 
   /// Helps to resolve UMRF name to a GraphNode

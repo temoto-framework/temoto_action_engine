@@ -1,5 +1,5 @@
 {
-  "graph_name": "engine_test_4",
+  "graph_name": "semantics_test_4",
   "graph_description": "tests the conditional execution functionality",
   "graph_entry": [
     {

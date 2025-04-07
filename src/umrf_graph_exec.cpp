@@ -120,9 +120,16 @@ std::future<bool> UmrfGraphExec::pauseGraph()
     {std::this_thread::sleep_for(std::chrono::milliseconds(100));}
 
     setState(State::PAUSED);
-    promise.set_value(true);
+
+    // The thread might finish before it is put to the state_threads_ map. Wait until it's done
+    while (!state_threads_.hasThread(State::PAUSED));
+    {
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
 
     state_threads_.done(State::PAUSED);
+
+    promise.set_value(true);
   }));
 
   return pause_future;
@@ -139,7 +146,7 @@ void UmrfGraphExec::resumeGraph(const std::string& continue_from)
 
   // Resume all nodes
   for (auto& graph_node : graph_nodes_map_)
-  {
+{
     graph_node.second->resume();
   }
 
@@ -156,15 +163,14 @@ std::future<std::string> UmrfGraphExec::stopGraph()
   std::promise<std::string> stop_result_promise;
   std::future<std::string> stop_result_future = stop_result_promise.get_future();
 
-  // if (getState() == State::UNINITIALIZED ||
-  //     getState() == State::STOPPING ||
-  //     getState() == State::STOPPED ||
-  //     getState() == State::FINISHED ||
-  //     getState() == State::ERROR)
-  // {
-  //   stop_result_promise.set_value(getState() == State::ERROR ? "on_error" : "on_true");
-  //   return stop_result_future;
-  // }
+  if (getState() == State::UNINITIALIZED ||
+      getState() == State::STOPPED       ||
+      getState() == State::FINISHED      ||
+      getState() == State::ERROR)
+  {
+    stop_result_promise.set_value(getState() == State::ERROR ? "on_error" : "on_true");
+    return stop_result_future;
+  }
 
   /*
    * Stop the graph in a separate thread, so that the call would not block
@@ -218,10 +224,16 @@ std::future<std::string> UmrfGraphExec::stopGraph()
     , result
     , ActionParameters());
 
-    // Signal the action ActionEngine::stopGraph to continue
-    promise.set_value(result);
+    // The thread might finish before it is put to the state_threads_ map. Wait until it's done
+    while (!state_threads_.hasThread(State::STOPPING));
+    {
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
 
     state_threads_.done(State::STOPPING);
+
+    // Signal the action ActionEngine::stopGraph to continue
+    promise.set_value(result);
   }));
 
   return stop_result_future;
@@ -241,6 +253,8 @@ std::future<bool> UmrfGraphExec::clearGraph()
   /*
    * Stop the graph in a separate thread, so that the call would not block
    */
+  setState(State::CLEARING);
+
   state_threads_.start(State::CLEARING, std::make_shared<std::thread>([&, promise = std::move(clear_result_promise)] () mutable
   {
     stopGraph().get();
@@ -249,10 +263,16 @@ std::future<bool> UmrfGraphExec::clearGraph()
     graph_nodes_map_.clear();
     setState(State::UNINITIALIZED);
 
-    // Signal the action ActionEngine::stopGraph to continue
-    promise.set_value(true);
+     // The thread might finish before it is put to the state_threads_ map. Wait until it's done
+    while (!state_threads_.hasThread(State::CLEARING));
+    {
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
 
     state_threads_.done(State::CLEARING);
+
+    // Signal the action ActionEngine::stopGraph to continue
+    promise.set_value(true);
   }));
 
   return clear_result_future;
@@ -349,6 +369,9 @@ try
     {
       child_node->start_child_nodes_cb_ = std::bind(&UmrfGraphExec::startChildNodes, this
       , std::placeholders::_1, std::placeholders::_2);
+
+      child_node->notify_state_change_cb_ = std::bind(&UmrfGraphExec::notifyStateChange, this
+      , std::placeholders::_1);
     }
 
     // Check if the parent should be ignored or not
@@ -426,11 +449,11 @@ try
     }
   }
 
+  /*
+   * If all child actions are ignored, and no other actions are running, set the graph to halted state
+   */
   if (nr_of_children_halted == nr_of_children)
   {
-    /*
-     * If no other actions are running, set the graph to halted state
-     */
     bool graph_halted = [&]
     {
       for (const auto& node : graph_nodes_map_)
@@ -464,4 +487,15 @@ catch(const std::exception& e)
 catch(...)
 {
   throw CREATE_TEMOTO_ERROR_STACK("Caught an unhandled exception");
+}
+
+void UmrfGraphExec::notifyStateChange(const std::string& umrf_name)
+{
+  // Do not send any updates when the structure of the graph is being changed
+  if (getState() == State::CLEARING)
+  {
+    return;
+  }
+
+  ENGINE_HANDLE.notifyStateChange(umrf_name, graph_name_);
 }

@@ -36,7 +36,7 @@ UmrfNodeExec::UmrfNodeExec(const UmrfNode& umrf_node)
   {
     setState(State::ERROR);
     std::cerr << "Failed to initialize the Action Handle because: " << e.what() << '\n';
-    ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
+    notify_state_change_cb_(getFullName());
   }
   else if (getActorExecTraits() == UmrfNode::ActorExecTraits::REMOTE)
   {
@@ -55,7 +55,6 @@ UmrfNodeExec::~UmrfNodeExec()
 
 UmrfNode UmrfNodeExec::asUmrfNode() const
 {
-  // UmrfNode umrf_node = umrf_json::fromUmrfJsonStr(getLatestUmrfJsonStr());
   std::string umrf_node_string = umrf_json::toUmrfJsonStr(*this);
   return umrf_json::fromUmrfJsonStr(umrf_node_string);
   //return UmrfNode(*this);
@@ -115,7 +114,7 @@ try
 catch(const std::exception& e)
 {
   setState(State::ERROR);
-  ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
+  notify_state_change_cb_(getFullName());
   throw CREATE_TEMOTO_ERROR_STACK("Failed to create an instance of the action: " + std::string(e.what()));
 }
 
@@ -182,7 +181,7 @@ void UmrfNodeExec::run()
     }
 
     setState(State::RUNNING);
-    ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
+    notify_state_change_cb_(getFullName());
 
     /*
      * EXECUTE ACTION AS LOCAL
@@ -252,7 +251,7 @@ void UmrfNodeExec::run()
   if (action_threw_error)
   {
     setState(State::ERROR);
-    ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
+    notify_state_change_cb_(getFullName());
     result = "on_error";
   }
 
@@ -295,7 +294,7 @@ void UmrfNodeExec::run()
   if (getType() == "spontaneous" && getState() != UmrfNode::State::STOPPING)
   {
     setState(State::FINISHED);
-    ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
+    notify_state_change_cb_(getFullName());
   }
 
   } // While loop
@@ -313,7 +312,7 @@ void UmrfNodeExec::run()
   if (getState() != UmrfNode::State::ERROR)
   {
     setState(State::FINISHED);
-    ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
+    notify_state_change_cb_(getFullName());
   }
 
   }));
@@ -347,7 +346,7 @@ std::future<void> UmrfNodeExec::stop(bool ignore_result)
   try
   {
     setState(State::STOPPING);
-    ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
+    notify_state_change_cb_(getFullName());
 
     /*
      * LOCALLY STOPPED
@@ -378,19 +377,19 @@ std::future<void> UmrfNodeExec::stop(bool ignore_result)
   {
     state_threads_.addErrorMessage(UmrfNode::State::STOPPING, FORWARD_TEMOTO_ERROR_STACK(e));
     setState(State::ERROR);
-    ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
+    notify_state_change_cb_(getFullName());
   }
   catch(const std::exception& e)
   {
     state_threads_.addErrorMessage(UmrfNode::State::STOPPING, CREATE_TEMOTO_ERROR_STACK(std::string(e.what())));
     setState(State::ERROR);
-    ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
+    notify_state_change_cb_(getFullName());
   }
   catch(...)
   {
     state_threads_.addErrorMessage(UmrfNode::State::STOPPING, CREATE_TEMOTO_ERROR_STACK("Caught an unhandled error."));
     setState(State::ERROR);
-    ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
+    notify_state_change_cb_(getFullName());
   }
 
   if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
@@ -404,6 +403,8 @@ std::future<void> UmrfNodeExec::stop(bool ignore_result)
     start_child_nodes_cb_(asRelation(), "on_error");
   }
 
+  state_threads_.done(UmrfNode::State::STOPPING);
+
   if (getState() == UmrfNode::State::ERROR)
   {
     try { throw(state_threads_.getErrorStack(UmrfNode::State::STOPPING)); }
@@ -413,8 +414,6 @@ std::future<void> UmrfNodeExec::stop(bool ignore_result)
   {
     promise_.set_value();
   }
-
-  state_threads_.done(UmrfNode::State::STOPPING);
 
   }));
 
@@ -490,19 +489,19 @@ void UmrfNodeExec::pause()
   {
     state_threads_.addErrorMessage(UmrfNode::State::PAUSED, FORWARD_TEMOTO_ERROR_STACK(e));
     setState(State::ERROR);
-    ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
+    notify_state_change_cb_(getFullName());
   }
   catch(const std::exception& e)
   {
     state_threads_.addErrorMessage(UmrfNode::State::PAUSED, CREATE_TEMOTO_ERROR_STACK(std::string(e.what())));
     setState(State::ERROR);
-    ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
+    notify_state_change_cb_(getFullName());
   }
   catch(...)
   {
     state_threads_.addErrorMessage(UmrfNode::State::PAUSED, CREATE_TEMOTO_ERROR_STACK("Caught an unhandled error."));
     setState(State::ERROR);
-    ENGINE_HANDLE.notifyStateChange(getFullName(), parent_graph_name_);
+    notify_state_change_cb_(getFullName());
   }
 
   if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)

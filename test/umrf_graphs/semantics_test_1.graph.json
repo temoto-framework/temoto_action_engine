@@ -1,5 +1,5 @@
 {
-  "graph_name": "engine_test_1",
+  "graph_name": "semantics_test_1",
   "graph_description": "tests the functionality to pass parameters",
   "graph_entry": [
     {
