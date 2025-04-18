@@ -253,11 +253,11 @@ std::future<bool> UmrfGraphExec::clearGraph()
   /*
    * Stop the graph in a separate thread, so that the call would not block
    */
-  setState(State::CLEARING);
-
   state_threads_.start(State::CLEARING, std::make_shared<std::thread>([&, promise = std::move(clear_result_promise)] () mutable
   {
     stopGraph().get();
+
+    setState(State::CLEARING);
 
     LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
     graph_nodes_map_.clear();
@@ -325,26 +325,15 @@ try
 
   if (parent_node_type == "spontaneous")
   {
+    std::vector<std::future<void>> futures;
     for(const auto& n : getLinkedActions(parent_node_relation))
     {
-      graph_nodes_map_.at(n)->stop();
+      futures.push_back(graph_nodes_map_.at(n)->stop());
     }
 
-    for(const auto& n : getLinkedActions(parent_node_relation))
+    for (auto& future : futures)
     {
-      while (true)
-      {
-        {
-          LOCK_GUARD_TYPE_R guard_graph_nodes(graph_nodes_map_rw_mutex_);
-          if (graph_nodes_map_.at(n)->getState() == UmrfNode::State::FINISHED ||
-              graph_nodes_map_.at(n)->getState() == UmrfNode::State::ERROR ||
-              graph_nodes_map_.at(n)->getState() == UmrfNode::State::UNINITIALIZED)
-          {
-            break;
-          }
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-      }
+      future.get();
     }
   }
 

@@ -1,0 +1,22 @@
+{
+  "graph_name": "external_changes_test_0",
+  "graph_description": "tests the graph stopping functionality",
+  "actions": [
+    {
+      "name": "TaTimer",
+      "instance_id": 0,
+      "type": "sync",
+      "input_parameters": {
+        "count_until": {
+          "pvf_type": "number",
+          "pvf_value": 3.0
+        }
+      },
+      "output_parameters": {
+        "final_count": {
+          "pvf_type": "number"
+        }
+      }
+    }
+  ]
+}

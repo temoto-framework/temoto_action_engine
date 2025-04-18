@@ -94,6 +94,10 @@ public:
 
 private:
 
+  std::string waitUntilFinished(const Waitable& waitable);
+
+  std::string getSubGraphName() const;
+
   mutable MUTEX_TYPE_R action_plugin_rw_mutex_;
   GUARDED_VARIABLE(std::shared_ptr<ActionPlugin<ActionBase>> action_plugin_, action_plugin_rw_mutex_);
 
@@ -117,8 +121,6 @@ private:
 
   std::string remote_result_;
   std::string remote_notification_id_;
-
-  std::string waitUntilFinished(const Waitable& waitable);
 
 };
 

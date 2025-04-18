@@ -30,7 +30,8 @@
 class EngineHandle
 {
 friend class ActionEngine;
-using ExecuteGraphT = std::function<void(const std::string&, const ActionParameters&, const std::string&)>;
+using ExecuteGraphT = std::function<void(const std::string&, const ActionParameters&, const std::string&, const std::string&)>;
+using StopGraphT = std::function<std::string(const std::string&)>;
 using AcknowledgeT  = std::function<void(const std::string&)>;
 using StateChangeT  = std::function<void(const std::string&, const std::string&)>;
 
@@ -48,9 +49,15 @@ public:
 
   void executeUmrfGraph(const std::string& graph_name
   , const ActionParameters& params
-  , const std::string& result = "on_true")
+  , const std::string& result = "on_true"
+  , const std::string& graph_name_renamed = "")
   {
-    execute_graph_fptr_(graph_name, params, result);
+    execute_graph_fptr_(graph_name, params, result, graph_name_renamed);
+  }
+
+  std::string stopGraph(const std::string& graph_name)
+  {
+    return stop_graph_fptr_(graph_name);
   }
 
   void notifyFinished(const Waitable& waitable, const std::string& result, const ActionParameters& params, const std::string& token = "")
@@ -72,6 +79,7 @@ private:
   AcknowledgeT acknowledge_fptr_;
   AddWaiterT add_waiter_fptr_;
   ExecuteGraphT execute_graph_fptr_;
+  StopGraphT stop_graph_fptr_;
   NotifyFinishedT notify_finished_fptr_;
   StateChangeT on_state_change_fptr;
   std::string actor_name_;

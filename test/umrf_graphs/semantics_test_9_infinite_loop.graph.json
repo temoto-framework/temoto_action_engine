@@ -1,0 +1,80 @@
+{
+  "graph_name": "semantics_test_9_infinite_loop",
+  "graph_description": "A graph that can only stopped externally",
+  "graph_entry": [
+    {
+      "name": "TaTimer",
+      "instance_id": 0
+    }
+  ],
+  "graph_exit": [
+    {
+      "name": "TaTimer",
+      "instance_id": 1,
+      "conditions": [
+        "on_true -> ignore",
+        "on_false -> ignore",
+        "on_error -> bypass"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "name": "TaTimer",
+      "instance_id": 0,
+      "type": "sync",
+      "input_parameters": {
+        "count_until": {
+          "pvf_type": "number",
+          "pvf_value": 0.5
+        }
+      },
+      "output_parameters": {
+        "final_count": {
+          "pvf_type": "number"
+        }
+      },
+      "parents": [
+        {
+          "name": "TaTimer",
+          "instance_id": 1,
+          "required": false
+        }
+      ],
+      "children": [
+        {
+          "name": "TaTimer",
+          "instance_id": 1
+        }
+      ]
+    },
+    {
+      "name": "TaTimer",
+      "instance_id": 1,
+      "type": "sync",
+      "input_parameters": {
+        "count_until": {
+          "pvf_type": "number",
+          "pvf_value": 0.5
+        }
+      },
+      "output_parameters": {
+        "final_count": {
+          "pvf_type": "number"
+        }
+      },
+      "parents": [
+        {
+          "name": "TaTimer",
+          "instance_id": 0
+        }
+      ],
+      "children": [
+        {
+          "name": "TaTimer",
+          "instance_id": 0
+        }
+      ]
+    }
+  ]
+}

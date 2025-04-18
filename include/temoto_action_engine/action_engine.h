@@ -40,19 +40,21 @@ public:
     const unsigned int& indexing_rate = 0,
     const std::string& sync_plugin_name = "");
 
-  void executeUmrfGraphA(UmrfGraph umrf_graph, const std::string& result = "on_true"
+  void startGraphA(UmrfGraph umrf_graph, const std::string& result = "on_true"
   , bool name_match_required = false);
 
-  void executeUmrfGraph(const std::string& graph_name, const ActionParameters& params = ActionParameters()
-  , const std::string& result = "on_true");
+  void startGraph(const std::string& graph_name
+  , const ActionParameters& params = ActionParameters()
+  , const std::string& result = "on_true"
+  , const std::string& graph_name_renamed = "");
 
   void modifyGraph(const UmrfGraph& graph_new, const std::string& continue_from = "");
 
-  void pauseUmrfGraph(const std::string& umrf_graph_name);
+  void pauseGraph(const std::string& umrf_graph_name);
 
-  void resumeUmrfGraph(const std::string& umrf_graph_name, const std::string& continue_from = "");
+  void resumeGraph(const std::string& umrf_graph_name, const std::string& continue_from = "");
 
-  void stopUmrfGraph(const std::string& umrf_graph_name);
+  std::string stopGraph(const std::string& umrf_graph_name);
 
   bool addActionsPath(const std::string& action_packages_path);
 
@@ -84,7 +86,7 @@ private:
 
   bool graphExists(const std::string& graph_name) const;
 
-  void addUmrfGraph(const std::string& graph_name, const std::vector<UmrfNode>& umrf_nodes);
+  void addGraph(const std::string& graph_name, const std::vector<UmrfNode>& umrf_nodes);
 
   void notifyFinished(const Waitable& waitable, const std::string& result, const ActionParameters& params, const std::string& token = "");
 

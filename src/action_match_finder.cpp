@@ -97,10 +97,6 @@ bool ActionMatchFinder::findMatchingAction(UmrfNode& umrf_node_in, const UmrfNod
     return false;
   }
 
-  /*
-   * Get the library path of the matching action
-   */
-  // umrf_node_in.setLibraryPath(known_umrf.getLibraryPath());
   umrf_node_in.setName(known_umrf.getName());
 
   /*

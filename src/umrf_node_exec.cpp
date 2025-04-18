@@ -194,6 +194,23 @@ void UmrfNodeExec::run()
     }
 
     /*
+     * EXECUTE ACTION AS GRAPH
+     */
+    else if (getActorExecTraits() == UmrfNode::ActorExecTraits::GRAPH)
+    {
+      // Assign an unique name to the child graph
+      std::string child_graph_name = getSubGraphName();
+
+      // TODO: capture the errors
+      ENGINE_HANDLE.executeUmrfGraph(getName(), getInputParameters(), "on_true", child_graph_name);
+
+      result = waitUntilFinished(Waitable{
+        .action_name = GRAPH_EXIT.getFullName(),
+        .graph_name = child_graph_name,
+        .actor_name = getActor()});
+    }
+
+    /*
      * EXECUTE ACTION AS REMOTE
      */
     else if (getActorExecTraits() == UmrfNode::ActorExecTraits::REMOTE)
@@ -202,19 +219,6 @@ void UmrfNodeExec::run()
       result = waitUntilFinished(Waitable{
         .action_name = getFullName(),
         .graph_name = parent_graph_name_,
-        .actor_name = getActor()});
-    }
-
-    /*
-     * EXECUTE ACTION AS GRAPH
-     */
-    else if (getActorExecTraits() == UmrfNode::ActorExecTraits::GRAPH)
-    {
-      // TODO: capture the errors
-      ENGINE_HANDLE.executeUmrfGraph(getName(), getInputParameters());
-      result = waitUntilFinished(Waitable{
-        .action_name = GRAPH_EXIT.getFullName(),
-        .graph_name = getName(),
         .actor_name = getActor()});
     }
 
@@ -353,7 +357,29 @@ std::future<void> UmrfNodeExec::stop(bool ignore_result)
      */
     if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
     {
-      action_plugin_->get()->stopAction(); // Blocking call, returns when finished
+      // Invoke the stop routine inside the action plugin
+      action_plugin_->get()->stopAction();
+
+      // Wait until the action stops
+      auto timeout{std::chrono::seconds(5)};
+      auto start_time{std::chrono::system_clock::now()};
+
+      while (getState() != UmrfNode::State::FINISHED && getState() != UmrfNode::State::ERROR)
+      {
+        if (std::chrono::system_clock::now() - start_time > timeout)
+        {
+          throw CREATE_TEMOTO_ERROR_STACK("Reached the timeout while waiting for action '" + getFullName() + "' to stop.");
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+      }
+    }
+
+    /*
+     * STOP THE SUBGRAPH
+     */
+    else if (getActorExecTraits() == UmrfNode::ActorExecTraits::GRAPH)
+    {
+      ENGINE_HANDLE.stopGraph(getSubGraphName()); // Blocking call, returns when finished
     }
 
     /*
@@ -362,14 +388,6 @@ std::future<void> UmrfNodeExec::stop(bool ignore_result)
     else if (getActorExecTraits() == UmrfNode::ActorExecTraits::REMOTE)
     {
       // TODO: sync_handle.waitForStop(getFullName())
-    }
-
-    /*
-     * STOP THE SUBGRAPH
-     */
-    else if (getActorExecTraits() == UmrfNode::ActorExecTraits::GRAPH)
-    {
-      // TODO: engine_handle.stopGraph( TODO )
     }
 
   } // try end
@@ -390,12 +408,6 @@ std::future<void> UmrfNodeExec::stop(bool ignore_result)
     state_threads_.addErrorMessage(UmrfNode::State::STOPPING, CREATE_TEMOTO_ERROR_STACK("Caught an unhandled error."));
     setState(State::ERROR);
     notify_state_change_cb_(getFullName());
-  }
-
-  if (getActorExecTraits() == UmrfNode::ActorExecTraits::LOCAL)
-  {
-    // TODO: engine_handle.stopGraph( TODO )
-    // TODO: sync_handle.syncState(getFullName(), getState());
   }
 
   if (getState() == UmrfNode::State::ERROR && !ignore_result)
@@ -468,20 +480,20 @@ void UmrfNodeExec::pause()
     }
 
     /*
-     * REMOTELY PAUSED
-     */
-    else if (getActorExecTraits() == UmrfNode::ActorExecTraits::REMOTE)
-    {
-      wait_for_resume_.wait(); // Wait until the action is externally unpaused
-    }
-
-    /*
      * PAUSE THE SUBGRAPH
      */
     else if (getActorExecTraits() == UmrfNode::ActorExecTraits::GRAPH)
     {
       // TODO: engine_handle.pauseGraph( TODO )
       // wait_for_resume_.wait(); // Wait until the action is externally unpaused
+    }
+
+    /*
+     * REMOTELY PAUSED
+     */
+    else if (getActorExecTraits() == UmrfNode::ActorExecTraits::REMOTE)
+    {
+      wait_for_resume_.wait(); // Wait until the action is externally unpaused
     }
 
   } // try end
@@ -573,4 +585,9 @@ void UmrfNodeExec::notifyFinished(const std::string& remote_notification_id)
 void UmrfNodeExec::setRemoteResult(const std::string& remote_result)
 {
   remote_result_ = remote_result;
+}
+
+std::string UmrfNodeExec::getSubGraphName() const
+{
+  return parent_graph_name_ + "__" + getName() + "__" + std::to_string(getInstanceId());
 }

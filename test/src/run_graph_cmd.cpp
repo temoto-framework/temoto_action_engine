@@ -1,12 +1,12 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * Copyright 2023 TeMoto Framework
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -49,7 +49,7 @@ try
     return 0;
   }
 
-  // Get the name of this action engine instance    
+  // Get the name of this action engine instance
   if (vm.count("actor"))
   {
     actor = vm["actor"].as<std::string>();
@@ -61,7 +61,7 @@ try
     return 1;
   }
 
-  // Get the action packages path file and get the paths    
+  // Get the action packages path file and get the paths
   if (vm.count("actions-path"))
   {
     actions_path = vm["actions-path"].as<std::string>();
@@ -109,14 +109,13 @@ try
   }
 
   // Execute the UMRF graph and wait for the result
-  action_engine->executeUmrfGraph(graph_name);
+  action_engine->startGraph(graph_name);
   std::string result = action_engine->waitForGraph(graph_name);
 
   return (result == "on_true") ? 0 : 1;
 }
 catch (const std::exception& e)
 {
-  std::cout << "broblem" << std::endl;
   std::cerr << e.what() << std::endl;
   return 1;
 }

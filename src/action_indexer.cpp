@@ -67,10 +67,11 @@ void ActionIndexer::addActionPath(const std::string& path)
     action_paths_.push_back(path);
   }
 
-  if (!run_indexing_thread_)
-  {
-    indexActions();
-  }
+  // if (!run_indexing_thread_)
+  // {
+  //   indexActions();
+  // }
+  indexActions();
 }
 
 void ActionIndexer::addActionPath(const std::vector<std::string>& paths)

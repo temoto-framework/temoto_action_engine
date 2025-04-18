@@ -5,12 +5,12 @@
 #include <math.h>
 #include <nlohmann/json.hpp>
 
-TEST(EngineTest, Lifecycle)
+TEST(SemanticsTest, Lifecycle)
 {
   ActionEngine ae("ae_instance_1");
 }
 
-TEST(EngineTest, SimpleAction)
+TEST(SemanticsTest, SimpleAction)
 {
   std::string graph_name = "semantics_test_1";
   std::string expected_result = "on_true";
@@ -18,13 +18,13 @@ TEST(EngineTest, SimpleAction)
   ActionEngine ae("ae_instance_1");
   ae.addActionsPath(".");
 
-  ae.executeUmrfGraph(graph_name);
+  ae.startGraph(graph_name);
   std::string result = ae.waitForGraph(graph_name);
 
   ASSERT_EQ(result, expected_result);
 }
 
-TEST(EngineTest, SimpleSequence)
+TEST(SemanticsTest, SimpleSequence)
 {
   std::string graph_name = "semantics_test_2";
   std::string expected_result = "on_true";
@@ -32,13 +32,13 @@ TEST(EngineTest, SimpleSequence)
   ActionEngine ae("ae_instance_1");
   ae.addActionsPath(".");
 
-  ae.executeUmrfGraph(graph_name);
+  ae.startGraph(graph_name);
   std::string result = ae.waitForGraph(graph_name);
 
   ASSERT_EQ(result, expected_result);
 }
 
-TEST(EngineTest, SimpleConcurrency)
+TEST(SemanticsTest, SimpleConcurrency)
 {
   std::string graph_name = "semantics_test_3";
   std::string expected_result = "on_true";
@@ -46,13 +46,13 @@ TEST(EngineTest, SimpleConcurrency)
   ActionEngine ae("ae_instance_1");
   ae.addActionsPath(".");
 
-  ae.executeUmrfGraph(graph_name);
+  ae.startGraph(graph_name);
   std::string result = ae.waitForGraph(graph_name);
 
   ASSERT_EQ(result, expected_result);
 }
 
-TEST(EngineTest, SimpleConditionals)
+TEST(SemanticsTest, SimpleConditionals)
 {
   std::string graph_name = "semantics_test_4";
   std::string expected_result = "on_true";
@@ -60,13 +60,13 @@ TEST(EngineTest, SimpleConditionals)
   ActionEngine ae("ae_instance_1");
   ae.addActionsPath(".");
 
-  ae.executeUmrfGraph(graph_name);
+  ae.startGraph(graph_name);
   std::string result = ae.waitForGraph(graph_name);
 
   ASSERT_EQ(result, expected_result);
 }
 
-TEST(EngineTest, InvokeStop)
+TEST(SemanticsTest, InvokeStop)
 {
   std::string graph_name = "semantics_test_5";
   std::string expected_result = "on_stopped";
@@ -74,13 +74,13 @@ TEST(EngineTest, InvokeStop)
   ActionEngine ae("ae_instance_1");
   ae.addActionsPath(".");
 
-  ae.executeUmrfGraph(graph_name);
+  ae.startGraph(graph_name);
   std::string result = ae.waitForGraph(graph_name);
 
   ASSERT_EQ(result, expected_result);
 }
 
-TEST(EngineTest, SimpleHierarchy)
+TEST(SemanticsTest, SimpleHierarchy)
 {
   std::string graph_name = "semantics_test_6";
   std::string expected_result = "on_true";
@@ -88,13 +88,13 @@ TEST(EngineTest, SimpleHierarchy)
   ActionEngine ae("ae_instance_1");
   ae.addActionsPath(".");
 
-  ae.executeUmrfGraph(graph_name);
+  ae.startGraph(graph_name);
   std::string result = ae.waitForGraph(graph_name);
 
   ASSERT_EQ(result, expected_result);
 }
 
-TEST(EngineTest, SimpleReactiveBehavior)
+TEST(SemanticsTest, SimpleReactiveBehavior)
 {
   std::string graph_name = "semantics_test_7";
   std::string expected_result = "on_true";
@@ -102,13 +102,13 @@ TEST(EngineTest, SimpleReactiveBehavior)
   ActionEngine ae("ae_instance_1");
   ae.addActionsPath(".");
 
-  ae.executeUmrfGraph(graph_name);
+  ae.startGraph(graph_name);
   std::string result = ae.waitForGraph(graph_name);
 
   ASSERT_EQ(result, expected_result);
 }
 
-TEST(EngineTest, Messages)
+TEST(SemanticsTest, Messages)
 {
   std::string graph_name = "semantics_test_8";
   std::string expected_result = "on_true";
@@ -116,7 +116,7 @@ TEST(EngineTest, Messages)
   ActionEngine ae("ae_instance_1");
   ae.addActionsPath(".");
 
-  ae.executeUmrfGraph(graph_name);
+  ae.startGraph(graph_name);
   std::string result = ae.waitForGraph(graph_name);
 
   std::string graph_str = ae.getGraphJsonsRunning().at(0);
@@ -152,4 +152,18 @@ TEST(EngineTest, Messages)
   }
 
   EXPECT_TRUE(all_messages_correct);
+}
+
+TEST(SemanticsTest, HierarchyWithStop)
+{
+  std::string graph_name = "semantics_test_9";
+  std::string expected_result = "on_stopped";
+
+  ActionEngine ae("ae_instance_1");
+  ae.addActionsPath(".");
+
+  ae.startGraph(graph_name);
+  std::string result = ae.waitForGraph(graph_name);
+
+  ASSERT_EQ(result, expected_result);
 }

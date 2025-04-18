@@ -1,0 +1,67 @@
+{
+  "graph_name": "semantics_test_9",
+  "graph_description": "Tests the behavior of stopping sub-graphs. Runs a timer and an infinite loop in parallel. The infinite loop is stopped by the timer action.",
+  "graph_entry": [
+    {
+      "name": "TaTimer",
+      "instance_id": 0
+    },
+    {
+      "name": "semantics_test_9_infinite_loop",
+      "instance_id": 0
+    }
+  ],
+  "graph_exit": [
+    {
+      "name": "semantics_test_9_infinite_loop",
+      "instance_id": 0,
+      "conditions": [
+        "on_stopped -> bypass"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "name": "TaTimer",
+      "instance_id": 0,
+      "type": "sync",
+      "input_parameters": {
+        "count_until": {
+          "pvf_type": "number",
+          "pvf_value": 3.0
+        }
+      },
+      "output_parameters": {
+        "final_count": {
+          "pvf_type": "number"
+        }
+      },
+      "children": [
+        {
+          "name": "semantics_test_9_infinite_loop",
+          "instance_id": 0
+        }
+      ]
+    },
+    {
+      "name": "semantics_test_9_infinite_loop",
+      "instance_id": 0,
+      "type": "sync",
+      "output_parameters": {
+        "final_count": {
+          "pvf_type": "number"
+        }
+      },
+      "parents": [
+        {
+          "name": "TaTimer",
+          "instance_id": 0,
+          "required": false,
+          "conditions": [
+            "on_true -> stop"
+          ]
+        }
+      ]
+    }
+  ]
+}

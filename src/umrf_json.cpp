@@ -183,7 +183,7 @@ std::vector<UmrfNode::Relation> parseParentRelations(const json& relations_json)
     // GET REQUIRED
     try
     {
-      // Default to false
+      // Default to true
       relation.required_ = (relation_json.contains(RELATION_FIELDS.required)) ? bool(relation_json.at(RELATION_FIELDS.required)) : true;
     }
     catch(const std::exception& e)
