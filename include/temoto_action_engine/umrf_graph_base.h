@@ -278,18 +278,18 @@ public:
     }
 
     // Update / Add actions
-    for (const auto& action_new : new_graph.getUmrfNodes())
+    for (const auto& [key, action_new] : new_graph.graph_nodes_map_)
     {
-      if (!partOfGraph(action_new.getFullName()))
+      if (!partOfGraph(action_new->getFullName()))
       {
-        graph_nodes_map_.emplace(action_new.getFullName(), std::make_shared<UMRF_NODE_T>(action_new));
+        graph_nodes_map_.emplace(action_new->getFullName(), std::make_shared<UMRF_NODE_T>(action_new->asUmrfNode()));
       }
       else
       {
-        auto action_current_itr = graph_nodes_map_.find(action_new.getFullName());
-        action_current_itr->second->setParents(action_new.getParents());
-        action_current_itr->second->setChildren(action_new.getChildren());
-        action_current_itr->second->updateInputParams(action_new.getInputParameters());
+        auto action_current_itr = graph_nodes_map_.find(action_new->getFullName());
+        action_current_itr->second->setParents(action_new->getParents());
+        action_current_itr->second->setChildren(action_new->getChildren());
+        action_current_itr->second->updateInputParams(action_new->getInputParameters());
       }
     }
   }

@@ -146,13 +146,24 @@ void UmrfGraphExec::resumeGraph(const std::string& continue_from)
 
   // Resume all nodes
   for (auto& graph_node : graph_nodes_map_)
-{
+  {
     graph_node.second->resume();
   }
 
   if (!continue_from.empty())
   {
-    graph_nodes_map_.at(continue_from)->run();
+    auto& continue_from_node = graph_nodes_map_.at(continue_from);
+
+    if (continue_from_node->start_child_nodes_cb_ == NULL)
+    {
+      continue_from_node->start_child_nodes_cb_ = std::bind(&UmrfGraphExec::startChildNodes, this
+      , std::placeholders::_1, std::placeholders::_2);
+
+      continue_from_node->notify_state_change_cb_ = std::bind(&UmrfGraphExec::notifyStateChange, this
+      , std::placeholders::_1);
+    }
+
+    continue_from_node->run();
   }
 
   setState(State::RUNNING);

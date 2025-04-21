@@ -1,0 +1,62 @@
+{
+  "graph_name": "external_changes_test_4_b",
+  "graph_description": "tests the graph modification and setting a new execution point to a new action",
+  "graph_entry": [
+    {
+      "name": "TaRelayString",
+      "instance_id": 0
+    }
+  ],
+  "graph_exit": [
+    {
+      "name": "TaRelayString",
+      "instance_id": 1
+    }
+  ],
+  "actions": [
+    {
+      "name": "TaRelayString",
+      "instance_id": 0,
+      "type": "sync",
+      "input_parameters": {
+        "string_in": {
+          "pvf_value": "Relaying just a random string",
+          "pvf_type": "string"
+        }
+      },
+      "output_parameters": {
+        "string_out": {
+          "pvf_type": "string"
+        }
+      },
+      "children": [
+        {
+          "name": "TaRelayString",
+          "instance_id": 1
+        }
+      ]
+    },
+    {
+      "name": "TaRelayString",
+      "instance_id": 1,
+      "type": "sync",
+      "input_parameters": {
+        "string_in": {
+          "pvf_value": "Another random string",
+          "pvf_type": "string"
+        }
+      },
+      "output_parameters": {
+        "string_out": {
+          "pvf_type": "string"
+        }
+      },
+      "parents": [
+        {
+          "name": "TaRelayString",
+          "instance_id": 0
+        }
+      ]
+    }
+  ]
+}

@@ -56,8 +56,12 @@ UmrfNodeExec::~UmrfNodeExec()
 UmrfNode UmrfNodeExec::asUmrfNode() const
 {
   std::string umrf_node_string = umrf_json::toUmrfJsonStr(*this);
-  return umrf_json::fromUmrfJsonStr(umrf_node_string);
-  //return UmrfNode(*this);
+
+  auto n{umrf_json::fromUmrfJsonStr(umrf_node_string)};
+  n.setParents(getParents());
+  n.setChildren(getChildren());
+
+  return n;
 }
 
 const TemotoErrorStack& UmrfNodeExec::getErrorMessages() const
@@ -288,6 +292,12 @@ void UmrfNodeExec::run()
 
   if (getState() == UmrfNode::State::RUNNING || getState() == UmrfNode::State::ERROR)
   {
+    for (const auto c : getChildren())
+    {
+      std::cout << c.getName();
+    }
+    std::cout << std::endl;
+
     start_child_nodes_cb_(asRelation(), result);
   }
   else if (getState() == UmrfNode::State::STOPPING)
