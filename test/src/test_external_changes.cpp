@@ -113,3 +113,26 @@ TEST(ExternalChangesTest, HaltOnTrue)
   result = ae.waitForGraph(graph_name);
   ASSERT_EQ(result, expected_result_before);
 }
+
+TEST(ExternalChangesTest, ModifyGraphAndSetAfter)
+{
+  std::string graph_name = "external_changes_test_4";
+  std::string expected_result_before = "on_halted";
+  std::string expected_result_after = "on_true";
+
+  std::string modified_graph_json_str{temoto_action_engine::readFromFile("external_changes_test_4_b.graph.json")};
+  UmrfGraph modified_graph{umrf_json::fromUmrfGraphJsonStr(modified_graph_json_str)};
+  modified_graph.setName("external_changes_test_4");
+
+  ActionEngine ae("ae_instance_1");
+  ae.addActionsPath(".");
+  std::string result;
+
+  ae.startGraph(graph_name);
+  result = ae.waitForGraph(graph_name);
+  ASSERT_EQ(result, expected_result_before);
+
+  ae.modifyGraph(modified_graph, "TaRelayString_1");
+  result = ae.waitForGraph(graph_name);
+  ASSERT_EQ(result, expected_result_after);
+}

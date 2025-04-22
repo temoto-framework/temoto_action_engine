@@ -111,6 +111,20 @@ try
 
   if (!graphExists(graph_name))
   {
+    /*
+     * Make sure that the name of the new graph is unique, i.e., is not contained in the indexed graphs
+     */
+    for (const auto& ig : ai_.getGraphs())
+    {
+      if (ig.getName() == graph_name)
+      {
+        throw CREATE_TEMOTO_ERROR_STACK("Cannot execute UMRF graph '" + graph_name + "' because it conflicts with an indexed graph (graph name not unique).");
+      }
+    }
+
+    /*
+     * Check if all the actions within the graph exist
+     */
     if (!matchGraph(umrf_graph, {graph_name}))
     {
       throw CREATE_TEMOTO_ERROR_STACK("Could not resolve graph '" + graph_name + "'");
@@ -118,14 +132,26 @@ try
 
     TEMOTO_PRINT("All actions in graph '" + graph_name + "' found.");
   }
-  else if (umrf_graph_exec_map_.at(graph_name)->getState() == UmrfGraphExec::State::FINISHED)
+  else if (
+    [&]{
+      const auto& s{umrf_graph_exec_map_.at(graph_name)->getState()};
+      return s != UmrfGraphExec::State::RUNNING  &&
+             s != UmrfGraphExec::State::PAUSED   &&
+             s != UmrfGraphExec::State::STOPPING &&
+             s != UmrfGraphExec::State::CLEARING;
+    }())
   {
-    finished_graphs_.erase(graph_name);
+    TEMOTO_PRINT("Restarting graph '" + graph_name + "'.");
+
+    if (finished_graphs_.find(graph_name) != finished_graphs_.end())
+    {
+      finished_graphs_.erase(graph_name);
+    }
+
     umrf_graph_exec_map_.erase(graph_name);
   }
 
   umrf_graph_exec_map_.emplace(graph_name, std::make_shared<UmrfGraphExec>(umrf_graph));
-  TEMOTO_PRINT("UMRF graph '" + graph_name + "' initialized.");
 
   startGraph(graph_name, ActionParameters{}, result, {});
   TEMOTO_PRINT("UMRF graph '" + graph_name + "' invoked successfully.");
@@ -143,7 +169,6 @@ try
 {
   // std::string child_graph_name = parent_graph_name_ + "__" + getName() + "__" + std::to_str(getInstanceId());
   LOCK_GUARD_TYPE_R guard_graph_map_(umrf_graph_map_rw_mutex_);
-
 
   // Utilized for hierarchical graphs
   auto graph_name_final{graph_name_renamed.empty() ? graph_name : graph_name_renamed};
@@ -178,15 +203,26 @@ try
   {
     insertIndexedGraph();
   }
-  else if (umrf_graph_exec_map_.at(graph_name_final)->getState() == UmrfGraphExec::State::FINISHED)
-  {
-    finished_graphs_.erase(graph_name_final);
-    umrf_graph_exec_map_.erase(graph_name_final);
-    insertIndexedGraph();
-  }
   else if (umrf_graph_exec_map_.at(graph_name_final)->getState() != UmrfGraphExec::State::UNINITIALIZED)
   {
-    throw CREATE_TEMOTO_ERROR_STACK("Cannot execute UMRF graph '" + graph_name_final + "' because it's already active.");
+    const auto& s{umrf_graph_exec_map_.at(graph_name_final)->getState()};
+
+    if (s != UmrfGraphExec::State::RUNNING  &&
+        s != UmrfGraphExec::State::PAUSED   &&
+        s != UmrfGraphExec::State::STOPPING &&
+        s != UmrfGraphExec::State::CLEARING)
+    {
+      TEMOTO_PRINT("Restarting graph '" + graph_name_final + "'.");
+
+      finished_graphs_.erase(graph_name_final);
+      umrf_graph_exec_map_.erase(graph_name_final);
+      insertIndexedGraph();
+    }
+    else
+    {
+      throw CREATE_TEMOTO_ERROR_STACK("Cannot execute UMRF graph '" + graph_name_final
+        + "' because it's already active (" + UmrfGraphExec::state_to_str_map_.at(s) + ")");
+    }
   }
 
   // Synchronize the execution of the graph with other actors
